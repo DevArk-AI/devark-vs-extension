@@ -1,0 +1,103 @@
+import type { AppStateV2 } from './types-v2';
+
+export const initialState: AppStateV2 = {
+  currentTab: 'copilot',
+  currentView: 'main',
+  cloud: {
+    isConnected: false,
+    isLoading: true,
+    autoSyncEnabled: false,
+  },
+  // Projects & Sessions (for sidebar)
+  projects: [],
+  activeSessionId: null,
+  activeSession: null,
+  activeProject: null,
+  currentWorkspaceSessionId: null,
+  currentGoal: null,
+  providers: [
+    {
+      id: 'cursor-cli',
+      name: 'Cursor CLI',
+      type: 'local',
+      status: 'not-detected',
+      description: 'Your Cursor subscription',
+    },
+    {
+      id: 'claude-agent-sdk',
+      name: 'Claude Agent SDK',
+      type: 'local',
+      status: 'not-detected',
+      description: 'Your Claude subscription',
+    },
+    {
+      id: 'ollama',
+      name: 'Ollama',
+      type: 'local',
+      status: 'not-running',
+      description: 'Free, local, private',
+    },
+    {
+      id: 'openrouter',
+      name: 'OpenRouter',
+      type: 'cloud',
+      status: 'not-configured',
+      description: 'Needs API key',
+      requiresApiKey: true,
+    },
+  ],
+  activeProvider: null,
+  // Advanced feature model settings
+  featureModels: null,
+  availableFeatureModels: [],
+  autoAnalyzeEnabled: true,
+  responseAnalysisEnabled: true,
+  analyzedToday: 0,
+  recentPrompts: [],
+  currentPrompt: '',
+  isAnalyzing: false,
+  isEnhancing: false,
+  isScoringEnhanced: false,
+  isInferringGoal: false,
+  currentAnalysis: null,
+  inferredGoal: null,
+  summaryPeriod: 'today',
+  customDateRange: null,
+  todaySummary: null,
+  yesterdaySummary: null,
+  weekendRecap: null,
+  weeklySummary: null,
+  monthlySummary: null,
+  customSummary: null,
+  isLoadingSummary: false,
+  loadingProgress: 0,
+  loadingMessage: '',
+  summaryLoadingCancelled: false,
+  settings: {
+    autoAnalyzeEnabled: true,
+    responseAnalysisEnabled: true,
+    generateDailySummary: true,
+    llmProvider: '',
+  },
+  isFirstRun: false, // Will be set based on config
+  theme: 'dark',
+  editorInfo: null, // Will be set based on editor detection
+  // Coaching state (Workstream D)
+  currentCoaching: null,
+  coachingPhase: 'idle',
+  contextUsed: null,
+  sessionContext: null,
+  // Sidebar mode (Projects vs Prompt Lab)
+  sidebarMode: 'projects',
+  // Prompt Lab (isolated from CoPilot)
+  promptLab: {
+    currentPrompt: '',
+    isAnalyzing: false,
+    isEnhancing: false,
+    isScoringEnhanced: false,
+    currentAnalysis: null,
+    savedPrompts: [],
+    selectedTags: [],
+    selectedFolder: undefined,
+  },
+};

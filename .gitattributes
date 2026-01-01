@@ -1,0 +1,27 @@
+# Default: normalize all text files to LF
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+
+# Keep batch files as CRLF (Windows requires it)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files - don't touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.vsix binary

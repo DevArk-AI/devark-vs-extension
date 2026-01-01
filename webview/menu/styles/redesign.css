@@ -1,0 +1,7886 @@
+/**
+ * Vibe-Log Co-Pilot Redesign Styles
+ *
+ * Refined developer tool aesthetic with VS Code integration
+ * FOCUS. DISCOVER. GROW. SHIP.
+ */
+
+/* ========================================
+   CSS VARIABLES & THEMING
+   ======================================== */
+
+:root {
+  /* Professional color palette - muted and mature */
+
+  /* Primary accent - subtle blue-purple (VS Code friendly) */
+  --vl-accent: #6c8eef;
+  --vl-accent-hover: #5a7cd9;
+  --vl-accent-muted: rgba(108, 142, 239, 0.15);
+  --vl-accent-subtle: rgba(108, 142, 239, 0.08);
+
+  /* Score colors - muted, professional tones */
+  --score-good: #6cb86c;
+  --score-good-bg: rgba(108, 184, 108, 0.12);
+  --score-medium: #d4a44a;
+  --score-medium-bg: rgba(212, 164, 74, 0.12);
+  --score-low: #d47878;
+  --score-low-bg: rgba(212, 120, 120, 0.12);
+
+  /* Status indicators - using same muted palette */
+  --status-connected: var(--score-good);
+  --status-disconnected: var(--score-low);
+  --status-pending: var(--score-medium);
+
+  /* Platform colors - muted versions */
+  --platform-cursor: #9d7cd8;    /* Muted purple */
+  --platform-claude: #d4956a;    /* Muted orange */
+  --platform-vscode: #6c9bcf;    /* Muted blue */
+
+  /* Activity colors - for charts and distribution */
+  --activity-planning: #b07aa1;  /* Muted pink */
+  --activity-research: #6ba3a3;  /* Muted teal */
+  --activity-docs: #7b7fc7;      /* Muted indigo */
+  --activity-other: #8b919a;     /* Muted gray */
+
+  /* Neutral grays - for borders, subtle backgrounds */
+  --vl-border: var(--vscode-input-border);
+  --vl-hover-bg: var(--vscode-list-hoverBackground);
+  --vl-subtle-bg: rgba(128, 128, 128, 0.08);
+  --vl-selected-bg: rgba(128, 128, 128, 0.12);
+  --vl-selected-border: rgba(128, 128, 128, 0.08);
+
+  /* Animation timings */
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+  --transition-slow: 400ms;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Typography - Using JetBrains Mono for metrics, system for UI */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ========================================
+   LAYOUT & STRUCTURE
+   ======================================== */
+
+.vl-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.vl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  flex-shrink: 0;
+}
+
+.vl-logo-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+}
+
+.vl-logo-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--vl-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.vl-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.vl-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-settings-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* ========================================
+   TAB NAVIGATION
+   ======================================== */
+
+.vl-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  flex-shrink: 0;
+}
+
+.vl-tab {
+  padding: var(--space-sm) var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.vl-tab:hover {
+  opacity: 0.9;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-tab.active {
+  opacity: 1;
+  color: var(--vl-accent);
+}
+
+.vl-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: var(--space-lg);
+  right: var(--space-lg);
+  height: 2px;
+  background: var(--vl-accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Today Summary - right side of tabs */
+.vl-today-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-today-summary-text {
+  opacity: 0.8;
+}
+
+.vl-today-summary-link {
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.vl-today-summary-link:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   MAIN CONTENT AREA
+   ======================================== */
+
+.vl-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+.vl-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.vl-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vl-content::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 4px;
+}
+
+.vl-content::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+/* ========================================
+   CLOUD STATUS BANNER
+   ======================================== */
+
+.vl-cloud-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--vscode-inputValidation-infoBackground);
+  border: 1px solid var(--vscode-inputValidation-infoBorder);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  font-size: 12px;
+}
+
+.vl-cloud-banner.connected {
+  background: var(--score-good-bg);
+  border-color: var(--score-good);
+}
+
+.vl-cloud-banner.disconnected {
+  background: var(--vscode-inputValidation-warningBackground);
+  border-color: var(--vscode-inputValidation-warningBorder);
+}
+
+.vl-cloud-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vl-status-dot.connected {
+  background: var(--status-connected);
+  box-shadow: 0 0 8px var(--status-connected);
+}
+
+.vl-status-dot.disconnected {
+  background: var(--status-disconnected);
+}
+
+.vl-cloud-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-cloud-cta:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+/* ========================================
+   AUTO-SYNC BANNER (for authenticated users)
+   ======================================== */
+
+.vl-autosync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--vscode-textBlockQuote-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  font-size: 12px;
+}
+
+.vl-autosync-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-autosync-title {
+  font-weight: 500;
+}
+
+.vl-autosync-desc {
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.vl-autosync-btn {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.vl-autosync-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* ========================================
+   INFO BANNER (for notices like "Cursor only")
+   ======================================== */
+
+.vl-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--vl-accent-subtle);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  font-size: 12px;
+}
+
+.vl-info-icon {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vl-accent);
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.vl-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-info-text strong {
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+}
+
+.vl-info-text p {
+  margin: 0;
+  opacity: 0.8;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--vscode-editor-foreground);
+}
+
+/* ========================================
+   AUTO-ANALYZE TOGGLE ROW
+   ======================================== */
+
+.vl-analyze-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-analyze-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-toggle.active {
+  background: var(--vl-accent);
+  border-color: var(--vl-accent);
+}
+
+.vl-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--vscode-foreground);
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+
+.vl-toggle.active .vl-toggle-knob {
+  left: 18px;
+  background: white;
+}
+
+.vl-toggle-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.vl-analyze-count {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.vl-analyze-count span {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--vl-accent);
+}
+
+/* ========================================
+   PROMPT INPUT
+   ======================================== */
+
+.vl-prompt-section {
+  margin-bottom: var(--space-xl);
+}
+
+.vl-prompt-input-container {
+  position: relative;
+}
+
+.vl-prompt-input {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  color: var(--vscode-input-foreground);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-input:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 2px var(--vl-accent-muted);
+}
+
+.vl-prompt-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.vl-improve-btn {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-improve-btn:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.vl-improve-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   SCORE DISPLAY (Inline Results)
+   ======================================== */
+
+.vl-analysis-result {
+  margin-bottom: var(--space-xl);
+  animation: slideIn var(--transition-normal) ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-result-section {
+  margin-bottom: var(--space-lg);
+}
+
+.vl-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-result-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-score {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--vl-subtle-bg);
+}
+
+.vl-score.score-good {
+  color: var(--score-good);
+}
+
+.vl-score.score-medium {
+  color: var(--score-medium);
+}
+
+.vl-score.score-low {
+  color: var(--score-low);
+}
+
+.vl-result-box {
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vl-result-box.original {
+  opacity: 0.8;
+}
+
+.vl-result-box.improved {
+  border-color: var(--score-good);
+  background: var(--score-good-bg);
+}
+
+/* Editable improved textarea */
+.vl-result-textarea {
+  width: 100%;
+  min-height: 80px;
+  max-height: 150px;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+  resize: none; /* Use expand button only to avoid UX confusion */
+  font-family: inherit;
+}
+
+.vl-result-textarea.improved {
+  border-color: var(--score-good);
+  background: var(--score-good-bg);
+}
+
+.vl-result-textarea.expanded {
+  min-height: 200px;
+  max-height: 400px;
+}
+
+.vl-result-textarea:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+}
+
+/* Expand button - proper touch target size */
+.vl-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm);
+  min-width: 24px;
+  min-height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.vl-expand-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Quick Wins Tags */
+.vl-quick-wins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-quick-win-tag {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+}
+
+.vl-quick-win-tag::before {
+  content: '+';
+  margin-right: 2px;
+  opacity: 0.7;
+}
+
+/* Action Buttons */
+.vl-result-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.vl-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-action-btn:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.vl-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary button - Purple */
+.vl-action-btn.primary {
+  background: var(--vl-accent);
+  color: white;
+}
+
+.vl-action-btn.primary:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+}
+
+/* Secondary button - Using VS Code semantic tokens for accessibility */
+.vl-action-btn.secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-input-border);
+}
+
+.vl-action-btn.secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+/* ========================================
+   RECENT PROMPTS LIST
+   ======================================== */
+
+.vl-section-divider {
+  height: 1px;
+  background: var(--vscode-panel-border);
+  margin: var(--space-xl) 0;
+}
+
+.vl-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+.vl-recent-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-prompt-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-item:hover {
+  border-color: var(--vscode-input-border);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-prompt-text {
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: var(--space-md);
+}
+
+.vl-prompt-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.vl-prompt-score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vl-prompt-time {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+.vl-view-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  font-size: 12px;
+  color: var(--vl-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vl-view-all-link:hover {
+  text-decoration: underline;
+}
+
+/* Empty State */
+.vl-empty-state {
+  padding: var(--space-xl);
+  text-align: center;
+  background: var(--vscode-input-background);
+  border: 1px dashed var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+}
+
+.vl-empty-state p {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  line-height: 1.6;
+}
+
+/* ========================================
+   FOOTER WITH LLM SELECTOR
+   ======================================== */
+
+.vl-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+  flex-shrink: 0;
+  height: 28px;
+}
+
+.vl-llm-selector {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 200px;
+}
+
+.vl-llm-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  min-width: 0;
+}
+
+.vl-llm-trigger:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  border-color: var(--vscode-input-border);
+}
+
+.vl-llm-label {
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vl-llm-name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.vl-llm-status {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Connected state - green checkmark */
+.vl-llm-status.connected {
+  color: var(--status-connected);
+}
+
+/* Error states - red X */
+.vl-llm-status.error {
+  color: var(--status-disconnected);
+}
+
+/* Warning/not-configured state - orange X */
+.vl-llm-status.warning {
+  color: var(--score-medium);
+}
+
+/* Legacy disconnected class - red X */
+.vl-llm-status.disconnected {
+  color: var(--status-disconnected);
+}
+
+/* LLM Drop-up Menu */
+.vl-llm-dropup {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  min-width: 280px;
+  margin-bottom: var(--space-sm);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: dropupIn var(--transition-normal) ease-out;
+}
+
+@keyframes dropupIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-dropup-header {
+  padding: var(--space-md) var(--space-lg);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.vl-dropup-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.vl-provider-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-provider-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-provider-item.active {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.vl-provider-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-provider-radio {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--vscode-input-border);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vl-provider-item.active .vl-provider-radio {
+  border-color: var(--vl-accent);
+  background: var(--vl-accent);
+  box-shadow: inset 0 0 0 3px var(--vscode-dropdown-background);
+}
+
+.vl-provider-name {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.vl-dropup-footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-configure-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 12px;
+  color: var(--vl-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vl-configure-link:hover {
+  text-decoration: underline;
+}
+
+/* Summary Footer Bar */
+.vl-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-size: 12px;
+}
+
+.vl-summary-bar-text {
+  opacity: 0.7;
+}
+
+.vl-summary-bar-link {
+  color: var(--vl-accent);
+  cursor: pointer;
+}
+
+.vl-summary-bar-link:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   LOADING STATE (Heartbeat Animation)
+   ======================================== */
+
+.vl-loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  min-height: 300px;
+}
+
+.vl-heartbeat-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-xl);
+  animation: heartbeat 800ms ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.vl-loading-message {
+  font-size: 14px;
+  margin-bottom: var(--space-lg);
+  opacity: 0.8;
+}
+
+.vl-progress-bar-container {
+  width: 200px;
+  height: 4px;
+  background: var(--vscode-input-background);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-progress-bar {
+  height: 100%;
+  background: var(--vl-accent);
+  border-radius: 2px;
+  transition: width var(--transition-normal) ease-out;
+}
+
+.vl-progress-detail {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-cancel-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: transparent;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-cancel-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* ========================================
+   SHIMMER / SKELETON LOADING STATES
+   ======================================== */
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Base shimmer class */
+.vl-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 25%,
+    var(--vl-accent-muted) 50%,
+    var(--vscode-input-background) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Shimmer result box */
+.vl-result-box.shimmer {
+  min-height: 60px;
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 25%,
+    var(--vl-accent-subtle) 50%,
+    var(--vscode-input-background) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 1px var(--vl-accent-muted);
+}
+
+/* Shimmer score badge */
+.vl-score.shimmer {
+  min-width: 60px;
+  height: 24px;
+  background: linear-gradient(
+    90deg,
+    var(--vl-accent-subtle) 25%,
+    var(--vl-accent-muted) 50%,
+    var(--vl-accent-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  color: transparent;
+  border-radius: var(--radius-sm);
+}
+
+/* Captured prompt indicator */
+.vl-prompt-captured {
+  position: relative;
+}
+
+.vl-prompt-captured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid var(--vl-accent);
+  border-radius: var(--radius-lg);
+  animation: pulse-border 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    opacity: 0.4;
+    box-shadow: 0 0 0 0 var(--vl-accent-muted);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px 1px var(--vl-accent-muted);
+  }
+}
+
+/* Captured badge */
+.vl-captured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  background: var(--vl-accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-sm);
+  margin-left: var(--space-sm);
+}
+
+.vl-captured-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Analyzing state for result section */
+.vl-result-section.analyzing {
+  opacity: 0.9;
+}
+
+.vl-result-section.analyzing .vl-result-box {
+  position: relative;
+  overflow: hidden;
+}
+
+.vl-result-section.analyzing .vl-result-box::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--vl-accent-subtle) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+  background-size: 200% 100%;
+  pointer-events: none;
+}
+
+/* Analyzing status text */
+.vl-analyzing-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--vl-accent-muted);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  font-size: 13px;
+}
+
+.vl-analyzing-status .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--vl-accent-glow);
+  border-top-color: var(--vl-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vl-spin {
+  animation: spin 1s linear infinite;
+}
+
+.vl-analyzing-status .status-text {
+  flex: 1;
+  color: var(--vl-accent);
+  font-weight: 500;
+}
+
+/* Progressive Analysis Status */
+.vl-analyzing-status-progressive {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-md) var(--space-lg);
+}
+
+.vl-analysis-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md) var(--space-lg);
+  width: 100%;
+}
+
+.vl-task-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  transition: color var(--transition-fast) ease;
+}
+
+.vl-task-status.loading {
+  color: var(--vl-accent);
+}
+
+.vl-task-status.complete {
+  color: var(--score-good);
+}
+
+.vl-task-status.pending {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+.vl-task-status .checkmark {
+  color: var(--score-good);
+  font-weight: 600;
+}
+
+.vl-task-status .pending-dot {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.5;
+}
+
+.spinner-small {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--vl-accent-glow);
+  border-top-color: var(--vl-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ========================================
+   SUMMARIES TAB
+   ======================================== */
+
+.vl-period-selector {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+}
+
+.vl-period-btn {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  height: 32px;
+}
+
+.vl-period-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-period-btn.active {
+  opacity: 1;
+  background: var(--vl-accent);
+  color: white;
+  border-color: var(--vl-accent);
+}
+
+.vl-summary-date {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--space-xl);
+}
+
+/* Quick Stats Grid */
+.vl-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.vl-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-stat-label {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.vl-stat-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.vl-stat-value.score {
+  color: var(--score-good);
+}
+
+/* Work Summary */
+.vl-work-summary {
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.vl-work-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vl-work-list li {
+  padding: var(--space-xs) 0;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.vl-work-list li::before {
+  content: '-';
+  opacity: 0.5;
+}
+
+/* Suggested Focus */
+.vl-suggested-focus {
+  padding: var(--space-lg);
+  background: var(--vl-accent-subtle);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.vl-suggested-focus .vl-section-title {
+  color: var(--vl-accent);
+  opacity: 1;
+}
+
+/* Daily Breakdown Table */
+.vl-daily-breakdown {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: var(--space-xl);
+}
+
+.vl-daily-breakdown th,
+.vl-daily-breakdown td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.vl-daily-breakdown th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+
+.vl-daily-breakdown td {
+  font-family: var(--font-mono);
+}
+
+/* Copy Button */
+.vl-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: auto;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-copy-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* ========================================
+   ONBOARDING SCREEN
+   ======================================== */
+
+.vl-onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl);
+  max-width: 480px;
+  margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.vl-onboarding-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-onboarding-tagline {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: var(--space-2xl);
+}
+
+.vl-value-props {
+  width: 100%;
+  margin-bottom: var(--space-2xl);
+}
+
+.vl-value-prop {
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+}
+
+.vl-value-prop-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-value-prop-desc {
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+.vl-value-prop-link {
+  display: inline;
+  color: var(--vl-accent);
+  cursor: pointer;
+}
+
+.vl-value-prop-link:hover {
+  text-decoration: underline;
+}
+
+/* LLM Selection */
+.vl-llm-selection {
+  width: 100%;
+  margin-bottom: var(--space-2xl);
+}
+
+.vl-llm-option {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 2px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-llm-option:hover {
+  border-color: var(--vscode-input-border);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-llm-option.selected {
+  border-color: var(--vl-accent);
+  background: var(--vl-accent-subtle);
+}
+
+/* Model Selection Dropdown */
+.vl-model-select {
+  width: 100%;
+  padding: var(--space-sm);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-model-select:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-model-select:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 2px var(--vl-accent-muted);
+}
+
+.vl-model-select option {
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  padding: var(--space-sm);
+}
+
+.vl-llm-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--vscode-input-border);
+  border-radius: 50%;
+  margin-right: var(--space-md);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vl-llm-option.selected .vl-llm-radio {
+  border-color: var(--vl-accent);
+  background: var(--vl-accent);
+  box-shadow: inset 0 0 0 4px var(--vscode-input-background);
+}
+
+.vl-llm-content {
+  flex: 1;
+}
+
+.vl-llm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xs);
+}
+
+.vl-llm-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.vl-llm-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.vl-llm-badge.connected {
+  background: var(--score-good-bg);
+  color: var(--score-good);
+}
+
+.vl-llm-badge.error {
+  background: var(--score-low-bg);
+  color: var(--score-low);
+}
+
+.vl-llm-badge.warning {
+  background: var(--score-medium-bg);
+  color: var(--score-medium);
+}
+
+.vl-llm-description {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.vl-llm-model {
+  margin-top: var(--space-sm);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  opacity: 0.6;
+}
+
+/* Checkboxes */
+.vl-checkboxes {
+  width: 100%;
+  margin-bottom: var(--space-2xl);
+}
+
+.vl-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  cursor: pointer;
+}
+
+.vl-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  background: var(--vscode-input-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vl-checkbox.checked {
+  background: var(--vl-accent);
+  border-color: var(--vl-accent);
+}
+
+.vl-checkbox-check {
+  color: white;
+  font-size: 10px;
+  opacity: 0;
+}
+
+.vl-checkbox.checked .vl-checkbox-check {
+  opacity: 1;
+}
+
+.vl-checkbox-label {
+  font-size: 12px;
+}
+
+/* Start Button */
+.vl-start-btn {
+  width: 100%;
+  padding: var(--space-md) var(--space-xl);
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-start-btn:hover {
+  background: var(--vl-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--vl-accent-glow);
+}
+
+.vl-start-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   SETTINGS PANEL
+   ======================================== */
+
+.vl-settings {
+  padding: var(--space-lg);
+}
+
+.vl-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.vl-settings-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.vl-close-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-close-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-settings-section {
+  margin-bottom: var(--space-xl);
+}
+
+.vl-settings-box {
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+}
+
+.vl-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vl-settings-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.vl-settings-desc {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: var(--space-xs);
+}
+
+.vl-settings-link {
+  color: var(--vl-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.vl-settings-link:hover {
+  text-decoration: underline;
+}
+
+/* Advanced Model Settings */
+.vl-advanced-models {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--vscode-widget-border);
+}
+
+.vl-model-select {
+  margin-bottom: var(--space-md);
+}
+
+.vl-model-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+  color: var(--vscode-foreground);
+}
+
+.vl-model-hint {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: var(--space-xs);
+  opacity: 0.7;
+}
+
+.vl-select {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-select:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-select:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 1px var(--vl-accent);
+}
+
+.vl-clickable {
+  cursor: pointer;
+}
+
+.vl-clickable:hover {
+  opacity: 0.8;
+}
+
+.vl-justify-between {
+  justify-content: space-between;
+}
+
+.vl-items-center {
+  align-items: center;
+}
+
+/* Data Stats */
+.vl-data-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.vl-data-stat {
+  font-size: 12px;
+}
+
+.vl-data-stat-label {
+  opacity: 0.6;
+}
+
+.vl-data-stat-value {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.vl-danger-btn {
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: 1px solid var(--score-low);
+  border-radius: var(--radius-sm);
+  color: var(--score-low);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-danger-btn:hover {
+  background: var(--score-low-bg);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.vl-flex {
+  display: flex;
+}
+
+.vl-flex-col {
+  flex-direction: column;
+}
+
+.vl-items-center {
+  align-items: center;
+}
+
+.vl-justify-between {
+  justify-content: space-between;
+}
+
+.vl-gap-sm {
+  gap: var(--space-sm);
+}
+
+.vl-gap-md {
+  gap: var(--space-md);
+}
+
+.vl-gap-lg {
+  gap: var(--space-lg);
+}
+
+.vl-mt-auto {
+  margin-top: auto;
+}
+
+.vl-text-center {
+  text-align: center;
+}
+
+.vl-opacity-70 {
+  opacity: 0.7;
+}
+
+.vl-font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ========================================
+   SIDEBAR-SPECIFIC ADJUSTMENTS
+   ======================================== */
+
+/* Sidebar mode - narrower width optimizations */
+@media (max-width: 500px) {
+  /* Reduce padding on all containers */
+  .vl-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .vl-content {
+    padding: var(--space-md);
+  }
+
+  .vl-onboarding {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  /* Make tabs stack or shrink */
+  .vl-tabs {
+    gap: var(--space-xs);
+  }
+
+  .vl-tab {
+    font-size: 11px;
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  /* Compact header */
+  .vl-logo-title {
+    display: none; /* Hide "Vibe Log" text in sidebar */
+  }
+
+  /* Reduce card sizes */
+  .vl-prompt-card,
+  .vl-summary-card,
+  .vl-value-prop,
+  .vl-llm-option {
+    padding: var(--space-md);
+  }
+
+  /* Compact metric cards */
+  .vl-metric-card {
+    padding: var(--space-md);
+  }
+
+  .vl-metric-label {
+    font-size: 10px;
+  }
+
+  .vl-metric-value {
+    font-size: 20px;
+  }
+
+  /* Compact onboarding logo */
+  .vl-onboarding-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  /* Make buttons full width in sidebar */
+  .vl-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stack flex containers on narrow screens */
+  .vl-flex-row-mobile {
+    flex-direction: column;
+  }
+
+  /* Hide less important labels */
+  .vl-hide-on-narrow {
+    display: none;
+  }
+
+  /* Reduce font sizes slightly */
+  .vl-section-title {
+    font-size: 11px;
+  }
+
+  /* Compact LLM dropup */
+  .vl-llm-dropup {
+    font-size: 11px;
+  }
+
+  /* Compact prompt history */
+  .vl-prompt-history {
+    gap: var(--space-sm);
+  }
+
+  /* Reduce gap between metric cards */
+  .vl-metrics-grid {
+    gap: var(--space-sm);
+  }
+}
+
+/* Extra narrow sidebar (< 350px) */
+@media (max-width: 350px) {
+  /* Stack tabs vertically */
+  .vl-tabs {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .vl-tab {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Further reduce padding */
+  .vl-content {
+    padding: var(--space-sm);
+  }
+
+  /* Make metric cards stack */
+  .vl-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide provider descriptions in very narrow mode */
+  .vl-llm-description {
+    display: none;
+  }
+}
+
+/* ========================================
+   ACCOUNT TAB STYLES
+   ======================================== */
+
+.vl-account-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  max-width: 800px;
+}
+
+/* Section Headers */
+.vl-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-section-header .vl-section-title {
+  margin-bottom: 0;
+}
+
+.vl-section-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+/* Dashboard Section */
+.vl-dashboard-section {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.vl-dashboard-connected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-dashboard-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.vl-status-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 13px;
+}
+
+.vl-status-text strong {
+  font-weight: 600;
+  color: var(--vl-accent);
+}
+
+.vl-last-sync {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: calc(8px + var(--space-sm));
+}
+
+.vl-dashboard-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-dashboard-disconnected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.vl-dashboard-description {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vscode-descriptionForeground);
+  margin: 0;
+}
+
+.vl-dashboard-login-actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+/* Benefits Section - for Account disconnected state */
+.vl-benefits-section {
+  margin-top: var(--space-sm);
+}
+
+.vl-benefits-box {
+  background: var(--vl-subtle-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.vl-benefit-item {
+  padding: var(--space-sm) 0;
+}
+
+.vl-benefit-item:first-child {
+  padding-top: 0;
+}
+
+.vl-benefit-item:last-child {
+  padding-bottom: 0;
+}
+
+.vl-benefit-title {
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: var(--space-xs);
+}
+
+.vl-benefit-desc {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.vl-privacy-note {
+  margin-top: var(--space-md);
+  font-size: 11px;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* Button Styles */
+.vl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-btn-primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.vl-btn-primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.vl-btn-secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.vl-btn-secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.vl-btn-link {
+  background: transparent;
+  color: var(--vscode-textLink-foreground);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.vl-btn-link:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+.vl-btn-accent {
+  background: var(--vl-accent);
+  color: white;
+}
+
+.vl-btn-accent:hover {
+  background: var(--vl-accent-hover);
+}
+
+/* Quick Actions Section */
+.vl-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.vl-action-card:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vl-accent);
+}
+
+.vl-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  flex-shrink: 0;
+}
+
+.vl-action-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-action-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-action-description {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+}
+
+/* Sync Status Section */
+.vl-sync-status {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.vl-sync-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+
+.vl-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  text-align: center;
+}
+
+.vl-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.vl-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--vscode-foreground);
+}
+
+.vl-stat-value.pending {
+  color: var(--score-medium);
+}
+
+.vl-sync-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+/* Account Details Section */
+.vl-account-details {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.vl-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.vl-detail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  flex-shrink: 0;
+}
+
+.vl-detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-detail-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.vl-detail-value {
+  font-size: 13px;
+  color: var(--vscode-foreground);
+}
+
+.vl-detail-placeholder {
+  font-style: italic;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Auto-sync Promo Banner */
+.vl-autosync-promo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--vl-accent-subtle);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-lg);
+}
+
+.vl-autosync-promo-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-autosync-promo-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-autosync-promo-description {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for ACCOUNT tab */
+@media (max-width: 500px) {
+  .vl-sync-stats {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .vl-stat-item {
+    text-align: left;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .vl-dashboard-login-actions {
+    flex-direction: column;
+  }
+
+  .vl-autosync-promo {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .vl-status-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* ========================================
+   MODAL & SYNC FILTER
+   ======================================== */
+
+.vl-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vl-modal {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.vl-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+}
+
+.vl-modal-close {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  padding: var(--space-sm);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.vl-modal-close:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-editor-foreground);
+}
+
+.vl-modal-body {
+  padding: var(--space-lg);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.vl-modal-footer {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  padding: var(--space-lg);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+/* Filter Section */
+.vl-filter-section {
+  margin-bottom: var(--space-xl);
+}
+
+.vl-filter-label {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--space-md);
+}
+
+.vl-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-filter-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  padding: var(--space-md);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.vl-filter-option:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--vl-accent);
+}
+
+.vl-filter-option input[type="radio"] {
+  cursor: pointer;
+  accent-color: var(--vl-accent);
+}
+
+.vl-filter-option span {
+  font-size: 13px;
+  color: var(--vscode-editor-foreground);
+}
+
+.vl-filter-input-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  margin-left: var(--space-xl);
+  margin-top: var(--space-sm);
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--vl-accent);
+}
+
+.vl-filter-input-group label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-weight: 500;
+}
+
+.vl-filter-input-group select,
+.vl-filter-input-group input[type="date"] {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.vl-filter-input-group select:hover,
+.vl-filter-input-group input[type="date"]:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-filter-input-group select:focus,
+.vl-filter-input-group input[type="date"]:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 2px var(--vl-accent-muted);
+}
+
+/* Sync Preview */
+.vl-sync-preview {
+  background: var(--vscode-textBlockQuote-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.vl-preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--space-md);
+}
+
+.vl-preview-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-preview-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vl-preview-label {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-preview-value {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vl-accent);
+}
+
+.vl-preview-stat-breakdown {
+  margin-top: -8px;
+}
+
+.vl-source-breakdown {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-source-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vl-source-icon {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.vl-preview-note {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--vscode-panel-border);
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-preview-note::before {
+  content: "🔒";
+  font-style: normal;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .vl-modal {
+    width: 95%;
+    max-width: none;
+  }
+
+  .vl-filter-input-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ========================================
+   DATE PICKER STYLES
+   ======================================== */
+
+/* Summaries Header Layout */
+.vl-summaries-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  position: relative;
+}
+
+/* Calendar Trigger Button */
+.vl-calendar-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.vl-calendar-trigger:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+  border-color: var(--vl-accent);
+}
+
+.vl-calendar-trigger.active {
+  background: var(--vl-accent);
+  color: white;
+  border-color: var(--vl-accent);
+}
+
+/* Active indicator (purple dot) */
+.vl-active-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--vl-accent);
+  border-radius: 50%;
+  border: 1px solid var(--vscode-sideBar-background);
+}
+
+/* Custom Date Display (when custom period active) */
+.vl-custom-date-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.vl-back-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.vl-back-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  border-color: var(--vl-accent);
+}
+
+.vl-custom-date-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vl-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Date Picker Dropdown */
+.vl-date-picker-dropdown {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  padding: var(--space-lg);
+  z-index: 100;
+  animation: slideDown var(--transition-normal) ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-date-mode-toggle {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.vl-mode-btn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-mode-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.vl-mode-btn.active {
+  background: var(--vl-accent);
+  color: white;
+  border-color: var(--vl-accent);
+}
+
+.vl-date-range-picker {
+  width: 100%;
+}
+
+/* Dual Calendar Layout (Range Mode) */
+.vl-dual-calendar-container {
+  display: flex;
+  gap: var(--space-lg);
+  width: 100%;
+}
+
+.vl-calendar-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vl-calendar-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--space-sm);
+  padding-left: var(--space-xs);
+}
+
+.vl-date-picker-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.vl-date-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 150px;
+}
+
+.vl-calendar-icon {
+  position: absolute;
+  left: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-descriptionForeground);
+  pointer-events: none;
+}
+
+.vl-date-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md) var(--space-sm) 32px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.vl-date-input:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-date-input:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 1px var(--vl-accent);
+}
+
+.vl-date-separator {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+/* React DatePicker Overrides - Inline Calendar */
+.vl-inline-calendar {
+  font-family: var(--font-ui);
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+}
+
+.react-datepicker {
+  border: none;
+  background-color: transparent;
+  font-family: var(--font-ui);
+}
+
+.react-datepicker__header {
+  background-color: transparent;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+  padding-top: var(--space-sm);
+  padding-bottom: var(--space-sm);
+}
+
+.react-datepicker__current-month {
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+/* Screen reader only text - hide visually but keep for accessibility */
+.react-datepicker__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.react-datepicker__day-names {
+  margin-top: var(--space-sm);
+  display: flex;
+  justify-content: space-around;
+}
+
+.react-datepicker__day-name {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: 32px;
+  line-height: 24px;
+  margin: 0;
+  text-align: center;
+  display: inline-block;
+}
+
+.react-datepicker__month {
+  margin: var(--space-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.react-datepicker__month-container {
+  width: 100%;
+}
+
+.react-datepicker__week {
+  display: flex;
+  justify-content: space-around;
+}
+
+.react-datepicker__day {
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.react-datepicker__day:hover:not(.react-datepicker__day--disabled) {
+  background-color: var(--vscode-list-hoverBackground);
+  border-radius: var(--radius-sm);
+}
+
+.react-datepicker__day--selected {
+  background-color: var(--vl-accent) !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.react-datepicker__day--in-selecting-range:not(.react-datepicker__day--in-range) {
+  background-color: var(--vl-accent-glow);
+  color: var(--vscode-foreground);
+}
+
+.react-datepicker__day--in-range {
+  background-color: var(--vl-accent-muted);
+  color: var(--vscode-foreground);
+  border-radius: 0;
+}
+
+.react-datepicker__day--range-start {
+  background-color: var(--vl-accent) !important;
+  color: white !important;
+  font-weight: 600;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.react-datepicker__day--range-end {
+  background-color: var(--vl-accent) !important;
+  color: white !important;
+  font-weight: 600;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.react-datepicker__day--range-start.react-datepicker__day--range-end {
+  border-radius: var(--radius-sm);
+}
+
+.react-datepicker__day--disabled {
+  color: var(--vscode-disabledForeground);
+  cursor: not-allowed;
+  opacity: 0.3;
+  text-decoration: line-through;
+}
+
+.react-datepicker__day--disabled:hover {
+  background-color: transparent;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--vl-accent-hover);
+  color: white;
+}
+
+.react-datepicker__day--today {
+  font-weight: 600;
+  border: 1px solid var(--vl-accent);
+}
+
+.react-datepicker__day--outside-month {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.5;
+}
+
+/* Navigation buttons */
+.react-datepicker__navigation {
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.react-datepicker__navigation:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: var(--vscode-foreground);
+  border-width: 2px 2px 0 0;
+  width: 6px;
+  height: 6px;
+  top: 8px;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: var(--vl-accent);
+}
+
+.react-datepicker__navigation--previous {
+  left: 8px;
+}
+
+.react-datepicker__navigation--next {
+  right: 8px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 500px) {
+  .vl-summaries-header {
+    flex-wrap: wrap;
+  }
+
+  .vl-period-selector {
+    flex: 1;
+    min-width: 100%;
+  }
+
+  /* Stack calendars vertically on mobile */
+  .vl-dual-calendar-container {
+    flex-direction: column;
+  }
+
+  .vl-calendar-column {
+    width: 100%;
+  }
+
+  .vl-calendar-trigger {
+    order: -1;
+  }
+
+  .vl-date-picker-controls {
+    flex-direction: column;
+  }
+
+  .vl-date-input-wrapper {
+    width: 100%;
+  }
+
+  .vl-date-separator {
+    align-self: flex-start;
+  }
+}
+
+/* ========================================
+   ANALYZE EMPTY STATE
+   ======================================== */
+
+.vl-analyze-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  min-height: 300px;
+}
+
+.vl-analyze-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--space-lg);
+  background: var(--vl-accent-glow);
+  border-radius: var(--radius-xl);
+  color: var(--vl-accent);
+}
+
+.vl-analyze-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.vl-analyze-description {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  margin: 0 0 var(--space-xl) 0;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.vl-analyze-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px var(--vl-accent-glow);
+}
+
+.vl-analyze-button:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--vl-accent-glow);
+}
+
+.vl-analyze-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px var(--vl-accent-glow);
+}
+
+.vl-analyze-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   RESIZABLE SIDEBAR
+   ======================================== */
+
+.vl-sidebar-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.vl-sidebar {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+  transition: width var(--transition-fast) ease;
+  overflow: hidden;
+}
+
+.vl-sidebar.dragging {
+  transition: none;
+  user-select: none;
+}
+
+.vl-sidebar.collapsed {
+  width: 60px !important;
+}
+
+/* Sidebar Toggle Button */
+.vl-sidebar-toggle {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.vl-sidebar:hover .vl-sidebar-toggle,
+.vl-sidebar.collapsed .vl-sidebar-toggle {
+  opacity: 1;
+}
+
+.vl-sidebar-toggle:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+  border-color: var(--vl-accent);
+}
+
+/* Sidebar Content */
+.vl-sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg) var(--space-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.vl-sidebar.collapsed .vl-sidebar-content {
+  padding: var(--space-lg) var(--space-sm);
+  align-items: center;
+}
+
+/* Sidebar Sections */
+.vl-sidebar-section {
+  margin-bottom: var(--space-md);
+}
+
+.vl-sidebar-section-grow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vl-sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs) 0;
+}
+
+.vl-sidebar.collapsed .vl-sidebar-section-header {
+  justify-content: center;
+}
+
+.vl-sidebar-divider {
+  height: 1px;
+  background: var(--vscode-panel-border);
+  margin: var(--space-md) 0;
+}
+
+.vl-sidebar-empty {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  padding: var(--space-sm) 0;
+}
+
+/* Icons Only Mode */
+.vl-sidebar-icons-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-project-icon-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-project-icon-item:hover {
+  background: var(--vscode-list-hoverBackground);
+  opacity: 1;
+}
+
+/* Projects List */
+.vl-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-project-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.vl-project-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.vl-project-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-project-chevron {
+  font-size: 8px;
+  opacity: 0.6;
+  transition: transform var(--transition-fast);
+}
+
+.vl-project-chevron.expanded {
+  transform: rotate(0);
+}
+
+.vl-project-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.vl-project-count {
+  font-size: 11px;
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+/* Sessions List */
+.vl-sessions-list {
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--space-md);
+  border-left: 1px solid var(--vscode-panel-border);
+  padding-left: var(--space-sm);
+}
+
+.vl-session-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.vl-session-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-session-item.active {
+  background: var(--vscode-list-activeSelectionBackground);
+}
+
+.vl-session-platform {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.vl-session-time {
+  opacity: 0.7;
+}
+
+.vl-session-prompt-count {
+  opacity: 0.5;
+}
+
+/* Unread activity dot indicator */
+.vl-session-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--vscode-notificationsInfoIcon-foreground, #3794ff);
+  margin-left: auto;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Goal Section */
+.vl-sidebar-goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-goal-text {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+}
+
+.vl-goal-complete-btn {
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-goal-complete-btn:hover {
+  background: var(--score-good);
+  border-color: var(--score-good);
+  color: white;
+}
+
+.vl-goal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.vl-goal-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-goal-edit-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-goal-icon-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vl-goal-icon-indicator .active {
+  color: var(--vl-accent);
+}
+
+.vl-sidebar-set-goal-btn {
+  padding: var(--space-sm);
+  background: transparent;
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.vl-sidebar-set-goal-btn:hover {
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+/* Session History */
+.vl-session-history {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.vl-session-prompts-placeholder {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.vl-session-stats {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  margin-top: auto;
+  border-top: 1px solid var(--vscode-panel-border);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Resize Handle */
+.vl-sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vl-sidebar-resize-handle:hover,
+.vl-sidebar-resize-handle.dragging {
+  background: var(--vl-accent-glow);
+}
+
+.vl-resize-handle-grip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-sm) 0;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.vl-sidebar-resize-handle:hover .vl-resize-handle-grip,
+.vl-sidebar-resize-handle.dragging .vl-resize-handle-grip {
+  opacity: 1;
+}
+
+.vl-resize-handle-line {
+  width: 2px;
+  height: 12px;
+  background: var(--vl-accent);
+  border-radius: 1px;
+}
+
+.vl-sidebar-resize-handle.collapsed {
+  cursor: e-resize;
+}
+
+/* Main Content Area (next to sidebar) */
+.vl-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.vl-main-content .vl-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  /* Sidebar stays in normal flow to push content, never overlays */
+  .vl-sidebar {
+    flex-shrink: 0;
+  }
+
+  .vl-sidebar.collapsed {
+    width: 48px !important;
+  }
+
+  .vl-sidebar-toggle {
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   A2: PROJECTS LIST & SESSION CARDS
+   ======================================== */
+
+/* Projects Empty State */
+.vl-projects-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.vl-projects-empty-icon {
+  opacity: 0.4;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-projects-empty-text {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Projects Collapsed View */
+.vl-projects-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.vl-project-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-project-icon-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-project-active-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--vl-accent);
+  border-radius: 50%;
+}
+
+/* Project Item */
+.vl-project-item.has-active {
+  border-left: 2px solid var(--vl-accent);
+  margin-left: -2px;
+  padding-left: 2px;
+}
+
+.vl-project-expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.vl-project-folder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.vl-project-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.vl-project-sessions {
+  margin-left: var(--space-lg);
+  padding-left: var(--space-sm);
+  border-left: 1px solid var(--vscode-panel-border);
+}
+
+.vl-project-no-sessions {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  padding: var(--space-sm);
+  font-style: italic;
+}
+
+/* Session Card */
+.vl-session-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.vl-session-card:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-session-card.selected {
+  background: var(--vl-selected-bg);
+  border: 1px solid var(--vl-border);
+  box-shadow: 0 0 0 1px var(--vl-selected-border);
+}
+
+.vl-session-card.active {
+  border-left: 2px solid var(--vl-accent);
+  margin-left: -2px;
+}
+
+.vl-session-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-session-platform-icon {
+  font-size: 12px;
+}
+
+.vl-session-platform-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--vscode-textBlockQuote-background);
+  /* Prevent layout shift while loading */
+}
+
+.vl-session-time-ago {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.vl-session-prompt-count {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  opacity: 0.6;
+}
+
+.vl-session-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.vl-session-goal-indicator {
+  font-size: 10px;
+}
+
+/* Compact Session Card */
+.vl-session-card-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  font-size: 11px;
+}
+
+.vl-session-card-compact:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-session-card-compact.selected {
+  background: var(--vl-selected-bg);
+  border: 1px solid var(--vl-border);
+  box-shadow: 0 0 0 1px var(--vl-selected-border);
+}
+
+.vl-session-card-compact .vl-session-active-indicator {
+  width: 4px;
+  height: 4px;
+  background: var(--vl-accent);
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+/* ========================================
+   A2: PROMPT HISTORY LIST
+   ======================================== */
+
+.vl-prompt-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-prompt-history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.vl-prompt-history-empty-icon {
+  opacity: 0.4;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-prompt-history-empty-text {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vl-prompt-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-prompt-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+  color: var(--vscode-foreground);
+}
+
+.vl-prompt-history-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-prompt-history-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vl-prompt-history-text {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.vl-prompt-history-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+  margin-left: var(--space-md);
+}
+
+.vl-prompt-history-score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vl-prompt-history-score.score-good { color: var(--score-good); }
+.vl-prompt-history-score.score-medium { color: var(--score-medium); }
+.vl-prompt-history-score.score-low { color: var(--score-low); }
+
+.vl-prompt-history-time {
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+.vl-prompt-history-load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: transparent;
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-history-load-more:hover {
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-prompt-history-load-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vl-prompt-history-summary {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-prompt-history-avg {
+  font-family: var(--font-mono);
+}
+
+/* ========================================
+   A3: SCORE DISPLAY COMPONENTS
+   ======================================== */
+
+/* Score Bar */
+.vl-score-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-score-bar-container.sm { --bar-height: 4px; }
+.vl-score-bar-container.md { --bar-height: 6px; }
+.vl-score-bar-container.lg { --bar-height: 8px; }
+
+.vl-score-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vl-score-bar-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-score-bar-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vl-score-bar-value.score-good { color: var(--score-good); }
+.vl-score-bar-value.score-medium { color: var(--score-medium); }
+.vl-score-bar-value.score-low { color: var(--score-low); }
+
+.vl-score-bar-track {
+  height: var(--bar-height, 6px);
+  background: var(--vscode-input-background);
+  border-radius: calc(var(--bar-height, 6px) / 2);
+  overflow: hidden;
+}
+
+.vl-score-bar-fill {
+  height: 100%;
+  border-radius: calc(var(--bar-height, 6px) / 2);
+  transition: width var(--transition-normal) ease-out;
+}
+
+.vl-score-bar-fill.animated {
+  animation: scoreBarFill var(--transition-slow) ease-out;
+}
+
+@keyframes scoreBarFill {
+  from { width: 0; }
+}
+
+.vl-score-bar-fill.score-good { background: var(--score-good); }
+.vl-score-bar-fill.score-medium { background: var(--score-medium); }
+.vl-score-bar-fill.score-low { background: var(--score-low); }
+
+/* Score Breakdown */
+.vl-score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-score-breakdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vl-score-breakdown-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-score-breakdown-help {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vl-accent);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-score-breakdown-help:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-score-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-score-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-score-breakdown-item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-score-breakdown-icon {
+  font-size: 12px;
+}
+
+.vl-score-breakdown-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.vl-score-breakdown-weight {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-left: auto;
+}
+
+.vl-score-breakdown-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-score-breakdown-bar-row .vl-score-bar-container {
+  flex: 1;
+}
+
+.vl-score-breakdown-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 28px;
+  text-align: right;
+}
+
+.vl-score-breakdown.compact .vl-score-breakdown-item-header {
+  gap: var(--space-xs);
+}
+
+.vl-score-breakdown.compact .vl-score-breakdown-label {
+  font-size: 11px;
+}
+
+/* Prompt Score */
+.vl-prompt-score {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+}
+
+.vl-prompt-score-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vl-prompt-score-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-prompt-score-icon {
+  font-size: 14px;
+}
+
+.vl-prompt-score-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Inline score value (prominent, next to title) */
+.vl-prompt-score-value-inline {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.vl-prompt-score-value-inline.score-good { color: var(--score-good); }
+.vl-prompt-score-value-inline.score-medium { color: var(--score-medium); }
+.vl-prompt-score-value-inline.score-low { color: var(--score-low); }
+
+.vl-prompt-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.vl-prompt-score-value {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.vl-prompt-score-value.score-good { color: var(--score-good); }
+.vl-prompt-score-value.score-medium { color: var(--score-medium); }
+.vl-prompt-score-value.score-low { color: var(--score-low); }
+
+.vl-prompt-score-max {
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+.vl-prompt-score-label {
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: auto;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.vl-prompt-score-label.score-good {
+  background: var(--score-good-bg);
+  color: var(--score-good);
+}
+
+.vl-prompt-score-label.score-medium {
+  background: var(--score-medium-bg);
+  color: var(--score-medium);
+}
+
+.vl-prompt-score-label.score-low {
+  background: var(--score-low-bg);
+  color: var(--score-low);
+}
+
+/* Why This Score */
+.vl-prompt-score-why {
+  padding: var(--space-md);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+}
+
+.vl-prompt-score-why-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+.vl-prompt-score-why-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.vl-prompt-score-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-prompt-score-point {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 12px;
+}
+
+.vl-point-icon.good { color: var(--score-good); }
+.vl-point-icon.improve { color: var(--score-medium); }
+
+/* How to Improve Section - Combined actionable checklist */
+.vl-prompt-score-improve {
+  padding: var(--space-md);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+}
+
+.vl-prompt-score-improve-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+.vl-prompt-score-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-prompt-score-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.vl-prompt-score-checklist-item.done {
+  color: var(--vscode-foreground);
+}
+
+.vl-prompt-score-checklist-item.todo {
+  color: var(--vscode-foreground);
+}
+
+.vl-checklist-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.vl-checklist-icon.done {
+  color: var(--score-good);
+}
+
+.vl-checklist-icon.todo {
+  color: var(--score-medium);
+}
+
+/* Breakdown Toggle */
+.vl-prompt-score-breakdown-section {
+  border-top: 1px solid var(--vscode-panel-border);
+  padding-top: var(--space-md);
+}
+
+.vl-prompt-score-breakdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-score-breakdown-toggle:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Improve Button */
+.vl-prompt-score-improve-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-score-improve-btn:hover {
+  background: var(--vl-accent-hover);
+}
+
+/* How Scores Work Modal */
+.vl-how-scores-modal {
+  max-width: 550px;
+}
+
+.vl-how-scores-intro {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-how-scores-dimensions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.vl-how-scores-dimension {
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border-radius: var(--radius-md);
+}
+
+.vl-how-scores-dimension-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.vl-dimension-icon {
+  font-size: 14px;
+}
+
+.vl-dimension-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vl-dimension-weight {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.vl-dimension-description {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.vl-dimension-examples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-dimension-example {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.vl-dimension-example.bad { opacity: 0.6; }
+.vl-dimension-example.good { color: var(--score-good); }
+
+.vl-example-icon {
+  font-size: 12px;
+}
+
+.vl-how-scores-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--vl-accent-muted);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-lg);
+}
+
+.vl-tip-icon {
+  font-size: 14px;
+}
+
+.vl-how-scores-tip p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ========================================
+   A4: DAILY STATS & PEER COMPARISON
+   ======================================== */
+
+/* Daily Stats Banner */
+.vl-daily-stats-banner {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-daily-stats-banner:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-daily-stats-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.vl-daily-stats-icon {
+  font-size: 14px;
+}
+
+.vl-daily-stats-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-daily-stats-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: 12px;
+}
+
+.vl-daily-stats-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.vl-daily-stats-value {
+  font-weight: 500;
+}
+
+.vl-daily-stats-label {
+  opacity: 0.7;
+}
+
+.vl-daily-stats-dot {
+  opacity: 0.3;
+}
+
+.vl-daily-stats-delta.positive { color: var(--score-good); }
+.vl-daily-stats-delta.negative { color: var(--score-low); }
+.vl-daily-stats-delta.neutral { opacity: 0.6; }
+
+.vl-daily-stats-percentile.top {
+  color: var(--vl-accent);
+  font-weight: 600;
+}
+
+/* Compact Daily Stats */
+.vl-daily-stats-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.vl-daily-stats-separator {
+  opacity: 0.3;
+}
+
+/* Personal Progress */
+.vl-personal-progress {
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+}
+
+.vl-personal-progress-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-personal-progress-icon {
+  color: var(--vl-accent);
+}
+
+.vl-personal-progress-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-personal-progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-personal-progress-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.vl-personal-progress-bar-label {
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.vl-personal-progress-bar-container {
+  flex: 1;
+}
+
+.vl-personal-progress-bar-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: right;
+}
+
+.vl-personal-progress-bar-row.average .vl-score-bar-fill {
+  background: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+.vl-personal-avg-bar .vl-score-bar-fill {
+  background: var(--vscode-descriptionForeground);
+  opacity: 0.6;
+}
+
+.vl-personal-progress-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 13px;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--vscode-editor-background);
+}
+
+.vl-personal-progress-message.up {
+  color: var(--score-good);
+}
+
+.vl-personal-progress-message.down {
+  color: var(--score-low);
+}
+
+.vl-personal-progress-message.same {
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-personal-progress-diff {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.vl-personal-progress-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-personal-progress-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-streak-icon {
+  color: var(--vl-accent);
+}
+
+.vl-best-label {
+  opacity: 0.7;
+}
+
+.vl-best-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--score-good);
+}
+
+.vl-personal-progress-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-personal-progress-cta:hover {
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-personal-progress-cta-arrow {
+  margin-left: auto;
+}
+
+/* ========================================
+   A5: GOAL & SUGGESTIONS
+   ======================================== */
+
+/* Session Goal */
+.vl-session-goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-session-goal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.6;
+}
+
+.vl-session-goal-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal:hover .vl-session-goal-edit-btn {
+  opacity: 0.6;
+}
+
+.vl-session-goal-edit-btn:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-session-goal-content {
+  padding: var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+}
+
+.vl-session-goal-text {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vl-session-goal-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.vl-session-goal-complete-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal-complete-btn:hover {
+  background: var(--score-good);
+  border-color: var(--score-good);
+  color: white;
+}
+
+.vl-session-goal-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal-clear-btn:hover {
+  opacity: 1;
+  color: var(--score-low);
+}
+
+/* Goal Empty State */
+.vl-session-goal.empty .vl-session-goal-set-btn {
+  padding: var(--space-sm);
+  background: transparent;
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.vl-session-goal.empty .vl-session-goal-set-btn:hover {
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+/* Goal Editing State */
+.vl-session-goal-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-session-goal-input {
+  padding: var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-input-foreground);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  resize: none;
+}
+
+.vl-session-goal-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vl-accent-glow);
+}
+
+.vl-session-goal-edit-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.vl-session-goal-save-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--vl-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal-save-btn:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+}
+
+.vl-session-goal-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vl-session-goal-cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal-cancel-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Collapsed Goal */
+.vl-session-goal-collapsed {
+  display: flex;
+  justify-content: center;
+}
+
+.vl-session-goal-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0.6;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-session-goal-icon-btn:hover {
+  opacity: 1;
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-session-goal-icon-btn.has-goal {
+  color: var(--vl-accent);
+  opacity: 1;
+}
+
+.vl-goal-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--vl-accent);
+  border-radius: 50%;
+}
+
+/* Goal Inference Modal */
+.vl-goal-inference-modal {
+  max-width: 480px;
+}
+
+.vl-goal-inference-icon {
+  font-size: 16px;
+  margin-right: var(--space-sm);
+}
+
+.vl-goal-inference-intro {
+  font-size: 13px;
+  margin-bottom: var(--space-md);
+}
+
+.vl-goal-inference-input-container {
+  margin-bottom: var(--space-lg);
+}
+
+.vl-goal-inference-display {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-goal-inference-display:hover {
+  border-color: var(--vl-accent);
+}
+
+.vl-goal-inference-text {
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.vl-goal-inference-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vl-accent);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-goal-inference-edit-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-goal-inference-input {
+  width: 100%;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-md);
+  color: var(--vscode-input-foreground);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  resize: none;
+}
+
+.vl-goal-inference-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vl-accent-glow);
+}
+
+.vl-goal-inference-question {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-goal-inference-benefits {
+  padding: var(--space-md);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+}
+
+.vl-goal-inference-benefits-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-goal-inference-benefits-list {
+  margin: 0;
+  padding-left: var(--space-lg);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-goal-inference-footer {
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* Co-Pilot Suggestion */
+.vl-copilot-suggestion {
+  padding: var(--space-lg);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--vl-accent);
+}
+
+.vl-copilot-suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.vl-copilot-suggestion-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-suggestion-lightbulb {
+  color: var(--score-medium);
+}
+
+.vl-copilot-suggestion-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-copilot-suggestion-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-copilot-suggestion-dismiss:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-copilot-suggestion-content {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-copilot-suggestion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--vscode-badge-background);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.vl-copilot-suggestion-body {
+  flex: 1;
+}
+
+.vl-copilot-suggestion-text {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.vl-copilot-suggestion-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.vl-copilot-suggestion-action {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-copilot-suggestion-action.primary {
+  background: var(--vl-accent);
+  border: none;
+  color: white;
+}
+
+.vl-copilot-suggestion-action.primary:hover {
+  background: var(--vl-accent-hover);
+}
+
+.vl-copilot-suggestion-action.secondary {
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+}
+
+.vl-copilot-suggestion-action.secondary:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* Compact Suggestion */
+.vl-copilot-suggestion-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--vl-accent);
+}
+
+.vl-suggestion-compact-icon {
+  color: var(--score-medium);
+}
+
+.vl-suggestion-compact-text {
+  flex: 1;
+  font-size: 11px;
+}
+
+.vl-suggestion-compact-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: var(--vscode-foreground);
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.vl-suggestion-compact-dismiss:hover {
+  opacity: 1;
+}
+
+/* ========================================
+   FLOATING SUGGESTION CONTAINER
+   ======================================== */
+
+.vl-suggestion-container {
+  position: fixed;
+  bottom: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: 400px;
+  width: calc(100% - var(--space-xl) * 2);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ========================================
+   SCORE BREAKDOWN SECTION
+   ======================================== */
+
+.vl-score-breakdown-section {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-how-scores-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  margin-top: var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+.vl-how-scores-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ========================================
+   PROMPT SCORE SUGGESTIONS
+   ======================================== */
+
+.vl-prompt-score-suggestions {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--score-medium);
+}
+
+.vl-prompt-score-suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  color: var(--score-medium);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vl-prompt-score-suggestions-list {
+  margin: 0;
+  padding-left: var(--space-lg);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vscode-foreground);
+  opacity: 0.9;
+}
+
+.vl-prompt-score-suggestions-list li {
+  margin-bottom: var(--space-xs);
+}
+
+.vl-prompt-score-suggestions-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* ========================================
+   COACHING SECTION (Workstream D)
+   ======================================== */
+
+/* Coaching Section */
+.vl-coaching-section {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-coaching-listening {
+  opacity: 0.7;
+}
+
+.vl-coaching-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-coaching-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vl-coaching-icon {
+  font-size: 16px;
+}
+
+.vl-coaching-title {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vl-coaching-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-coaching-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-coaching-completed {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: var(--space-md);
+  font-size: 13px;
+}
+
+.vl-check {
+  flex-shrink: 0;
+}
+
+.vl-coaching-suggestion-card {
+  background: var(--vscode-input-background);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  margin-top: var(--space-sm);
+}
+
+.vl-suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.vl-suggestion-icon {
+  color: var(--vscode-charts-yellow);
+}
+
+.vl-suggestion-title {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.vl-suggestion-prompt {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.vl-suggestion-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vl-coaching-more {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: var(--space-sm);
+}
+
+.vl-coaching-more:hover {
+  text-decoration: underline;
+}
+
+.vl-coaching-suggestion-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+/* Coaching buttons */
+.vl-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.vl-btn-primary {
+  background: var(--vl-accent);
+  color: white;
+}
+
+.vl-btn-primary:hover {
+  background: var(--vl-accent-hover);
+}
+
+.vl-btn-secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.vl-btn-secondary:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.vl-btn-link {
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.vl-btn-link:hover {
+  text-decoration: underline;
+}
+
+/* Goal Progress Bar */
+.vl-goal-progress {
+  margin: var(--space-md) 0;
+}
+
+.vl-goal-progress-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+.vl-goal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.vl-goal-label {
+  font-weight: 500;
+}
+
+.vl-goal-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vl-goal-percent,
+.vl-goal-percent-label {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-goal-bar-container {
+  height: 6px;
+  background: var(--vscode-progressBar-background);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.vl-goal-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.vl-goal-bar-fill.progress-high {
+  background: var(--score-good);
+}
+
+.vl-goal-bar-fill.progress-medium {
+  background: var(--score-medium);
+}
+
+.vl-goal-bar-fill.progress-low {
+  background: var(--vl-accent);
+}
+
+/* Context Badge */
+.vl-context-badge {
+  display: inline-flex;
+  flex-direction: column;
+  background: var(--vscode-badge-background);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-context-badge:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-context-badge-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vl-context-label {
+  font-weight: 500;
+}
+
+.vl-context-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-context-badge-expanded {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-context-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+/* Session Context Panel */
+.vl-session-context-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--vscode-input-background);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--vscode-foreground);
+}
+
+.vl-session-context-collapsed:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-session-context-panel {
+  background: var(--vscode-input-background);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: var(--space-lg);
+}
+
+.vl-session-context-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+}
+
+.vl-session-context-header:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-session-context-content {
+  padding: 0 10px 10px;
+}
+
+.vl-context-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: var(--space-sm) 0;
+  font-size: 12px;
+}
+
+.vl-context-summary {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vl-topic-list,
+.vl-addressed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vl-topic-tag,
+.vl-addressed-tag {
+  background: var(--vscode-badge-background);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.vl-context-footer {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--vscode-panel-border);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Pulse animation for listening state */
+.vl-pulse {
+  animation: coachingPulse 2s infinite;
+}
+
+@keyframes coachingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Muted text helper */
+.vl-muted {
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+}
+
+/* Section divider */
+.vl-section-divider {
+  height: 1px;
+  background: var(--vscode-panel-border);
+  margin: var(--space-lg) 0;
+}
+
+/* ========================================
+   SIDEBAR MODE TOGGLE (Projects / Prompt Lab)
+   ======================================== */
+
+.vl-sidebar-mode-header {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.vl-sidebar-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.vl-sidebar-mode-btn:hover {
+  opacity: 0.9;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-sidebar-mode-btn.active {
+  opacity: 1;
+  color: var(--vl-accent);
+}
+
+.vl-sidebar-mode-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: var(--space-sm);
+  right: var(--space-sm);
+  height: 2px;
+  background: var(--vl-accent);
+  border-radius: 2px;
+}
+
+/* Sidebar Auto-Analyze Toggle */
+.vl-sidebar-auto-analyze {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  margin: 0 var(--space-sm) var(--space-sm);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+}
+
+.vl-auto-analyze-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vl-auto-analyze-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vl-auto-analyze-desc {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================
+   SESSION INFO HEADER
+   ======================================== */
+
+.vl-session-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+}
+
+.vl-session-info-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-session-info-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.vl-session-info-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vl-session-info-project {
+  flex: 1;
+  min-width: 0;
+}
+
+.vl-session-info-project .vl-session-info-value {
+  max-width: 200px;
+}
+
+.vl-session-info-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.vl-session-info-platform {
+  font-weight: 500;
+}
+
+.vl-platform-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vl-session-info-separator {
+  opacity: 0.5;
+  margin: 0 2px;
+}
+
+/* ========================================
+   PROMPT LAB VIEW
+   ======================================== */
+
+.vl-prompt-lab-view {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.vl-prompt-lab-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-prompt-lab-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-prompt-lab-title svg {
+  color: var(--vl-accent);
+}
+
+.vl-prompt-lab-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Cloud Status Badge (compact) */
+.vl-cloud-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--vscode-textBlockQuote-background);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  align-self: flex-start;
+}
+
+.vl-cloud-status-badge .vl-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.vl-cloud-status-badge.connected .vl-status-dot {
+  background: var(--status-connected);
+  box-shadow: 0 0 4px var(--status-connected);
+}
+
+.vl-cloud-status-badge.disconnected .vl-status-dot {
+  background: var(--status-disconnected);
+}
+
+/* Prompt Input Section */
+.vl-prompt-lab-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-prompt-lab-input {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-lg);
+  color: var(--vscode-input-foreground);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-lab-input:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+  box-shadow: 0 0 0 2px var(--vl-accent-muted);
+}
+
+.vl-prompt-lab-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.vl-prompt-lab-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.vl-prompt-lab-input-hint {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  text-align: right;
+}
+
+/* Analyze Button */
+.vl-prompt-lab-analyze-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-prompt-lab-analyze-btn:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--vl-accent-glow);
+}
+
+.vl-prompt-lab-analyze-btn:active {
+  transform: translateY(0);
+}
+
+.vl-prompt-lab-analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Context Badge (UI Transparency) */
+.vl-context-badge-row {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-sm);
+}
+
+.vl-context-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--vscode-inputOption-activeBackground);
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-context-item {
+  padding: 2px 6px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+}
+
+.vl-context-item:not(:last-child)::after {
+  content: '';
+}
+
+/* Results Section */
+.vl-prompt-lab-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  animation: slideIn var(--transition-normal) ease-out;
+}
+
+.vl-results-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-results-section h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.vl-prompt-text-preview {
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+  opacity: 0.8;
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Improved Section */
+.vl-improved-section {
+  background: var(--score-good-bg);
+  border: 1px solid var(--score-good);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+}
+
+.vl-improved-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-improved-score {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--vl-subtle-bg);
+}
+
+.vl-improved-score.score-good {
+  color: var(--score-good);
+}
+
+.vl-improved-score.score-medium {
+  color: var(--score-medium);
+}
+
+.vl-improved-score.score-low {
+  color: var(--score-low);
+}
+
+.vl-improved-prompt-textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--score-good);
+  border-radius: var(--radius-md);
+  color: var(--vscode-foreground);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.vl-improved-prompt-textarea:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+}
+
+.vl-improved-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Action Buttons for Prompt Lab */
+.vl-action-btn-primary {
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+}
+
+.vl-action-btn-primary:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+}
+
+.vl-action-btn-secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-input-border);
+}
+
+.vl-action-btn-secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.vl-action-btn-text {
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  border: none;
+  text-decoration: underline;
+  font-size: 12px;
+}
+
+.vl-action-btn-text:hover {
+  color: var(--vscode-foreground);
+}
+
+/* ========================================
+   SAVED PROMPTS LIBRARY (Sidebar)
+   ======================================== */
+
+.vl-saved-prompts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+}
+
+.vl-saved-prompt-item {
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-saved-prompt-item:hover {
+  border-color: var(--vscode-input-border);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-saved-prompt-item:hover .vl-saved-prompt-delete {
+  opacity: 1;
+}
+
+.vl-saved-prompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.vl-saved-prompt-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.vl-saved-prompt-delete:hover {
+  background: var(--vscode-errorForeground);
+  color: white;
+}
+
+.vl-saved-prompt-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: var(--space-xs);
+}
+
+.vl-saved-prompt-preview {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vl-saved-prompt-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.vl-saved-prompt-tag {
+  font-size: 10px;
+  color: var(--vl-accent);
+  background: var(--vl-accent-muted);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.vl-saved-prompt-score {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--vscode-descriptionForeground);
+  margin-top: var(--space-xs);
+}
+
+/* ========================================
+   INLINE EDIT INPUT
+   ======================================== */
+
+.vl-inline-edit-input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vl-accent-glow);
+}
+
+/* ========================================
+   CONTEXT MENU
+   ======================================== */
+
+.vl-context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 150px;
+  background: var(--vscode-menu-background);
+  border: 1px solid var(--vscode-menu-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: var(--space-xs) 0;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.vl-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--vscode-menu-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.vl-context-menu-item:hover {
+  background: var(--vscode-menu-selectionBackground);
+  color: var(--vscode-menu-selectionForeground);
+}
+
+.vl-context-menu-item.danger {
+  color: var(--score-low);
+}
+
+.vl-context-menu-item.danger:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.vl-context-menu-separator {
+  height: 1px;
+  background: var(--vscode-menu-separatorBackground);
+  margin: var(--space-xs) 0;
+}
+
+/* ========================================
+   DELETE CONFIRMATION DIALOG
+   ======================================== */
+
+.vl-confirm-dialog {
+  max-width: 380px;
+}
+
+.vl-confirm-dialog .vl-modal-body {
+  text-align: center;
+}
+
+.vl-confirm-dialog .vl-confirm-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--score-low-bg);
+  border-radius: 50%;
+  color: var(--score-low);
+}
+
+.vl-confirm-dialog .vl-confirm-message {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+}
+
+.vl-confirm-dialog .vl-confirm-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-xl);
+}
+
+/* ========================================
+   RESPONSIVE: PROMPT LAB
+   ======================================== */
+
+@media (max-width: 500px) {
+  .vl-prompt-lab-view {
+    padding: var(--space-md);
+  }
+
+  .vl-prompt-lab-input {
+    min-height: 100px;
+  }
+
+  .vl-improved-actions {
+    flex-direction: column;
+  }
+
+  .vl-improved-actions .vl-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ========================================
+   CONTEXT MENU
+   ======================================== */
+
+.vl-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 140px;
+  background: var(--vscode-menu-background, var(--vscode-dropdown-background));
+  border: 1px solid var(--vscode-menu-border, var(--vscode-dropdown-border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: var(--space-xs);
+  overflow: hidden;
+}
+
+.vl-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-menu-foreground, var(--vscode-dropdown-foreground));
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.vl-context-menu-item:hover {
+  background: var(--vscode-menu-selectionBackground, var(--vscode-list-hoverBackground));
+}
+
+.vl-context-menu-item.danger {
+  color: var(--score-low);
+}
+
+.vl-context-menu-item.danger:hover {
+  background: var(--score-low-bg);
+}
+
+.vl-context-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vl-context-menu-item.disabled:hover {
+  background: transparent;
+}
+
+.vl-context-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+.vl-context-menu-label {
+  flex: 1;
+}
+
+/* Menu Button (Three dots) */
+.vl-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.vl-menu-button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  opacity: 1;
+}
+
+/* Show menu button on hover of parent */
+.vl-session-item:hover .vl-menu-button,
+.vl-saved-prompt-item:hover .vl-menu-button {
+  opacity: 0.6;
+}
+
+.vl-session-item:hover .vl-menu-button:hover,
+.vl-saved-prompt-item:hover .vl-menu-button:hover {
+  opacity: 1;
+}
+
+.vl-session-menu-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   DIALOG / MODAL
+   ======================================== */
+
+.vl-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.vl-dialog {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  max-width: 400px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.vl-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.vl-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.vl-dialog-icon.danger {
+  color: var(--score-low);
+}
+
+.vl-dialog-title {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.vl-dialog-close:hover {
+  opacity: 1;
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-dialog-content {
+  padding: var(--space-lg);
+}
+
+.vl-dialog-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--vscode-foreground);
+  line-height: 1.5;
+}
+
+.vl-dialog-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  border-radius: var(--radius-md);
+  color: var(--vscode-input-foreground);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.vl-dialog-input:focus {
+  border-color: var(--vl-accent);
+}
+
+.vl-dialog-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.vl-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-sideBar-background);
+}
+
+.vl-dialog-btn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.vl-dialog-btn.primary {
+  background: var(--vl-accent);
+  border: none;
+  color: white;
+}
+
+.vl-dialog-btn.primary:hover {
+  background: var(--vl-accent-hover);
+}
+
+.vl-dialog-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vl-dialog-btn.secondary {
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  color: var(--vscode-foreground);
+}
+
+.vl-dialog-btn.secondary:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.vl-dialog-btn.danger {
+  background: var(--score-low);
+  border: none;
+  color: white;
+}
+
+.vl-dialog-btn.danger:hover {
+  background: var(--score-low);
+}
+
+/* ========================================
+   ACTIVE SESSION SWITCHER
+   ======================================== */
+
+.vl-active-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--vscode-sideBar-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.vl-active-sessions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-xs);
+}
+
+.vl-active-sessions-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-active-sessions-count {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.8;
+}
+
+.vl-active-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vl-active-session-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-active-session-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-active-session-item.selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.vl-active-session-indicator {
+  font-size: 8px;
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.vl-active-session-indicator.selected {
+  color: var(--vl-accent);
+}
+
+.vl-active-session-favicon {
+  flex-shrink: 0;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
+.vl-active-session-platform-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vl-active-session-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.vl-active-session-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.vl-active-session-time {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+}
+
+.vl-active-session-no-goal {
+  font-size: 10px;
+  color: var(--score-medium);
+  background: var(--score-medium-bg);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.vl-active-sessions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.vl-active-sessions-empty-text {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-active-sessions-empty-hint {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.7;
+}
+
+/* Session groups (grouped by platform) */
+.vl-session-group {
+  margin-bottom: 4px;
+}
+
+.vl-session-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  border-radius: 4px;
+}
+
+.vl-session-group-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-session-group-chevron {
+  flex-shrink: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-session-group-favicon {
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.vl-session-group-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vl-session-group-label {
+  flex: 1;
+}
+
+.vl-session-group-count {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.vl-session-group-items {
+  padding-left: 12px;
+}
+
+/* Session details (below session name) */
+.vl-active-session-details {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.vl-active-session-separator {
+  opacity: 0.5;
+}
+
+.vl-active-session-duration,
+.vl-active-session-messages {
+  white-space: nowrap;
+}
+
+/* ========================================
+   SYNC PROGRESS MODAL
+   ======================================== */
+
+.vl-sync-progress-modal {
+  text-align: center;
+}
+
+.vl-sync-progress-modal .vl-modal-header {
+  justify-content: space-between;
+}
+
+.vl-sync-progress-modal .vl-modal-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.vl-modal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-modal-action-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.vl-sync-progress-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl) var(--space-lg) !important;
+  gap: var(--space-md);
+}
+
+.vl-sync-logo-container {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vl-sync-logo-container .vl-heartbeat-logo {
+  width: 64px;
+  height: 64px;
+}
+
+.vl-sync-status-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.vl-sync-status-icon.success {
+  color: var(--score-good);
+}
+
+.vl-sync-status-icon.error,
+.vl-sync-status-icon.cancelled {
+  color: var(--score-low);
+}
+
+.vl-sync-phase-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-sync-message {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground);
+  max-width: 300px;
+  text-align: center;
+}
+
+.vl-sync-progress-section {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.vl-sync-progress-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vl-sync-progress-percent {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vl-accent);
+}
+
+.vl-sync-batch-info {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-sync-session-count {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+.vl-sync-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  color: var(--vl-accent);
+}
+
+.vl-sync-complete-stats {
+  font-size: 13px;
+  color: var(--score-good);
+  font-weight: 500;
+  margin-top: var(--space-sm);
+}
+
+/* ========================================
+   SYNC STATUS BAR (MINIMIZED)
+   ======================================== */
+
+.vl-sync-status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-statusBar-background);
+  border-top: 1px solid var(--vscode-panel-border);
+  z-index: 99998;
+  gap: var(--space-md);
+}
+
+.vl-sync-status-bar.finished {
+  background: var(--vscode-statusBar-background);
+}
+
+.vl-sync-status-bar.error {
+  background: var(--score-low-bg);
+}
+
+.vl-status-bar-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.vl-status-bar-content:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-status-bar-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.vl-status-bar-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.vl-status-bar-icon.success {
+  color: var(--score-good);
+}
+
+.vl-status-bar-icon.error {
+  color: var(--score-low);
+}
+
+.vl-progress-ring {
+  width: 20px;
+  height: 20px;
+}
+
+.vl-progress-ring-bg {
+  stroke: var(--vscode-panel-border);
+}
+
+.vl-progress-ring-fill {
+  stroke: var(--vl-accent);
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--transition-fast);
+}
+
+.vl-status-bar-text {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vl-status-bar-percent {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vl-accent);
+  flex-shrink: 0;
+}
+
+.vl-status-bar-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.vl-status-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-status-bar-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+/* ========================================
+   V2 REDESIGN - CO-PILOT VIEW
+   ======================================== */
+
+/* V2 Layout Container */
+.vl-copilot-view-v2 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+/* Scrollable content area */
+.vl-copilot-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Sticky coaching section at bottom */
+.vl-copilot-coach-sticky {
+  flex-shrink: 0;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.vl-copilot-spacer {
+  flex: 1;
+  min-height: var(--space-xl);
+}
+
+/* ========================================
+   GOAL BANNER (Top)
+   ======================================== */
+
+.vl-goal-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-md);
+}
+
+.vl-goal-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vl-accent);
+  flex-shrink: 0;
+}
+
+.vl-goal-banner-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.vl-goal-banner-display .vl-goal-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+  flex-shrink: 0;
+}
+
+.vl-goal-banner-display .vl-goal-text {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--vscode-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vl-goal-banner-display .vl-goal-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.vl-goal-banner-display .vl-goal-edit-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+}
+
+.vl-goal-banner-placeholder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+  font-style: italic;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.vl-goal-banner-placeholder:hover {
+  color: var(--vscode-foreground);
+}
+
+.vl-goal-banner-edit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 1;
+}
+
+.vl-goal-input {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-input-foreground);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.vl-goal-input:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+}
+
+.vl-goal-save-btn,
+.vl-goal-cancel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-goal-save-btn {
+  color: var(--score-good);
+}
+
+.vl-goal-cancel-btn {
+  color: var(--score-low);
+}
+
+.vl-goal-save-btn:hover,
+.vl-goal-cancel-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+/* ========================================
+   CLOUD STATUS BAR (Bottom)
+   ======================================== */
+
+.vl-cloud-status-bar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  flex: 0 0 auto;
+  gap: var(--space-sm);
+}
+
+.vl-cloud-status-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.vl-cloud-status-left > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.vl-cloud-icon {
+  flex-shrink: 0;
+}
+
+.vl-cloud-icon.connected {
+  color: var(--status-connected);
+}
+
+.vl-cloud-icon.syncing {
+  color: var(--vl-accent);
+  animation: spin 1s linear infinite;
+}
+
+.vl-cloud-icon.error {
+  color: var(--status-disconnected);
+}
+
+.vl-cloud-username {
+  color: var(--vscode-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vl-cloud-status-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.vl-cloud-action {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vl-cloud-action:hover {
+  background: var(--vscode-list-hoverBackground);
+  text-decoration: underline;
+}
+
+.vl-cloud-action.primary {
+  background: var(--vl-accent);
+  color: white;
+  padding: 2px 8px;
+}
+
+.vl-cloud-action.primary:hover {
+  background: var(--vl-accent-hover);
+  text-decoration: none;
+}
+
+/* ========================================
+   COACHING SECTION V2 UPDATES
+   ======================================== */
+
+.vl-coaching-last-response {
+  margin-bottom: var(--space-sm);
+}
+
+.vl-coaching-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 4px;
+}
+
+.vl-coaching-status-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.vl-outcome-icon {
+  flex-shrink: 0;
+}
+
+.vl-coaching-status-line.outcome-success .vl-outcome-icon {
+  color: var(--score-good);
+}
+
+.vl-coaching-status-line.outcome-partial .vl-outcome-icon {
+  color: var(--score-medium);
+}
+
+.vl-coaching-status-line.outcome-blocked .vl-outcome-icon,
+.vl-coaching-status-line.outcome-error .vl-outcome-icon {
+  color: var(--score-low);
+}
+
+.vl-outcome-text {
+  font-weight: 500;
+}
+
+.vl-status-separator {
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-entities-modified {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.vl-coaching-divider {
+  height: 1px;
+  background: var(--vscode-panel-border);
+  margin: var(--space-sm) 0;
+}
+
+.vl-coaching-next-step {
+  margin-top: var(--space-sm);
+}
+
+.vl-next-step-icon {
+  color: var(--vscode-charts-yellow);
+}
+
+.vl-suggestion-title-prominent {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  margin-bottom: 6px;
+}
+
+.vl-suggestion-prompt-box {
+  background: var(--vscode-input-background);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  font-size: 12px;
+  font-style: italic;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: var(--space-sm);
+  line-height: 1.4;
+}
+
+.vl-coaching-more-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 6px 12px;
+}
+
+.vl-coaching-more-inline:hover {
+  text-decoration: underline;
+}
+
+/* ========================================
+   PROMPT FEEDBACK SECTION (Collapsible)
+   ======================================== */
+
+.vl-prompt-feedback-section {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  overflow: hidden;
+}
+
+.vl-prompt-feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.vl-prompt-feedback-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.vl-prompt-feedback-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vl-prompt-feedback-icon {
+  font-size: 16px;
+}
+
+.vl-prompt-feedback-title {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vl-prompt-feedback-header-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  margin: 0 var(--space-lg);
+}
+
+.vl-prompt-feedback-header-center .vl-score {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.vl-prompt-feedback-header-center .vl-score-bar-container {
+  flex: 1;
+  max-width: 120px;
+}
+
+.vl-prompt-feedback-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-left: var(--space-sm);
+}
+
+.vl-prompt-feedback-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.vl-expand-label {
+  font-size: 11px;
+}
+
+/* Quick Tips in Collapsed State */
+.vl-prompt-feedback-quick-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+.vl-quick-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.vl-quick-tip.good {
+  background: var(--score-good-bg);
+  color: var(--score-good);
+}
+
+.vl-quick-tip.warning {
+  background: var(--score-medium-bg);
+  color: var(--score-medium);
+}
+
+/* Expanded Content with animation */
+.vl-prompt-feedback-content {
+  padding: 0 var(--space-md) var(--space-md);
+  border-top: 1px solid var(--vscode-panel-border);
+  animation: vl-expand-in 0.2s ease-out;
+}
+
+@keyframes vl-expand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-prompt-feedback-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 6px;
+  margin-top: var(--space-md);
+}
+
+.vl-prompt-box {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.vl-prompt-box.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--vscode-input-background) 25%,
+    var(--vscode-editor-background) 50%,
+    var(--vscode-input-background) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.vl-prompt-box.empty {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+
+.vl-prompt-feedback-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+}
+
+.vl-prompt-feedback-breakdown {
+  margin-top: var(--space-md);
+}
+
+.vl-prompt-feedback-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-help-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--vscode-textLink-foreground);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vl-help-link:hover {
+  text-decoration: underline;
+}
+
+.vl-prompt-feedback-improved {
+  margin-top: var(--space-md);
+}
+
+.vl-prompt-feedback-improved-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.vl-prompt-improved-container {
+  position: relative;
+}
+
+.vl-prompt-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--space-sm);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-md);
+  color: var(--vscode-input-foreground);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.vl-prompt-textarea:focus {
+  outline: none;
+  border-color: var(--vl-accent);
+}
+
+.vl-prompt-feedback-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Spin animation for syncing icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,48 @@
+# Build output
+dist/
+*.vsix
+
+# Dependencies
+node_modules/
+
+# IDE
+.vscode-test/
+*.log
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.local.json
+
+# TypeScript
+*.tsbuildinfo
+nul
+
+# Test coverage
+coverage/
+
+# Documentation (internal/sensitive)
+docs/
+*.md
+!README.md
+!LICENSE
+!CHANGELOG.md
+
+# Claude/Cursor local settings
+.claude/
+.cursor/
+
+# Scripts and temporary files
+*.ps1
+*.py
+apply-fixes.py
+count-today-sessions.ps1
+
+# Old branding files
+new-ux.txt
+*.patch

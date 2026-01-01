@@ -1,0 +1,42 @@
+# Source files
+src/**
+webview/**
+*.ts
+*.tsx
+tsconfig.json
+tsconfig.webview.json
+
+# Build files
+build.js
+.vscode/**
+.vscode-test/**
+
+# Git
+.git/**
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE
+
+# Development - exclude all node_modules
+node_modules/**
+.eslintrc.json
+.prettierrc
+
+# Explicitly exclude the symlinked devark-cli (resolves to ../devark-cli)
+../devark-cli/**
+**/devark-cli/**
+node_modules/devark-cli/**
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+test/**
+
+# Misc
+.DS_Store
+*.vsix

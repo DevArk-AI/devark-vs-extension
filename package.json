@@ -1,0 +1,387 @@
+{
+  "name": "devark-extension",
+  "displayName": "DevArk - Developer Analytics",
+  "description": "Your AI coding sessions, analyzed and improved",
+  "version": "0.1.0",
+  "publisher": "devark",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devark/devark-vs-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Productivity"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "bin": {
+    "devark-sync": "./dist/bin/vibe-sync.js"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "devark.showMenu",
+        "title": "DevArk: Open Menu",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "devark.toggleDebugMode",
+        "title": "DevArk: Toggle Debug Mode",
+        "icon": "$(bug)"
+      },
+      {
+        "command": "devark.copilot.summarizeSession",
+        "title": "DevArk: Summarize Current Session",
+        "icon": "$(book)"
+      },
+      {
+        "command": "devark.copilot.scorePrompt",
+        "title": "DevArk: Score Prompt",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "devark.copilot.enhancePrompt",
+        "title": "DevArk: Enhance Prompt",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "devark.copilot.testConnection",
+        "title": "DevArk: Test LLM Connection",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "devark.copilot.selectProvider",
+        "title": "DevArk: Select LLM Provider",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "devark.copilot.selectModel",
+        "title": "DevArk: Select Ollama Model",
+        "icon": "$(library)"
+      },
+      {
+        "command": "devark.testProviders",
+        "title": "DevArk: Test All LLM Providers",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "devark.installCursorHooks",
+        "title": "DevArk: Install Cursor Hooks",
+        "icon": "$(plug)"
+      }
+    ],
+    "icons": {
+      "devark-icon": {
+        "description": "DevArk brand icon",
+        "default": {
+          "fontPath": "dist/resources/fonts/devark-icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devark-sidebar",
+          "title": "DevArk",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "devark-sidebar": [
+        {
+          "id": "devark-sidebar-webview",
+          "name": "DevArk",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DevArk",
+      "properties": {
+        "devark.llm.providers": {
+          "type": "object",
+          "description": "Configuration for all LLM providers",
+          "properties": {
+            "ollama": {
+              "type": "object",
+              "description": "Ollama local LLM provider",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Enable Ollama provider"
+                },
+                "endpoint": {
+                  "type": "string",
+                  "default": "http://localhost:11434",
+                  "description": "Ollama server endpoint URL",
+                  "pattern": "^https?://",
+                  "patternErrorMessage": "Must be a valid HTTP or HTTPS URL"
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Ollama model to use (auto-detects from installed models if not specified)"
+                },
+                "temperature": {
+                  "type": "number",
+                  "default": 0.3,
+                  "minimum": 0,
+                  "maximum": 2,
+                  "description": "Temperature for completions (0=deterministic, 2=creative)"
+                },
+                "maxTokens": {
+                  "type": "number",
+                  "default": 500,
+                  "minimum": 100,
+                  "maximum": 8000,
+                  "description": "Maximum tokens for completions"
+                }
+              }
+            },
+            "openrouter": {
+              "type": "object",
+              "description": "OpenRouter cloud API provider (API key stored securely)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable OpenRouter provider"
+                },
+                "model": {
+                  "type": "string",
+                  "description": "OpenRouter model ID (e.g., anthropic/claude-3.5-sonnet, meta-llama/llama-3-70b-instruct)"
+                },
+                "temperature": {
+                  "type": "number",
+                  "default": 0.3,
+                  "minimum": 0,
+                  "maximum": 2,
+                  "description": "Temperature for completions (0=deterministic, 2=creative)"
+                },
+                "maxTokens": {
+                  "type": "number",
+                  "default": 500,
+                  "minimum": 100,
+                  "maximum": 8000,
+                  "description": "Maximum tokens for completions"
+                }
+              }
+            },
+            "cursor-cli": {
+              "type": "object",
+              "description": "Cursor CLI provider (local, uses browser login)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable Cursor CLI provider (requires 'cursor-agent login' via browser)"
+                },
+                "model": {
+                  "type": "string",
+                  "default": "auto",
+                  "enum": [
+                    "auto",
+                    "sonnet-4.5",
+                    "opus-4.5",
+                    "gpt-5",
+                    "gpt-5.1",
+                    "gemini-3-pro",
+                    "grok"
+                  ],
+                  "description": "Cursor model to use (auto recommended to avoid rate limits)",
+                  "enumDescriptions": [
+                    "Auto - automatically selects best available model",
+                    "Claude Sonnet 4.5 - balanced performance",
+                    "Claude Opus 4.5 - highest quality",
+                    "GPT-5 - OpenAI latest",
+                    "GPT-5.1 - OpenAI enhanced",
+                    "Gemini 3 Pro - Google's model",
+                    "Grok - xAI model"
+                  ]
+                }
+              }
+            },
+            "claude-agent-sdk": {
+              "type": "object",
+              "description": "Claude Agent SDK (requires: npm install @anthropic-ai/claude-agent-sdk)",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable Claude Agent SDK provider (requires: npm install @anthropic-ai/claude-agent-sdk)"
+                },
+                "model": {
+                  "type": "string",
+                  "default": "haiku",
+                  "enum": [
+                    "haiku",
+                    "sonnet",
+                    "opus"
+                  ],
+                  "description": "Claude model to use (haiku is fastest)",
+                  "enumDescriptions": [
+                    "Claude Haiku - Fastest, ideal for scoring",
+                    "Claude Sonnet - Balanced speed and quality",
+                    "Claude Opus - Most capable"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "ollama": {
+              "enabled": true,
+              "endpoint": "http://localhost:11434",
+              "temperature": 0.3,
+              "maxTokens": 500
+            },
+            "openrouter": {
+              "enabled": false,
+              "temperature": 0.3,
+              "maxTokens": 500
+            },
+            "cursor-cli": {
+              "enabled": false,
+              "model": "auto"
+            },
+            "claude-agent-sdk": {
+              "enabled": false,
+              "model": "haiku"
+            }
+          }
+        },
+        "devark.llm.activeProvider": {
+          "type": "string",
+          "default": "ollama",
+          "description": "Currently active LLM provider ID"
+        },
+        "devark.llm.timeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 5000,
+          "maximum": 120000,
+          "description": "Request timeout in milliseconds",
+          "markdownDescription": "How long to wait for responses:\n- `5000-15000`: Fast models\n- `30000`: Default (recommended)\n- `60000+`: Large models or slow networks"
+        },
+        "devark.llm.featureModels": {
+          "type": "object",
+          "description": "Feature-specific LLM model overrides. Configure different models for summaries, prompt scoring, and prompt improvement.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable feature-specific model configuration"
+            },
+            "summaries": {
+              "type": "string",
+              "default": "",
+              "description": "Model override for summaries (format: provider:model, e.g., 'ollama:codellama:7b'). Empty uses default provider."
+            },
+            "promptScoring": {
+              "type": "string",
+              "default": "",
+              "description": "Model override for prompt scoring (format: provider:model). Empty uses default provider."
+            },
+            "promptImprovement": {
+              "type": "string",
+              "default": "",
+              "description": "Model override for prompt improvement (format: provider:model). Empty uses default provider."
+            }
+          },
+          "default": {
+            "enabled": false,
+            "summaries": "",
+            "promptScoring": "",
+            "promptImprovement": ""
+          }
+        },
+        "devark.onboardingCompleted": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the user has completed the initial onboarding process"
+        },
+        "devark.autoAnalyze": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically analyze prompts from Cursor IDE in real-time"
+        },
+        "devark.useHookBasedDetection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use Cursor hooks for prompt detection (more reliable than database polling). Requires running 'Install Cursor Hooks' command first."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build:production",
+    "compile": "node build.js",
+    "watch": "node build.js --watch",
+    "build:production": "node build.js --production",
+    "package": "npm run build:production && vsce package",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "eval:extract": "npx tsx scripts/eval/extract-fixtures.ts",
+    "eval:run": "npx tsx scripts/eval/run-evaluation.ts",
+    "eval:quick": "npx tsx scripts/eval/run-evaluation.ts single-session",
+    "eval:all": "npm run eval:extract && npm run eval:run"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.76",
+    "@types/dompurify": "^3.0.5",
+    "@types/react-datepicker": "^6.2.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dompurify": "^3.3.0",
+    "lucide-react": "^0.554.0",
+    "react": "^18.2.0",
+    "react-datepicker": "^8.9.0",
+    "react-dom": "^18.2.0",
+    "sql.js": "^1.13.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@twbs/fantasticon": "^3.1.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/parser": "^8.50.0",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vscode/vsce": "^2.22.0",
+    "autoprefixer": "^10.4.22",
+    "esbuild": "^0.19.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-vitest": "^0.5.4",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
+    "potrace": "^2.1.8",
+    "sharp": "^0.34.5",
+    "svg2ttf": "^6.0.3",
+    "svgicons2svgfont": "^15.0.1",
+    "tailwindcss": "^3.4.18",
+    "ttf2woff": "^3.0.0",
+    "ttf2woff2": "^8.0.0",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.0.15"
+  }
+}
