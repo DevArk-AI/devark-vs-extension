@@ -96,6 +96,7 @@ export class ConfigHandler extends BaseMessageHandler {
   private async handleGetConfig(): Promise<void> {
     const onboardingCompleted = this.settingsService.getWithDefault('onboarding.completed', false);
     const isFirstRun = !onboardingCompleted;
+    console.log('[ConfigHandler] getConfig - onboardingCompleted:', onboardingCompleted, 'isFirstRun:', isFirstRun);
     this.send('configLoaded', { isFirstRun });
   }
 

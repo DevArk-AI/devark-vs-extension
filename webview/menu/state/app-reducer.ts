@@ -212,6 +212,22 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
     case 'UPDATE_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.payload } };
 
+    case 'SET_FIRST_RUN': {
+      // Set isFirstRun and switch from loading to appropriate view
+      // - If first run: show onboarding
+      // - If not first run: show main (handles both loading → main and onboarding → main)
+      const nextView = action.payload
+        ? 'onboarding'
+        : (state.currentView === 'loading' || state.currentView === 'onboarding')
+          ? 'main'
+          : state.currentView;
+      return {
+        ...state,
+        isFirstRun: action.payload,
+        currentView: nextView,
+      };
+    }
+
     case 'COMPLETE_ONBOARDING':
       return { ...state, isFirstRun: false, currentView: 'main' };
 

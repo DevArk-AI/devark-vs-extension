@@ -337,16 +337,20 @@ export class V2MessageHandler {
 
     if (DEBUG_V2_MESSAGE_HANDLER) console.log(`[V2MessageHandler] Received: ${type}`, data);
 
-    // Queue session-related messages if not yet initialized (race condition fix)
-    // These messages depend on SessionManagerService being fully initialized
-    const sessionDependentMessages = [
+    // Queue messages that depend on handlers being initialized (race condition fix)
+    // These messages require handlers to be set up before they can be processed
+    const handlerDependentMessages = [
+      // Session-related messages depend on SessionManagerService
       'v2GetActiveSession',
       'v2GetSessionList',
       'v2GetDailyStats',
       'v2GetGoalStatus',
       'v2GetPrompts',
+      // Config messages depend on ConfigHandler
+      'getConfig',
+      'completeOnboarding',
     ];
-    if (!this.initialized && sessionDependentMessages.includes(type)) {
+    if (!this.initialized && handlerDependentMessages.includes(type)) {
       console.log(`[V2MessageHandler] Queueing ${type} until initialization completes`);
       this.pendingMessages.push(message);
       return;

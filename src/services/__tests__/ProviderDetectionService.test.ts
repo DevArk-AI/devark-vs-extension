@@ -33,6 +33,11 @@ vi.mock('../../llm/command-utils', () => ({
   isCommandAvailable: vi.fn()
 }));
 
+// Mock isCursorIDE - defaults to Cursor for consistent test behavior
+vi.mock('../../extension-state', () => ({
+  isCursorIDE: vi.fn().mockReturnValue(true)
+}));
+
 import { isCommandAvailable } from '../../llm/command-utils';
 
 /**

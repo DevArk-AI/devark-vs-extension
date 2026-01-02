@@ -24,6 +24,12 @@ import {
   providerCollections,
   mockProviderResponses
 } from '../fixtures/mock-providers';
+import { vi } from 'vitest';
+
+// Mock isCursorIDE for platform-specific provider ordering
+vi.mock('../../extension-state', () => ({
+  isCursorIDE: vi.fn().mockReturnValue(true)
+}));
 
 describe('AI Summary Integration Tests', () => {
   describe('Complete Summary Generation Flow', () => {

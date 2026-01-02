@@ -238,9 +238,9 @@ export function AppV2() {
           break;
 
         case 'configLoaded':
-          if (message.data.isFirstRun) {
-            dispatch({ type: 'SET_VIEW', payload: 'onboarding' });
-          }
+          console.log('[AppV2] configLoaded - isFirstRun:', message.data.isFirstRun);
+          // Always set isFirstRun state and let reducer handle view
+          dispatch({ type: 'SET_FIRST_RUN', payload: message.data.isFirstRun });
           break;
 
         case 'onboardingComplete':
@@ -634,6 +634,28 @@ export function AppV2() {
     }
 
     switch (state.currentView) {
+      case 'loading':
+        // Show minimal loading state while waiting for config
+        return (
+          <div className="vl-loading-overlay">
+            <div className="vl-heartbeat-logo">
+              {window.VIBE_LOG_LOGO_URI ? (
+                <img
+                  src={window.VIBE_LOG_LOGO_URI}
+                  alt="Loading"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                />
+              ) : (
+                <div
+                  className="vl-logo-fallback"
+                  style={{ width: '100%', height: '100%', fontSize: '20px', borderRadius: '16px' }}
+                >
+                  VL
+                </div>
+              )}
+            </div>
+          </div>
+        );
       case 'onboarding':
         return <OnboardingView />;
       case 'settings':

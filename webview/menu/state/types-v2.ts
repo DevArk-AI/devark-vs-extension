@@ -550,7 +550,7 @@ export type CoachingPhase = 'idle' | 'analyzing_response' | 'generating_coaching
 export interface AppStateV2 {
   // Navigation
   currentTab: MainTab;
-  currentView: 'main' | 'onboarding' | 'settings' | 'provider-select' | 'hook-setup';
+  currentView: 'loading' | 'main' | 'onboarding' | 'settings' | 'provider-select' | 'hook-setup';
 
   // Cloud
   cloud: CloudState;
@@ -631,6 +631,7 @@ export interface AppStateV2 {
 export type ActionV2 =
   | { type: 'SET_TAB'; payload: MainTab }
   | { type: 'SET_VIEW'; payload: AppStateV2['currentView'] }
+  | { type: 'SET_FIRST_RUN'; payload: boolean }
   | { type: 'SET_SUMMARY_PERIOD'; payload: SummaryPeriod }
   | { type: 'SET_CUSTOM_DATE_RANGE'; payload: DateRange | null }
   | { type: 'SET_CLOUD_STATE'; payload: Partial<CloudState> }

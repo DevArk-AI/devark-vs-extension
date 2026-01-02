@@ -9,6 +9,7 @@
 
 import { LLMManager } from '../llm/llm-manager';
 import { isCommandAvailable } from '../llm/command-utils';
+import { isCursorIDE } from '../extension-state';
 import type { ProviderMetadata } from '../llm/provider-registry';
 
 /**
@@ -118,9 +119,12 @@ export class ProviderDetectionService {
       })
     );
 
-    // Sort providers in the desired order for onboarding
-    // Order: Cursor CLI, Claude Code CLI, Ollama, Cloud providers
-    const providerOrder = ['cursor-cli', 'claude-agent-sdk', 'ollama', 'openrouter'];
+    // Sort providers based on platform:
+    // - Cursor IDE: cursor-cli first
+    // - VS Code: claude-agent-sdk first
+    const providerOrder = isCursorIDE()
+      ? ['cursor-cli', 'claude-agent-sdk', 'ollama', 'openrouter']
+      : ['claude-agent-sdk', 'cursor-cli', 'ollama', 'openrouter'];
     const sortedProviders = formattedProviders.sort((a, b) => {
       const aIndex = providerOrder.indexOf(a.id);
       const bIndex = providerOrder.indexOf(b.id);

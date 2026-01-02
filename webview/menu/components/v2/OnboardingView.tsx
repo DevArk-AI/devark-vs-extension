@@ -18,7 +18,9 @@ import type { LLMProvider } from '../../state/types-v2';
 
 export function OnboardingView() {
   const { state, dispatch } = useAppV2();
-  const [selectedProvider, setSelectedProvider] = useState<string>('cursor-cli');
+  // Default provider based on platform: cursor-cli for Cursor, claude-agent-sdk for VS Code
+  const defaultProvider = state.editorInfo?.isCursor ? 'cursor-cli' : 'claude-agent-sdk';
+  const [selectedProvider, setSelectedProvider] = useState<string>(defaultProvider);
   const [autoAnalyze, setAutoAnalyze] = useState(true);
   const [generateSummary, setGenerateSummary] = useState(true);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -27,6 +29,22 @@ export function OnboardingView() {
   useEffect(() => {
     handleAutoDetect();
   }, []);
+
+  // Update selected provider when editorInfo becomes available
+  useEffect(() => {
+    if (state.editorInfo) {
+      const platformDefault = state.editorInfo.isCursor ? 'cursor-cli' : 'claude-agent-sdk';
+      setSelectedProvider(platformDefault);
+    }
+  }, [state.editorInfo?.isCursor]);
+
+  // Auto-enable Claude Agent SDK when detected as 'available' (VIB-58)
+  useEffect(() => {
+    const claudeSDK = state.providers.find((p) => p.id === 'claude-agent-sdk');
+    if (claudeSDK?.status === 'available') {
+      send('switchProvider', { providerId: 'claude-agent-sdk' });
+    }
+  }, [state.providers]);
 
   const handleAutoDetect = () => {
     setIsDetecting(true);
@@ -275,7 +293,7 @@ export function OnboardingView() {
           <div className={`vl-checkbox ${autoAnalyze ? 'checked' : ''}`}>
             <Check size={10} className="vl-checkbox-check" />
           </div>
-          <span className="vl-checkbox-label">Auto-analyze my Cursor prompts</span>
+          <span className="vl-checkbox-label">Auto-analyze prompt</span>
         </label>
 
         <label className="vl-checkbox-item" onClick={() => setGenerateSummary(!generateSummary)}>
