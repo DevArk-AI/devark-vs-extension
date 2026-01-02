@@ -26,7 +26,7 @@ const CURSOR_HOOK_MAP: Partial<Record<HookType, CursorHookType>> = {
   UserPromptSubmit: 'beforeSubmitPrompt',
 };
 
-const VIBE_LOG_MARKER = 'devark-sync';
+const DEVARK_MARKER = 'devark-sync';
 
 export class CursorHookInstaller implements IHookInstaller {
   private currentConfig: Partial<HookConfig> = {};
@@ -85,7 +85,7 @@ export class CursorHookInstaller implements IHookInstaller {
         for (const cursorHookType of Object.keys(hooks)) {
           if (hooks[cursorHookType]) {
             hooks[cursorHookType] = hooks[cursorHookType].filter(
-              h => !this.isVibeLogCommand(h.command)
+              h => !this.isDevArkCommand(h.command)
             );
 
             if (hooks[cursorHookType].length === 0) {
@@ -124,7 +124,7 @@ export class CursorHookInstaller implements IHookInstaller {
 
         if (hooks[cursorHookType]) {
           hooks[cursorHookType] = hooks[cursorHookType].filter(
-            h => !this.isVibeLogCommand(h.command)
+            h => !this.isDevArkCommand(h.command)
           );
 
           if (hooks[cursorHookType].length === 0) {
@@ -159,9 +159,9 @@ export class CursorHookInstaller implements IHookInstaller {
 
         for (const [hookType, mappedType] of Object.entries(CURSOR_HOOK_MAP)) {
           if (mappedType && cursorHooks[mappedType]) {
-            const hasVibeLog = cursorHooks[mappedType].some(h => this.isVibeLogCommand(h.command));
+            const hasDevArk = cursorHooks[mappedType].some(h => this.isDevArkCommand(h.command));
 
-            if (hasVibeLog) {
+            if (hasDevArk) {
               hasGlobalSettings = true;
               hooks.push({
                 type: hookType as HookType,
@@ -253,7 +253,7 @@ export class CursorHookInstaller implements IHookInstaller {
     // Remove any existing vibe-log hooks for this type
     if (hooks[cursorHookType]) {
       hooks[cursorHookType] = hooks[cursorHookType]!.filter(
-        h => !this.isVibeLogCommand(h.command)
+        h => !this.isDevArkCommand(h.command)
       );
     }
 
@@ -296,8 +296,8 @@ export class CursorHookInstaller implements IHookInstaller {
     return parts.join(' ');
   }
 
-  private isVibeLogCommand(command: string): boolean {
-    return command.includes(VIBE_LOG_MARKER) ||
+  private isDevArkCommand(command: string): boolean {
+    return command.includes(DEVARK_MARKER) ||
            command.includes('cursor-hooks') ||
            command.includes('before-submit-prompt') ||
            command.includes('post-response');

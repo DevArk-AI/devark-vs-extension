@@ -41,7 +41,7 @@ const VALID_CLAUDE_HOOKS: HookType[] = ['SessionStart', 'PreCompact', 'SessionEn
  * - Older installs may have used the devark-sync symlink path.
  * So we match both families to keep installs idempotent and to clean up duplicates.
  */
-const VIBE_LOG_COMMAND_MARKERS = [
+const DEVARK_COMMAND_MARKERS = [
   'devark-sync',
   'devark-sync.js',
   'claude-hooks/user-prompt-submit.js',
@@ -108,7 +108,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
 
         for (const hookType of VALID_CLAUDE_HOOKS) {
           if (hooks[hookType]) {
-            const filtered = this.filterVibeLogHooks(hooks[hookType] as ClaudeHookConfig[]);
+            const filtered = this.filterDevArkHooks(hooks[hookType] as ClaudeHookConfig[]);
             if (filtered.length > 0) {
               hooks[hookType] = filtered;
             } else {
@@ -147,7 +147,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
         const hooks = settings.hooks as Record<string, unknown>;
 
         if (hooks[hook]) {
-          const filtered = this.filterVibeLogHooks(hooks[hook] as ClaudeHookConfig[]);
+          const filtered = this.filterDevArkHooks(hooks[hook] as ClaudeHookConfig[]);
           if (filtered.length > 0) {
             hooks[hook] = filtered;
           } else {
@@ -185,7 +185,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
           if (settingsHooks[hookType]) {
             const hookConfigs = settingsHooks[hookType] as ClaudeHookConfig[];
             const hasVibeLog = hookConfigs.some(config =>
-              config.hooks?.some(h => this.isVibeLogCommand(h.command))
+              config.hooks?.some(h => this.isDevArkCommand(h.command))
             );
 
             if (hasVibeLog) {
@@ -316,7 +316,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
       const hooks = settings.hooks as Record<string, ClaudeHookConfig[]>;
 
       if (hooks[hookType]) {
-        hooks[hookType] = this.filterVibeLogHooks(hooks[hookType]);
+        hooks[hookType] = this.filterDevArkHooks(hooks[hookType]);
       }
 
       if (!hooks[hookType]) {
@@ -337,7 +337,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
       const hooks = settings.hooks as Record<string, ClaudeHookConfig[]>;
 
       if (hooks[hookType]) {
-        hooks[hookType] = this.filterVibeLogHooks(hooks[hookType]);
+        hooks[hookType] = this.filterDevArkHooks(hooks[hookType]);
       }
 
       if (!hooks[hookType]) {
@@ -384,16 +384,16 @@ export class ClaudeHookInstaller implements IHookInstaller {
     return parts.join(' ');
   }
 
-  private isVibeLogCommand(command: string): boolean {
+  private isDevArkCommand(command: string): boolean {
     const normalized = command.toLowerCase().replace(/\\/g, '/');
-    return VIBE_LOG_COMMAND_MARKERS.some((m) => normalized.includes(m));
+    return DEVARK_COMMAND_MARKERS.some((m) => normalized.includes(m));
   }
 
-  private filterVibeLogHooks(hookConfigs: ClaudeHookConfig[]): ClaudeHookConfig[] {
+  private filterDevArkHooks(hookConfigs: ClaudeHookConfig[]): ClaudeHookConfig[] {
     return hookConfigs
       .map(config => ({
         ...config,
-        hooks: config.hooks.filter(hook => !this.isVibeLogCommand(hook.command)),
+        hooks: config.hooks.filter(hook => !this.isDevArkCommand(hook.command)),
       }))
       .filter(config => config.hooks.length > 0);
   }
@@ -402,7 +402,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
     return hookConfigs
       .map(config => ({
         ...config,
-        hooks: config.hooks.filter(hook => !this.isVibeLogCommand(hook.command)),
+        hooks: config.hooks.filter(hook => !this.isDevArkCommand(hook.command)),
       }))
       .filter(config => config.hooks.length > 0);
   }

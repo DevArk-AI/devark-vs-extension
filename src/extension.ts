@@ -41,7 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Initialize debug mode from workspace state (persists across sessions)
   let debugMode = context.workspaceState.get<boolean>('devark.debugMode', false);
-  process.env.VIBE_LOG_DEBUG = debugMode ? 'true' : 'false';
+  process.env.DEVARK_DEBUG = debugMode ? 'true' : 'false';
 
   // Initialize UnifiedSettingsService first - sole gateway to vscode settings
   const unifiedSettingsService = new UnifiedSettingsService();
@@ -206,7 +206,7 @@ export async function activate(context: vscode.ExtensionContext) {
     'devark.toggleDebugMode',
     async () => {
       debugMode = !debugMode;
-      process.env.VIBE_LOG_DEBUG = debugMode ? 'true' : 'false';
+      process.env.DEVARK_DEBUG = debugMode ? 'true' : 'false';
 
       // Persist debug mode across sessions
       await context.workspaceState.update('devark.debugMode', debugMode);
@@ -219,7 +219,7 @@ export async function activate(context: vscode.ExtensionContext) {
       );
 
       console.log(`[Extension] Debug mode ${status}`);
-      console.log(`[Extension] VIBE_LOG_DEBUG environment variable: ${process.env.VIBE_LOG_DEBUG}`);
+      console.log(`[Extension] DEVARK_DEBUG environment variable: ${process.env.DEVARK_DEBUG}`);
     }
   );
   context.subscriptions.push(toggleDebugCommand);

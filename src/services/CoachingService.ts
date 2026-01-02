@@ -65,8 +65,8 @@ Each suggestion must include:
 - Clear, actionable first step
 - Why this matters NOW based on the context`;
 
-// Debug logging - controlled by VIBE_LOG_DEBUG environment variable (set via devark.toggleDebugMode command)
-const DEBUG_COACHING = process.env.VIBE_LOG_DEBUG === 'true';
+// Debug logging - controlled by DEVARK_DEBUG environment variable (set via devark.toggleDebugMode command)
+const DEBUG_COACHING = process.env.DEVARK_DEBUG === 'true';
 
 /**
  * CoachingService - Singleton service for generating coaching suggestions

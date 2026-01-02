@@ -145,7 +145,7 @@ export class MockApiClient implements IApiClient {
   async createAuthSession(): Promise<AuthSessionResult> {
     this.checkFailure();
     return {
-      authUrl: 'https://app.vibe-log.dev/auth/cli?token=test-token',
+      authUrl: 'https://app.devark.ai/auth/cli?token=test-token',
       token: 'test-auth-token',
     };
   }
@@ -261,7 +261,7 @@ export class MockApiClient implements IApiClient {
   }
 
   getBaseUrl(): string {
-    return 'https://app.vibe-log.dev';
+    return 'https://app.devark.ai';
   }
 
   setToken(token: string | null): void {

@@ -23,7 +23,7 @@ import type {
   InstructionsFetchResult,
 } from '../../types';
 
-const DEFAULT_BASE_URL = 'https://app.devark.dev';
+const DEFAULT_BASE_URL = 'https://app.devark.ai';
 const CHUNK_SIZE = 100;
 
 export class DevArkApiClient implements IApiClient {

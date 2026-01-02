@@ -2,26 +2,39 @@
  * LoadingOverlay - Loading State with Heartbeat Animation
  *
  * Shows:
- * - Pulsing Vibe-Log logo
+ * - Pulsing DevArk logo (theme-aware)
  * - Progress bar
  * - Loading message
  * - Cancel button
  */
 
+/**
+ * Get theme-aware logo URI (VIB-65)
+ */
+function getThemeLogoUri(theme: 'light' | 'dark' | 'high-contrast'): string | undefined {
+  const isLight = theme === 'light';
+  return isLight
+    ? (window as any).DEVARK_LOGO_URI
+    : (window as any).DEVARK_LOGO_WHITE_URI || (window as any).DEVARK_LOGO_URI;
+}
+
 interface LoadingOverlayProps {
   progress: number;
   message: string;
+  theme?: 'light' | 'dark' | 'high-contrast';
   onCancel?: () => void;
 }
 
-export function LoadingOverlay({ progress, message, onCancel }: LoadingOverlayProps) {
+export function LoadingOverlay({ progress, message, theme = 'dark', onCancel }: LoadingOverlayProps) {
+  const logoUri = getThemeLogoUri(theme);
+
   return (
     <div className="vl-loading-overlay">
       {/* Heartbeat Logo */}
       <div className="vl-heartbeat-logo">
-        {(window as any).VIBE_LOG_LOGO_URI ? (
+        {logoUri ? (
           <img
-            src={(window as any).VIBE_LOG_LOGO_URI}
+            src={logoUri}
             alt="Loading"
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />

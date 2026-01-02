@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- DevArk Icon - Three stacked chevrons forming ark/roof shape -->
+
+  <!-- Top chevron - Blue left, Black right -->
+  <path d="M32 6 L8 26 L12 30 L32 14 Z" fill="#3528E0"/>
+  <path d="M32 6 L56 26 L52 30 L32 14 Z" fill="#000000"/>
+
+  <!-- Middle chevron - Blue left, Black right -->
+  <path d="M32 18 L12 34 L16 38 L32 26 Z" fill="#3528E0"/>
+  <path d="M32 18 L52 34 L48 38 L32 26 Z" fill="#000000"/>
+
+  <!-- Bottom chevron - Blue left, Black right -->
+  <path d="M32 30 L16 42 L20 46 L32 38 Z" fill="#3528E0"/>
+  <path d="M32 30 L48 42 L44 46 L32 38 Z" fill="#000000"/>
+</svg>

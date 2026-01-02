@@ -12,17 +12,29 @@
 import { X, Minimize2, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import type { SyncProgressData } from '@shared/webview-protocol';
 
+/**
+ * Get theme-aware logo URI (VIB-65)
+ */
+function getThemeLogoUri(theme: 'light' | 'dark' | 'high-contrast'): string | undefined {
+  const isLight = theme === 'light';
+  return isLight
+    ? (window as any).DEVARK_LOGO_URI
+    : (window as any).DEVARK_LOGO_WHITE_URI || (window as any).DEVARK_LOGO_URI;
+}
+
 interface SyncProgressModalProps {
   progress: SyncProgressData;
+  theme?: 'light' | 'dark' | 'high-contrast';
   onMinimize: () => void;
   onCancel: () => void;
   onClose: () => void;
 }
 
-export function SyncProgressModal({ progress, onMinimize, onCancel, onClose }: SyncProgressModalProps) {
+export function SyncProgressModal({ progress, theme = 'dark', onMinimize, onCancel, onClose }: SyncProgressModalProps) {
   const percentage = progress.total > 0
     ? Math.round((progress.current / progress.total) * 100)
     : 0;
+  const logoUri = getThemeLogoUri(theme);
 
   const isComplete = progress.phase === 'complete';
   const isError = progress.phase === 'error';
@@ -100,9 +112,9 @@ export function SyncProgressModal({ progress, onMinimize, onCancel, onClose }: S
               getStatusIcon()
             ) : (
               <div className="vl-heartbeat-logo">
-                {(window as any).VIBE_LOG_LOGO_URI ? (
+                {logoUri ? (
                   <img
-                    src={(window as any).VIBE_LOG_LOGO_URI}
+                    src={logoUri}
                     alt="Syncing"
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />

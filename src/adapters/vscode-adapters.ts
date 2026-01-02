@@ -237,7 +237,7 @@ export function showNotification(
  *
  * @example
  * ```typescript
- * const success = await openExternal('https://app.devark.dev/auth/cli');
+ * const success = await openExternal('https://app.devark.ai/auth/cli');
  * if (!success) {
  *   showNotification('Failed to open browser', 'error');
  * }

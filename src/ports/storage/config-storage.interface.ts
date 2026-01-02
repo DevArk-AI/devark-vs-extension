@@ -76,7 +76,7 @@ export interface IConfigStorage {
  * Default configuration values
  */
 export const DEFAULT_CONFIG: Required<ExtensionConfig> = {
-  apiUrl: 'https://app.devark.dev',
+  apiUrl: 'https://app.devark.ai',
   autoSync: true,
   syncInterval: 30,
   sanitizePaths: true,

@@ -86,22 +86,30 @@ export class MenuPanelV2 extends BasePanel {
   }
 
   /**
-   * Override to inject logo URI
+   * Override to inject logo URIs and initial theme (VIB-65)
    */
   protected _getHtmlForWebview(webview: vscode.Webview): string {
-    // Get the logo URI
+    // Get logo URIs for theme-aware switching
     const logoUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'resources', 'icon.svg')
+      vscode.Uri.joinPath(this.extensionUri, 'resources', 'devark-icon.svg')
     );
+    const logoWhiteUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'resources', 'devark-icon-white.svg')
+    );
+
+    // Detect current theme
+    const theme = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
 
     // Get base HTML
     const baseHtml = super._getHtmlForWebview(webview);
 
-    // Inject logo URI for the header
+    // Inject logo URIs and initial theme for the header
     return baseHtml.replace(
       'window.vscode = vscode;',
       `window.vscode = vscode;
-      window.VIBE_LOG_LOGO_URI = "${logoUri}";`
+      window.DEVARK_LOGO_URI = "${logoUri}";
+      window.DEVARK_LOGO_WHITE_URI = "${logoWhiteUri}";
+      window.DEVARK_INITIAL_THEME = "${theme}";`
     );
   }
 

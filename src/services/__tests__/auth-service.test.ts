@@ -55,7 +55,7 @@ describe('AuthService', () => {
     it('creates auth session via API', async () => {
       const result = await authService.startLogin();
 
-      expect(result.authUrl).toBe('https://app.devark.dev/auth/cli?token=test-token');
+      expect(result.authUrl).toBe('https://app.devark.ai/auth/cli?token=test-token');
     });
 
     it('returns waitForCompletion function', async () => {

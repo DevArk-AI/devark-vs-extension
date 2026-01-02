@@ -276,7 +276,7 @@ export class CursorSessionReader implements ISessionReader {
       // In standalone CLI mode, vscode is undefined so we use __dirname
       let wasmPath: string;
       if (vscode) {
-        const extensionPath = vscode.extensions.getExtension('vibe-log.devark-extension')?.extensionPath
+        const extensionPath = vscode.extensions.getExtension('devark.devark-extension')?.extensionPath
           || path.join(__dirname, '..');
         wasmPath = path.join(extensionPath, 'dist', 'sql-wasm.wasm');
       } else {
@@ -294,7 +294,7 @@ export class CursorSessionReader implements ISessionReader {
       } catch {
         // Try node_modules path as fallback (only makes sense in extension context)
         if (vscode) {
-          const extensionPath = vscode.extensions.getExtension('vibe-log.devark-extension')?.extensionPath
+          const extensionPath = vscode.extensions.getExtension('devark.devark-extension')?.extensionPath
             || path.join(__dirname, '..');
           const fallbackWasmPath = path.join(extensionPath, 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
           if (DEBUG_SESSION_READER) console.log('[Session Reader] Trying fallback WASM at:', fallbackWasmPath);

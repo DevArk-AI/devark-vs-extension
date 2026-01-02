@@ -96,7 +96,7 @@ export function createExtensionServices(
   const httpClient = new FetchHttpClient();
 
   // API client (token is set by AuthService when needed)
-  const serverUrl = process.env.VIBE_LOG_API_URL;
+  const serverUrl = process.env.DEVARK_API_URL;
   const apiClient = new DevArkApiClient(httpClient, serverUrl);
 
   // Auth service

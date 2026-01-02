@@ -53,14 +53,14 @@ describe('DevArkApiClient', () => {
     it('POST /api/auth/cli/session returns authUrl and token', async () => {
       httpClient.setResponse('/api/auth/cli/session', {
         data: {
-          authUrl: 'https://app.devark.dev/auth?token=abc123',
+          authUrl: 'https://app.devark.ai/auth?token=abc123',
           token: 'temp-session-token',
         },
       });
 
       const result = await apiClient.createAuthSession();
 
-      expect(result.authUrl).toBe('https://app.devark.dev/auth?token=abc123');
+      expect(result.authUrl).toBe('https://app.devark.ai/auth?token=abc123');
       expect(result.token).toBe('temp-session-token');
 
       // Verify request was made
@@ -72,7 +72,7 @@ describe('DevArkApiClient', () => {
     it('handles sessionId as alternative to token', async () => {
       httpClient.setResponse('/api/auth/cli/session', {
         data: {
-          authUrl: 'https://app.devark.dev/auth',
+          authUrl: 'https://app.devark.ai/auth',
           sessionId: 'session-id-123', // Alternative field name
         },
       });

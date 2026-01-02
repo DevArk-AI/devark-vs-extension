@@ -398,7 +398,7 @@ export class MiscHandler extends BaseMessageHandler {
 
   private async handleOpenDashboard(): Promise<void> {
     try {
-      const dashboardUrl = 'https://app.devark.dev';
+      const dashboardUrl = 'https://app.devark.ai';
       await vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
     } catch (error) {
       console.error('[MiscHandler] Failed to open dashboard:', error);

@@ -25,7 +25,9 @@ declare global {
   interface Window {
     vscode: any;
     vscodeTheme: string;
-    VIBE_LOG_LOGO_URI?: string;
+    DEVARK_LOGO_URI?: string;
+    DEVARK_LOGO_WHITE_URI?: string;
+    DEVARK_INITIAL_THEME?: 'light' | 'dark';
   }
 }
 

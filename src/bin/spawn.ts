@@ -9,13 +9,13 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-const VIBE_LOG_DIR = path.join(os.homedir(), '.devark');
-const LOCK_FILE = path.join(VIBE_LOG_DIR, 'upload.lock');
-const LOG_FILE = path.join(VIBE_LOG_DIR, 'upload.log');
+const DEVARK_DIR = path.join(os.homedir(), '.devark');
+const LOCK_FILE = path.join(DEVARK_DIR, 'upload.lock');
+const LOG_FILE = path.join(DEVARK_DIR, 'upload.log');
 const LOCK_STALE_MS = 5 * 60 * 1000; // 5 minutes
 
-async function ensureVibeLogDir(): Promise<void> {
-  await fs.mkdir(VIBE_LOG_DIR, { recursive: true });
+async function ensureDevArkDir(): Promise<void> {
+  await fs.mkdir(DEVARK_DIR, { recursive: true });
 }
 
 /**
@@ -25,12 +25,12 @@ export async function spawnDetached(
   command: string,
   args: string[]
 ): Promise<void> {
-  await ensureVibeLogDir();
+  await ensureDevArkDir();
 
   const spawnOptions: SpawnOptions = {
     detached: true,
     stdio: ['ignore', 'ignore', 'ignore'],
-    env: { ...process.env, VIBE_LOG_OUTPUT: LOG_FILE },
+    env: { ...process.env, DEVARK_OUTPUT: LOG_FILE },
   };
 
   // Windows-specific detachment
@@ -67,7 +67,7 @@ export async function isUploadRunning(): Promise<boolean> {
  * Create lock file for sync process
  */
 export async function createUploadLock(): Promise<void> {
-  await ensureVibeLogDir();
+  await ensureDevArkDir();
   await fs.writeFile(LOCK_FILE, process.pid.toString());
 }
 

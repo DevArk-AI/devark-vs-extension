@@ -201,10 +201,10 @@ describe('ConfigService', () => {
     });
 
     it('returns configured API URL', async () => {
-      mockStorage.setConfig({ apiUrl: 'https://staging.devark.dev' });
+      mockStorage.setConfig({ apiUrl: 'https://staging.devark.ai' });
 
       const url = await configService.getApiUrl();
-      expect(url).toBe('https://staging.devark.dev');
+      expect(url).toBe('https://staging.devark.ai');
     });
   });
 });

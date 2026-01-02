@@ -56,8 +56,21 @@ export function useAppV2() {
 declare global {
   interface Window {
     vscode: any;
-    VIBE_LOG_LOGO_URI?: string;
+    DEVARK_LOGO_URI?: string;
+    DEVARK_LOGO_WHITE_URI?: string;
+    DEVARK_INITIAL_THEME?: 'light' | 'dark';
   }
+}
+
+/**
+ * Get theme-aware logo URI (VIB-65)
+ * Returns white logo for dark themes, regular logo for light themes
+ */
+function getThemeLogoUri(theme: 'light' | 'dark' | 'high-contrast'): string | undefined {
+  const isLight = theme === 'light';
+  return isLight
+    ? window.DEVARK_LOGO_URI
+    : window.DEVARK_LOGO_WHITE_URI || window.DEVARK_LOGO_URI;
 }
 
 function postMessage(type: string, data?: any) {
@@ -106,6 +119,13 @@ export function AppV2() {
     setIsSyncing(true);
     postMessage('syncNow');
   };
+
+  // Set initial theme from extension-injected value on mount (VIB-65)
+  useEffect(() => {
+    if (window.DEVARK_INITIAL_THEME) {
+      dispatch({ type: 'SET_THEME', payload: window.DEVARK_INITIAL_THEME });
+    }
+  }, []);
 
   // Re-request coaching when switching back to copilot tab
   useEffect(() => {
@@ -625,6 +645,7 @@ export function AppV2() {
         <LoadingOverlay
           progress={state.loadingProgress}
           message={state.loadingMessage}
+          theme={state.theme}
           onCancel={() => {
             dispatch({ type: 'CANCEL_LOADING_SUMMARY' });
             postMessage('cancelLoading');
@@ -634,14 +655,17 @@ export function AppV2() {
     }
 
     switch (state.currentView) {
-      case 'loading':
+      case 'loading': {
         // Show minimal loading state while waiting for config
+        // Use initial theme from injection since state.theme may not be set yet (VIB-65)
+        const loadingTheme = state.theme || window.DEVARK_INITIAL_THEME || 'dark';
+        const loadingLogoUri = getThemeLogoUri(loadingTheme);
         return (
           <div className="vl-loading-overlay">
             <div className="vl-heartbeat-logo">
-              {window.VIBE_LOG_LOGO_URI ? (
+              {loadingLogoUri ? (
                 <img
-                  src={window.VIBE_LOG_LOGO_URI}
+                  src={loadingLogoUri}
                   alt="Loading"
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
@@ -656,6 +680,7 @@ export function AppV2() {
             </div>
           </div>
         );
+      }
       case 'onboarding':
         return <OnboardingView />;
       case 'settings':
@@ -696,8 +721,8 @@ export function AppV2() {
         {state.currentView !== 'onboarding' && (
           <header className="vl-header">
             <div className="vl-logo-container">
-              {window.VIBE_LOG_LOGO_URI ? (
-                <img src={window.VIBE_LOG_LOGO_URI} alt="DevArk" className="vl-logo" />
+              {getThemeLogoUri(state.theme) ? (
+                <img src={getThemeLogoUri(state.theme)} alt="DevArk" className="vl-logo" />
               ) : (
                 <div className="vl-logo-fallback">VL</div>
               )}

@@ -16,6 +16,16 @@ import { useAppV2 } from '../../AppV2';
 import { send } from '../../utils/vscode';
 import type { LLMProvider } from '../../state/types-v2';
 
+/**
+ * Get theme-aware logo URI (VIB-65)
+ */
+function getThemeLogoUri(theme: 'light' | 'dark' | 'high-contrast'): string | undefined {
+  const isLight = theme === 'light';
+  return isLight
+    ? (window as any).DEVARK_LOGO_URI
+    : (window as any).DEVARK_LOGO_WHITE_URI || (window as any).DEVARK_LOGO_URI;
+}
+
 export function OnboardingView() {
   const { state, dispatch } = useAppV2();
   // Default provider based on platform: cursor-cli for Cursor, claude-agent-sdk for VS Code
@@ -99,13 +109,15 @@ export function OnboardingView() {
      selectedProviderData.status === 'available' ||
      (selectedProviderData.type === 'cloud' && selectedProviderData.requiresApiKey));
 
+  const logoUri = getThemeLogoUri(state.theme);
+
   return (
     <div className="vl-onboarding">
       {/* Logo */}
       <div className="vl-onboarding-logo">
-        {(window as any).VIBE_LOG_LOGO_URI ? (
+        {logoUri ? (
           <img
-            src={(window as any).VIBE_LOG_LOGO_URI}
+            src={logoUri}
             alt="DevArk"
             style={{
               width: '80px',

@@ -87,6 +87,12 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
     webviewView.onDidDispose(() => {
       this.dispose();
     });
+
+    // Listen for theme changes and notify webview (VIB-65)
+    vscode.window.onDidChangeActiveColorTheme((colorTheme) => {
+      const themeType = colorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
+      this._view?.webview.postMessage({ type: 'themeChanged', data: { theme: themeType } });
+    });
   }
 
   /**
@@ -126,9 +132,16 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this.extensionUri, 'dist', 'webview', 'index.css')
     );
 
+    // Logo URIs for theme-aware switching (VIB-65)
     const logoUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'resources', 'icon.svg')
+      vscode.Uri.joinPath(this.extensionUri, 'resources', 'devark-icon.svg')
     );
+    const logoWhiteUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'resources', 'devark-icon-white.svg')
+    );
+
+    // Detect current theme for initial load
+    const theme = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark';
 
     const nonce = this._getNonce();
 
@@ -182,7 +195,9 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     window.vscode = vscode;
-    window.VIBE_LOG_LOGO_URI = "${logoUri}";
+    window.DEVARK_LOGO_URI = "${logoUri}";
+    window.DEVARK_LOGO_WHITE_URI = "${logoWhiteUri}";
+    window.DEVARK_INITIAL_THEME = "${theme}";
     window.IS_SIDEBAR = true;
   </script>
   <script nonce="${nonce}" type="module" src="${scriptUri}"></script>

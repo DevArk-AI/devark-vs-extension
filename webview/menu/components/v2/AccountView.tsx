@@ -604,6 +604,7 @@ export function AccountView() {
       {isSyncing && syncProgress && !isSyncMinimized && (
         <SyncProgressModal
           progress={syncProgress}
+          theme={state.theme}
           onMinimize={handleMinimizeSync}
           onCancel={handleCancelSync}
           onClose={handleCloseSyncProgress}
