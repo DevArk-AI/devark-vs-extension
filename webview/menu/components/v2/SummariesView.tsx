@@ -1069,7 +1069,7 @@ function CloudUpsellBanner({ period }: { period: string }) {
         className="vl-cloud-cta"
         onClick={() => dispatch({ type: 'SET_TAB', payload: 'account' })}
       >
-        Get detailed reports on Vibe-Log Cloud <ArrowRight size={12} />
+        Get detailed reports on DevArk Cloud <ArrowRight size={12} />
       </button>
     </div>
   );

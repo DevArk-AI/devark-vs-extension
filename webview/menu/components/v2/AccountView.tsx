@@ -162,7 +162,7 @@ export function AccountView() {
       {/* Dashboard Section */}
       <section className="vl-dashboard-section">
         <div className="vl-section-header">
-          <h2 className="vl-section-title">VIBE-LOG DASHBOARD</h2>
+          <h2 className="vl-section-title">DEVARK DASHBOARD</h2>
         </div>
 
         {state.cloud.isConnected ? (

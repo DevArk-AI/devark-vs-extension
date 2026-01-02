@@ -5,13 +5,13 @@
  * Follows VS Code pattern of status info at bottom.
  *
  * Status Variants:
- * - Connected: Cloud icon + "Connected to Vibe-Log" + [Open Dashboard]
- * - Not connected: Dot + "Not connected" + [Connect to Vibe-Log]
+ * - Connected: Cloud icon + "Connected to DevArk" + [Open Dashboard]
+ * - Not connected: Dot + "Not connected" + [Connect to DevArk] (link style)
  * - Syncing: Spinner + "Syncing..." + [Open Dashboard]
  * - Error: Warning + "Sync error" + [Retry]
  */
 
-import { Cloud, AlertCircle, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
+import { Cloud, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 
 export type CloudStatus = 'connected' | 'disconnected' | 'syncing' | 'error' | 'loading';
 
@@ -36,7 +36,7 @@ export function CloudStatusBar({
         {status === 'connected' && (
           <>
             <Cloud size={14} className="vl-cloud-icon connected" />
-            <span>Connected to Vibe-Log</span>
+            <span>Connected to DevArk</span>
             {username && <span className="vl-cloud-username">@{username}</span>}
           </>
         )}
@@ -74,9 +74,8 @@ export function CloudStatusBar({
           </button>
         )}
         {status === 'disconnected' && (
-          <button className="vl-cloud-action primary" onClick={onConnect}>
-            Connect to Vibe-Log
-            <ArrowRight size={12} />
+          <button className="vl-cloud-action vl-cloud-link" onClick={onConnect}>
+            Connect to DevArk
           </button>
         )}
         {status === 'syncing' && (

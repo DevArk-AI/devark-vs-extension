@@ -679,7 +679,7 @@ export function AppV2() {
               ) : (
                 <div className="vl-logo-fallback">VL</div>
               )}
-              <span className="vl-header-title">VIBE-LOG</span>
+              <span className="vl-header-title">DEVARK</span>
             </div>
             <button
               className="vl-settings-btn"

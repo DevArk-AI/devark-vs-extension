@@ -345,7 +345,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
       {/* Version */}
       <div style={{ marginTop: 'var(--space-xl)', fontSize: '11px', opacity: 0.5, textAlign: 'center' }}>
-        Vibe-Log v0.1.0
+        DevArk v0.1.0
       </div>
     </div>
   );

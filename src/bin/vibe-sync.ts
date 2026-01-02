@@ -187,8 +187,8 @@ if (require.main === module) {
         const { FetchHttpClient } = await import(
           '../adapters/network/fetch-http-client'
         );
-        const { VibeLogApiClient } = await import(
-          '../adapters/network/vibe-log-api-client'
+        const { DevArkApiClient } = await import(
+          '../adapters/network/devark-api-client'
         );
         const { ClaudeSessionReader } = await import(
           '../adapters/readers/claude-session-reader'
@@ -198,7 +198,7 @@ if (require.main === module) {
         const fs = new NodeFileSystem();
         const tokenStorage = new FileTokenStorage(fs);
         const httpClient = new FetchHttpClient();
-        const apiClient = new VibeLogApiClient(httpClient);
+        const apiClient = new DevArkApiClient(httpClient);
         const syncState = new FileSyncStateStorage(fs);
 
         // Set auth token on API client if available
