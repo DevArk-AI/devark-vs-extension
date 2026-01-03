@@ -124,7 +124,7 @@ These often reveal patterns. Maybe certain types of tasks need a different appro
 Found a bug? Have an idea? We'd love to hear from you.
 
 - GitHub Issues: [github.com/devark/devark-vs-extension](https://github.com/devark/devark-vs-extension)
-- Email: support@devark.dev
+- Email: support@devark.ai
 
 ## License
 
