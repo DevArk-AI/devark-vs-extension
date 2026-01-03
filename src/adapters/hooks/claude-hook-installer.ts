@@ -350,7 +350,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
   }
 
   private buildCommand(hookType: HookType, config: HookConfig): string {
-    const parts = [`node "${this.syncScriptPath}"`];
+    const parts = [`node ${this.syncScriptPath}`];
     parts.push(`--hook-trigger=${hookType.toLowerCase()}`);
     parts.push('--source=claude');
     parts.push('--silent');
@@ -364,7 +364,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
 
   private buildPromptHookCommand(config: HookConfig): string {
     const scriptPath = this.promptHookPath || this.syncScriptPath;
-    const parts = [`node "${scriptPath}"`];
+    const parts = [`node ${scriptPath}`];
 
     if (config.debug) {
       parts.push('--debug');
@@ -375,7 +375,7 @@ export class ClaudeHookInstaller implements IHookInstaller {
 
   private buildStopHookCommand(config: HookConfig): string {
     const scriptPath = this.stopHookPath || this.syncScriptPath;
-    const parts = [`node "${scriptPath}"`];
+    const parts = [`node ${scriptPath}`];
 
     if (config.debug) {
       parts.push('--debug');
