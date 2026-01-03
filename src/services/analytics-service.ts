@@ -7,12 +7,18 @@
 
 import type { AnalyticsEvent } from './analytics-events';
 
+/** Function to check if user is registered to cloud */
+export type AuthStatusChecker = () => Promise<boolean>;
+
 export interface IAnalyticsService {
   /** Track an analytics event */
   track(event: AnalyticsEvent, properties?: Record<string, unknown>): void;
 
   /** Check if analytics is enabled */
   isEnabled(): boolean;
+
+  /** Set the auth status checker (called after DI setup to avoid circular deps) */
+  setAuthStatusChecker(checker: AuthStatusChecker): void;
 }
 
 interface MixpanelEvent {
@@ -50,6 +56,10 @@ export class AnalyticsService implements IAnalyticsService {
   private readonly token: string | undefined;
   private readonly distinctId: string;
   private readonly apiUrl = 'https://api.mixpanel.com/track';
+  private authStatusChecker: AuthStatusChecker | null = null;
+  private cachedAuthStatus: boolean | null = null;
+  private authStatusCacheTime = 0;
+  private readonly AUTH_CACHE_TTL = 30000; // 30 seconds
 
   constructor(token?: string) {
     this.token = token || process.env.MIXPANEL_TOKEN;
@@ -62,6 +72,10 @@ export class AnalyticsService implements IAnalyticsService {
     }
   }
 
+  setAuthStatusChecker(checker: AuthStatusChecker): void {
+    this.authStatusChecker = checker;
+  }
+
   isEnabled(): boolean {
     return !!this.token && this.token !== 'placeholder-mixpanel-token';
   }
@@ -71,25 +85,49 @@ export class AnalyticsService implements IAnalyticsService {
       return;
     }
 
-    const mixpanelEvent: MixpanelEvent = {
-      event,
-      properties: {
-        distinct_id: this.distinctId,
-        token: this.token!,
-        time: Math.floor(Date.now() / 1000),
-        $insert_id: generateInsertId(),
-        // Standard properties
-        platform: 'vscode-extension',
-        extension_version: process.env.EXTENSION_VERSION || 'unknown',
-        // User-provided properties
-        ...properties,
-      },
-    };
+    // Get auth status and send event
+    this.getAuthStatus().then((isRegistered) => {
+      const mixpanelEvent: MixpanelEvent = {
+        event,
+        properties: {
+          distinct_id: this.distinctId,
+          token: this.token!,
+          time: Math.floor(Date.now() / 1000),
+          $insert_id: generateInsertId(),
+          // Standard properties
+          platform: 'vscode-extension',
+          extension_version: process.env.EXTENSION_VERSION || 'unknown',
+          is_registered_to_cloud: isRegistered,
+          // User-provided properties
+          ...properties,
+        },
+      };
 
-    // Fire and forget - don't block on analytics
-    this.sendEvent(mixpanelEvent).catch((err) => {
-      console.warn('[Analytics] Failed to send event:', err.message);
+      // Fire and forget - don't block on analytics
+      this.sendEvent(mixpanelEvent).catch((err) => {
+        console.warn('[Analytics] Failed to send event:', err.message);
+      });
     });
+  }
+
+  private async getAuthStatus(): Promise<boolean> {
+    // Use cached value if still valid
+    if (this.cachedAuthStatus !== null && Date.now() - this.authStatusCacheTime < this.AUTH_CACHE_TTL) {
+      return this.cachedAuthStatus;
+    }
+
+    // Check auth status if checker is available
+    if (this.authStatusChecker) {
+      try {
+        this.cachedAuthStatus = await this.authStatusChecker();
+        this.authStatusCacheTime = Date.now();
+        return this.cachedAuthStatus;
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
   }
 
   private async sendEvent(event: MixpanelEvent): Promise<void> {
@@ -121,6 +159,10 @@ export class AnalyticsService implements IAnalyticsService {
 export class NoOpAnalyticsService implements IAnalyticsService {
   isEnabled(): boolean {
     return false;
+  }
+
+  setAuthStatusChecker(): void {
+    // No-op
   }
 
   track(): void {

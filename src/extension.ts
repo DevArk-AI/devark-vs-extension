@@ -53,6 +53,15 @@ export async function activate(context: vscode.ExtensionContext) {
   const services = createExtensionServices(context);
   ExtensionState.setServices(services);
 
+  // Set up auth status checker for analytics (checks if user is registered to cloud)
+  services.analyticsService.setAuthStatusChecker(async () => {
+    try {
+      return await services.authService.isAuthenticated();
+    } catch {
+      return false;
+    }
+  });
+
   // Track extension activation
   const isFirstActivation = !context.globalState.get<boolean>('devark.hasActivatedBefore');
   services.analyticsService.track(AnalyticsEvents.ACTIVATED, {
