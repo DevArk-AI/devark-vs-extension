@@ -240,7 +240,7 @@ export class SessionHandler extends BaseMessageHandler {
         platform: 'claude_code',
         startTime: unifiedSession?.startTime || new Date(),
         lastActivityTime: unifiedSession?.endTime || new Date(),
-        promptCount: details.messages.filter(m => m.role === 'user').length,
+        promptCount: this.countActualUserPrompts(details.messages),
         prompts: [],
         responses: [],
         isActive: false,
@@ -282,10 +282,11 @@ export class SessionHandler extends BaseMessageHandler {
         });
 
         // Send prompts list with just the last message
+        const totalPrompts = this.countActualUserPrompts(details.messages);
         this.send('v2Prompts', {
           prompts: [prompt],
-          total: details.messages.filter(m => m.role === 'user').length,
-          hasMore: details.messages.filter(m => m.role === 'user').length > 1,
+          total: totalPrompts,
+          hasMore: totalPrompts > 1,
           offset: 0,
           limit: 1,
         });
@@ -312,15 +313,45 @@ export class SessionHandler extends BaseMessageHandler {
   }
 
   /**
-   * Get the last user message from a messages array
+   * Get the last actual user prompt from a messages array
+   * Filters out tool results which also have role 'user'
    */
   private getLastUserMessage(messages: Message[]): Message | null {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'user') {
-        return messages[i];
+      const msg = messages[i];
+      if (msg.role === 'user' && this.isActualUserPrompt(msg.content)) {
+        return msg;
       }
     }
     return null;
+  }
+
+  /**
+   * Check if message content is an actual user prompt (not tool result)
+   * Tool results contain [Tool result] or [Tool: ...] markers
+   */
+  private isActualUserPrompt(content: string): boolean {
+    // Skip empty content
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+    // Skip tool results (these are machine-generated, not user prompts)
+    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
+      return false;
+    }
+    // Skip if content is mostly tool markers
+    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
+    if (toolMarkerPattern.test(content)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Count actual user prompts in a messages array (excludes tool results)
+   */
+  private countActualUserPrompts(messages: Message[]): number {
+    return messages.filter(m => m.role === 'user' && this.isActualUserPrompt(m.content)).length;
   }
 
   /**
@@ -602,9 +633,9 @@ export class SessionHandler extends BaseMessageHandler {
         return;
       }
 
-      // Filter to user messages only and reverse to get most recent first
+      // Filter to actual user prompts (not tool results) and reverse to get most recent first
       const userMessages = details.messages
-        .filter(m => m.role === 'user')
+        .filter(m => m.role === 'user' && this.isActualUserPrompt(m.content))
         .reverse();
 
       const total = userMessages.length;
