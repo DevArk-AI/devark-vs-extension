@@ -172,17 +172,20 @@ if (result.success) {
 
 ## Configuration
 
-The system reads from VSCode workspace settings under `vibelog.llm.*`:
+The system reads from VSCode workspace settings under `devark.llm.*`:
 
 ```json
 {
-  "vibelog.llm.provider": "ollama",
-  "vibelog.llm.ollama.endpoint": "http://localhost:11434",
-  "vibelog.llm.ollama.model": "codellama:7b",
-  "vibelog.llm.openrouter.apiKey": "sk-or-v1-...",
-  "vibelog.llm.openrouter.model": "anthropic/claude-3.5-sonnet",
-  "vibelog.llm.openrouter.siteUrl": "https://vibe-log.dev",
-  "vibelog.llm.openrouter.siteName": "VibeLog"
+  "devark.llm.activeProvider": "ollama",
+  "devark.llm.providers": {
+    "ollama": {
+      "endpoint": "http://localhost:11434",
+      "model": "codellama:7b"
+    },
+    "openrouter": {
+      "model": "anthropic/claude-3.5-sonnet"
+    }
+  }
 }
 ```
 

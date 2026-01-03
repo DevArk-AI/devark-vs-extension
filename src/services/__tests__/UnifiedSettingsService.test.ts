@@ -26,8 +26,8 @@ describe('UnifiedSettingsService', () => {
     });
 
     it('works with string settings', async () => {
-      await settingsService.set('llm.provider', 'ollama');
-      const value = settingsService.get('llm.provider');
+      await settingsService.set('llm.activeProvider', 'ollama');
+      const value = settingsService.get('llm.activeProvider');
       expect(value).toBe('ollama');
     });
 
@@ -59,14 +59,14 @@ describe('UnifiedSettingsService', () => {
 
   describe('set()', () => {
     it('stores value for retrieval', async () => {
-      await settingsService.set('llm.provider', 'openrouter');
-      expect(settingsService.get('llm.provider')).toBe('openrouter');
+      await settingsService.set('llm.activeProvider', 'openrouter');
+      expect(settingsService.get('llm.activeProvider')).toBe('openrouter');
     });
 
     it('overwrites previous value', async () => {
-      await settingsService.set('llm.provider', 'ollama');
-      await settingsService.set('llm.provider', 'openrouter');
-      expect(settingsService.get('llm.provider')).toBe('openrouter');
+      await settingsService.set('llm.activeProvider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'openrouter');
+      expect(settingsService.get('llm.activeProvider')).toBe('openrouter');
     });
 
     it('stores boolean values correctly', async () => {
@@ -81,12 +81,12 @@ describe('UnifiedSettingsService', () => {
   describe('setMultiple()', () => {
     it('sets multiple values at once', async () => {
       await settingsService.setMultiple({
-        'llm.provider': 'ollama',
+        'llm.activeProvider': 'ollama',
         'onboarding.completed': true,
         'autoAnalyze.enabled': false,
       });
 
-      expect(settingsService.get('llm.provider')).toBe('ollama');
+      expect(settingsService.get('llm.activeProvider')).toBe('ollama');
       expect(settingsService.get('onboarding.completed')).toBe(true);
       expect(settingsService.get('autoAnalyze.enabled')).toBe(false);
     });
@@ -94,7 +94,7 @@ describe('UnifiedSettingsService', () => {
     it('preserves unrelated settings', async () => {
       await settingsService.set('detection.useHooks', true);
       await settingsService.setMultiple({
-        'llm.provider': 'openrouter',
+        'llm.activeProvider': 'openrouter',
       });
 
       expect(settingsService.get('detection.useHooks')).toBe(true);
@@ -115,7 +115,7 @@ describe('UnifiedSettingsService', () => {
       const callback = vi.fn();
       settingsService.onChange('onboarding.completed', callback);
 
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
 
       expect(callback).not.toHaveBeenCalled();
     });
@@ -134,10 +134,10 @@ describe('UnifiedSettingsService', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
 
-      settingsService.onChange('llm.provider', callback1);
-      settingsService.onChange('llm.provider', callback2);
+      settingsService.onChange('llm.activeProvider', callback1);
+      settingsService.onChange('llm.activeProvider', callback2);
 
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
 
       expect(callback1).toHaveBeenCalledWith('ollama');
       expect(callback2).toHaveBeenCalledWith('ollama');
@@ -149,11 +149,11 @@ describe('UnifiedSettingsService', () => {
       const callback = vi.fn();
       settingsService.onAnyChange(callback);
 
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
       await settingsService.set('onboarding.completed', true);
 
       expect(callback).toHaveBeenCalledTimes(2);
-      expect(callback).toHaveBeenCalledWith('llm.provider', 'ollama');
+      expect(callback).toHaveBeenCalledWith('llm.activeProvider', 'ollama');
       expect(callback).toHaveBeenCalledWith('onboarding.completed', true);
     });
 
@@ -162,7 +162,7 @@ describe('UnifiedSettingsService', () => {
       const disposable = settingsService.onAnyChange(callback);
 
       disposable.dispose();
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
 
       expect(callback).not.toHaveBeenCalled();
     });
@@ -187,27 +187,27 @@ describe('UnifiedSettingsService', () => {
 
   describe('reset()', () => {
     it('clears specific setting', async () => {
-      await settingsService.set('llm.provider', 'ollama');
-      await settingsService.reset('llm.provider');
+      await settingsService.set('llm.activeProvider', 'ollama');
+      await settingsService.reset('llm.activeProvider');
 
-      expect(settingsService.get('llm.provider')).toBeUndefined();
+      expect(settingsService.get('llm.activeProvider')).toBeUndefined();
     });
 
     it('notifies listeners with undefined', async () => {
       const callback = vi.fn();
-      await settingsService.set('llm.provider', 'ollama');
-      settingsService.onChange('llm.provider', callback);
+      await settingsService.set('llm.activeProvider', 'ollama');
+      settingsService.onChange('llm.activeProvider', callback);
 
-      await settingsService.reset('llm.provider');
+      await settingsService.reset('llm.activeProvider');
 
       expect(callback).toHaveBeenCalledWith(undefined);
     });
 
     it('preserves other settings', async () => {
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
       await settingsService.set('onboarding.completed', true);
 
-      await settingsService.reset('llm.provider');
+      await settingsService.reset('llm.activeProvider');
 
       expect(settingsService.get('onboarding.completed')).toBe(true);
     });
@@ -215,13 +215,13 @@ describe('UnifiedSettingsService', () => {
 
   describe('resetAll()', () => {
     it('clears all settings', async () => {
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
       await settingsService.set('onboarding.completed', true);
       await settingsService.set('autoAnalyze.enabled', true);
 
       await settingsService.resetAll();
 
-      expect(settingsService.get('llm.provider')).toBeUndefined();
+      expect(settingsService.get('llm.activeProvider')).toBeUndefined();
       expect(settingsService.get('onboarding.completed')).toBeUndefined();
       expect(settingsService.get('autoAnalyze.enabled')).toBeUndefined();
     });
@@ -230,10 +230,10 @@ describe('UnifiedSettingsService', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
 
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
       await settingsService.set('onboarding.completed', true);
 
-      settingsService.onChange('llm.provider', callback1);
+      settingsService.onChange('llm.activeProvider', callback1);
       settingsService.onChange('onboarding.completed', callback2);
 
       await settingsService.resetAll();
@@ -246,11 +246,11 @@ describe('UnifiedSettingsService', () => {
   describe('dispose()', () => {
     it('clears all listeners', async () => {
       const callback = vi.fn();
-      settingsService.onChange('llm.provider', callback);
+      settingsService.onChange('llm.activeProvider', callback);
       settingsService.onAnyChange(callback);
 
       settingsService.dispose();
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
 
       expect(callback).not.toHaveBeenCalled();
     });
@@ -259,11 +259,11 @@ describe('UnifiedSettingsService', () => {
   describe('initial settings', () => {
     it('accepts initial settings in constructor', () => {
       const service = new MockUnifiedSettingsService({
-        'llm.provider': 'openrouter',
+        'llm.activeProvider': 'openrouter',
         'onboarding.completed': true,
       });
 
-      expect(service.get('llm.provider')).toBe('openrouter');
+      expect(service.get('llm.activeProvider')).toBe('openrouter');
       expect(service.get('onboarding.completed')).toBe(true);
     });
   });
@@ -271,35 +271,35 @@ describe('UnifiedSettingsService', () => {
   describe('simulateChange() helper', () => {
     it('sets value and notifies listeners', () => {
       const callback = vi.fn();
-      settingsService.onChange('llm.provider', callback);
+      settingsService.onChange('llm.activeProvider', callback);
 
-      settingsService.simulateChange('llm.provider', 'ollama');
+      settingsService.simulateChange('llm.activeProvider', 'ollama');
 
-      expect(settingsService.get('llm.provider')).toBe('ollama');
+      expect(settingsService.get('llm.activeProvider')).toBe('ollama');
       expect(callback).toHaveBeenCalledWith('ollama');
     });
 
     it('handles undefined value for reset simulation', () => {
       const callback = vi.fn();
-      settingsService.set('llm.provider', 'ollama');
-      settingsService.onChange('llm.provider', callback);
+      settingsService.set('llm.activeProvider', 'ollama');
+      settingsService.onChange('llm.activeProvider', callback);
 
-      settingsService.simulateChange('llm.provider', undefined);
+      settingsService.simulateChange('llm.activeProvider', undefined);
 
-      expect(settingsService.get('llm.provider')).toBeUndefined();
+      expect(settingsService.get('llm.activeProvider')).toBeUndefined();
       expect(callback).toHaveBeenCalledWith(undefined);
     });
   });
 
   describe('getAllSettings() helper', () => {
     it('returns all settings as object', async () => {
-      await settingsService.set('llm.provider', 'ollama');
+      await settingsService.set('llm.activeProvider', 'ollama');
       await settingsService.set('onboarding.completed', true);
 
       const all = settingsService.getAllSettings();
 
       expect(all).toEqual({
-        'llm.provider': 'ollama',
+        'llm.activeProvider': 'ollama',
         'onboarding.completed': true,
       });
     });

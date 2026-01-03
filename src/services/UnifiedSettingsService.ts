@@ -131,7 +131,6 @@ export interface IUnifiedSettingsService {
  * Default values for settings
  */
 const DEFAULTS: Partial<Record<SettingKey, unknown>> = {
-  'llm.provider': 'ollama',
   'llm.activeProvider': 'ollama',
   'llm.timeout': 30000,
   'llm.providers': {},
@@ -269,7 +268,6 @@ export class UnifiedSettingsService implements IUnifiedSettingsService {
 
   async resetAll(): Promise<void> {
     const allSettings: SettingKey[] = [
-      'llm.provider',
       'llm.providers',
       'llm.activeProvider',
       'llm.timeout',
@@ -341,7 +339,6 @@ export class UnifiedSettingsService implements IUnifiedSettingsService {
         'onboarding.completed',
         'autoAnalyze.enabled',
         'detection.useHooks',
-        'llm.provider',
         'llm.providers',
         'llm.activeProvider',
         'llm.timeout',

@@ -313,7 +313,7 @@ export class MiscHandler extends BaseMessageHandler {
     await this.settingsService.set('onboarding.completed', true);
 
     if (data?.provider) {
-      await this.settingsService.set('llm.provider', data.provider);
+      await this.settingsService.set('llm.activeProvider', data.provider);
     }
 
     if (data?.autoAnalyze !== undefined) {

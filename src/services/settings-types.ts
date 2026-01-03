@@ -29,7 +29,6 @@ export type ProvidersConfigMap = Record<string, ProviderConfig>;
 
 export type SettingKey =
   // LLM Provider Settings
-  | 'llm.provider'
   | 'llm.providers'
   | 'llm.activeProvider'
   | 'llm.timeout'
@@ -51,7 +50,6 @@ export type SettingKey =
  * Maps each setting key to its value type
  */
 export const SettingValueType = {
-  'llm.provider': 'string',
   'llm.providers': 'object',
   'llm.activeProvider': 'string',
   'llm.timeout': 'number',
@@ -67,11 +65,9 @@ export const SettingValueType = {
 
 /**
  * Discriminated union for compile-time type safety
- * When you call get<'llm.provider'>(), TypeScript knows the return type is string
+ * When you call get<'llm.activeProvider'>(), TypeScript knows the return type is string
  */
-export type SettingValue<T extends SettingKey> = T extends 'llm.provider'
-  ? string
-  : T extends 'llm.providers'
+export type SettingValue<T extends SettingKey> = T extends 'llm.providers'
     ? ProvidersConfigMap
     : T extends 'llm.activeProvider'
       ? string

@@ -20,7 +20,6 @@ import { ILogger } from '../interfaces';
  */
 export function createMockSettingsServiceWithDefaults(): MockUnifiedSettingsService {
   const service = new MockUnifiedSettingsService({
-    'llm.provider': 'ollama',
     'llm.activeProvider': 'ollama',
   });
 

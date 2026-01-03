@@ -104,7 +104,7 @@ export class ConfigHandler extends BaseMessageHandler {
     await this.settingsService.set('onboarding.completed', true);
 
     if (data?.provider) {
-      await this.settingsService.set('llm.provider', data.provider);
+      await this.settingsService.set('llm.activeProvider', data.provider);
 
       const llmManager = ExtensionState.getLLMManager();
       if (llmManager) {
