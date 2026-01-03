@@ -13,6 +13,10 @@ import { BaseMessageHandler, type MessageSender, type HandlerContext } from './b
 import { SharedContext } from './shared-context';
 import { getCoachingService } from '../../services/CoachingService';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
+import type { UnifiedSession } from '../../services/UnifiedSessionService';
+import type { Session, Project, Platform, PromptRecord } from '../../services/types/session-types';
+import type { Message } from '../../types/message.types';
+import * as crypto from 'crypto';
 
 export class SessionHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -117,6 +121,12 @@ export class SessionHandler extends BaseMessageHandler {
     }
 
     try {
+      // Check if this is a Claude session (ID starts with 'claude-')
+      if (this.isClaudeSession(sessionId)) {
+        await this.handleSwitchClaudeSession(sessionId);
+        return;
+      }
+
       const sessionManagerService = this.sharedContext.sessionManagerService;
       if (!sessionManagerService) {
         this.send('error', { operation: 'switchSession', message: 'Session service not initialized' });
@@ -185,6 +195,152 @@ export class SessionHandler extends BaseMessageHandler {
     }
   }
 
+  /**
+   * Check if session ID is a Claude Code session
+   */
+  private isClaudeSession(sessionId: string): boolean {
+    return sessionId.startsWith('claude-');
+  }
+
+  /**
+   * Handle switching to a Claude Code session
+   * Fetches session details and shows the last user message
+   */
+  private async handleSwitchClaudeSession(sessionId: string): Promise<void> {
+    const unifiedSessionService = this.sharedContext.unifiedSessionService;
+    if (!unifiedSessionService?.isReady()) {
+      this.send('error', { operation: 'switchSession', message: 'Claude session service not available' });
+      return;
+    }
+
+    try {
+      // Fetch session details (includes messages)
+      const details = await unifiedSessionService.getSessionDetails(sessionId);
+      if (!details) {
+        this.send('error', { operation: 'switchSession', message: 'Claude session not found' });
+        return;
+      }
+
+      // Find the session in our merged list to get project info
+      const result = await unifiedSessionService.getUnifiedSessions({
+        sources: ['claude_code'],
+        since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+        minPromptCount: 1,
+      });
+      const unifiedSession = result.sessions.find(s => s.id === sessionId);
+
+      // Build a Session object for the UI
+      const projectId = unifiedSession?.workspacePath
+        ? this.generateProjectId(unifiedSession.workspacePath)
+        : 'unknown';
+
+      const session: Session = {
+        id: sessionId,
+        projectId,
+        platform: 'claude_code',
+        startTime: unifiedSession?.startTime || new Date(),
+        lastActivityTime: unifiedSession?.endTime || new Date(),
+        promptCount: details.messages.filter(m => m.role === 'user').length,
+        prompts: [],
+        responses: [],
+        isActive: false,
+        totalDuration: unifiedSession?.duration,
+        metadata: {
+          files: details.fileContext || [],
+        },
+      };
+
+      const project: Project = {
+        id: projectId,
+        name: unifiedSession?.workspaceName || 'Claude Session',
+        path: unifiedSession?.workspacePath,
+        sessions: [session],
+        isExpanded: true,
+        totalSessions: 1,
+        totalPrompts: session.promptCount,
+        lastActivityTime: session.lastActivityTime,
+      };
+
+      this.send('v2ActiveSession', {
+        sessionId: session.id,
+        session,
+        project,
+        goal: null,
+      });
+
+      // Get the last user message to display
+      const lastUserMessage = this.getLastUserMessage(details.messages);
+      if (lastUserMessage) {
+        const prompt = this.convertMessageToPrompt(lastUserMessage, sessionId);
+        this.send('v2PromptAutoSelected', {
+          prompt: {
+            ...prompt,
+            timestamp: prompt.timestamp instanceof Date
+              ? prompt.timestamp.toISOString()
+              : prompt.timestamp,
+          },
+        });
+
+        // Send prompts list with just the last message
+        this.send('v2Prompts', {
+          prompts: [prompt],
+          total: details.messages.filter(m => m.role === 'user').length,
+          hasMore: details.messages.filter(m => m.role === 'user').length > 1,
+          offset: 0,
+          limit: 1,
+        });
+      } else {
+        this.send('v2PromptAutoSelected', { prompt: null });
+        this.send('v2Prompts', {
+          prompts: [],
+          total: 0,
+          hasMore: false,
+          offset: 0,
+          limit: 20,
+        });
+      }
+
+      // Clear coaching for Claude sessions (not scored)
+      const coachingService = getCoachingService();
+      coachingService.setCurrentPromptId(null);
+      this.send('coachingUpdated', { coaching: null });
+
+    } catch (error) {
+      console.error('[SessionHandler] Failed to switch to Claude session:', error);
+      this.send('error', { operation: 'switchSession', message: error instanceof Error ? error.message : 'Failed to load Claude session' });
+    }
+  }
+
+  /**
+   * Get the last user message from a messages array
+   */
+  private getLastUserMessage(messages: Message[]): Message | null {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return messages[i];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Convert a Message to a PromptRecord for display
+   */
+  private convertMessageToPrompt(message: Message, sessionId: string): PromptRecord {
+    const truncatedText = message.content.length > 100
+      ? message.content.substring(0, 97) + '...'
+      : message.content;
+
+    return {
+      id: `${sessionId}-${message.timestamp.getTime()}`,
+      sessionId,
+      text: message.content,
+      truncatedText,
+      timestamp: message.timestamp,
+      score: 0, // Claude sessions aren't scored
+    };
+  }
+
   private async handleMarkSessionAsRead(sessionId: string): Promise<void> {
     if (!sessionId) return;
     const sessionManagerService = this.sharedContext.sessionManagerService;
@@ -196,30 +352,181 @@ export class SessionHandler extends BaseMessageHandler {
   private async handleV2GetSessionList(data?: { limit?: number; projectId?: string }): Promise<void> {
     try {
       const sessionManagerService = this.sharedContext.sessionManagerService;
-      if (!sessionManagerService) {
-        this.send('v2SessionList', { sessions: [], projects: [] });
-        return;
+      const unifiedSessionService = this.sharedContext.unifiedSessionService;
+
+      // Get hook-captured projects
+      let hookProjects: Project[] = [];
+
+      if (sessionManagerService) {
+        const options: { limit?: number; projectId?: string } = {};
+        if (data?.limit) options.limit = data.limit;
+        if (data?.projectId) options.projectId = data.projectId;
+
+        const allProjects = sessionManagerService.getAllProjects();
+        hookProjects = allProjects.map(p => ({
+          ...p,
+          sessions: p.sessions.filter(s => s.promptCount > 0)
+        }));
       }
-      const options: { limit?: number; projectId?: string } = {};
-      if (data?.limit) options.limit = data.limit;
-      if (data?.projectId) options.projectId = data.projectId;
 
-      const allSessions = sessionManagerService.getSessions(options);
-      // Filter out empty sessions (0 prompts) - they provide no value to the user
-      const sessions = allSessions.filter(s => s.promptCount > 0);
+      // Get Claude Code sessions from UnifiedSessionService
+      let claudeProjects: Project[] = [];
+      if (unifiedSessionService?.isReady()) {
+        try {
+          // Fetch last 90 days of sessions
+          const result = await unifiedSessionService.getUnifiedSessions({
+            sources: ['claude_code'],
+            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+            minPromptCount: 1,
+          });
+          claudeProjects = this.buildProjectsFromUnifiedSessions(result.sessions);
+        } catch (error) {
+          console.error('[SessionHandler] Failed to fetch Claude sessions:', error);
+        }
+      }
 
-      // Also filter sessions inside each project before sending to webview
-      const allProjects = sessionManagerService.getAllProjects();
-      const projects = allProjects.map(p => ({
-        ...p,
-        sessions: p.sessions.filter(s => s.promptCount > 0)
-      }));
+      // Merge projects from both sources
+      const mergedProjects = this.mergeProjects(hookProjects, claudeProjects);
 
-      this.send('v2SessionList', { sessions, projects });
+      // Flatten sessions for the sessions list
+      const allMergedSessions = mergedProjects.flatMap(p => p.sessions);
+
+      this.send('v2SessionList', { sessions: allMergedSessions, projects: mergedProjects });
     } catch (error) {
       console.error('[SessionHandler] Failed to get session list:', error);
       this.send('v2SessionList', { sessions: [], projects: [] });
     }
+  }
+
+  /**
+   * Convert UnifiedSession to the Session type used by the webview
+   */
+  private convertUnifiedToSession(unified: UnifiedSession, projectId: string): Session {
+    return {
+      id: unified.id,
+      projectId,
+      platform: unified.source as Platform,
+      startTime: unified.startTime,
+      lastActivityTime: unified.endTime,
+      promptCount: unified.promptCount,
+      prompts: [],
+      responses: [],
+      isActive: unified.status === 'active',
+      totalDuration: unified.duration,
+      metadata: {
+        files: unified.fileContext,
+      },
+    };
+  }
+
+  /**
+   * Generate a stable project ID from workspace path
+   */
+  private generateProjectId(workspacePath: string): string {
+    const normalizedPath = workspacePath.toLowerCase().replace(/\\/g, '/');
+    return crypto.createHash('md5').update(normalizedPath).digest('hex').substring(0, 12);
+  }
+
+  /**
+   * Build Project objects from UnifiedSessions, grouped by workspace path
+   */
+  private buildProjectsFromUnifiedSessions(sessions: UnifiedSession[]): Project[] {
+    const projectMap = new Map<string, Project>();
+
+    for (const session of sessions) {
+      const workspacePath = session.workspacePath || 'unknown';
+      const projectId = this.generateProjectId(workspacePath);
+
+      if (!projectMap.has(projectId)) {
+        projectMap.set(projectId, {
+          id: projectId,
+          name: session.workspaceName,
+          path: session.workspacePath,
+          sessions: [],
+          isExpanded: true,
+          totalSessions: 0,
+          totalPrompts: 0,
+          lastActivityTime: undefined,
+        });
+      }
+
+      const project = projectMap.get(projectId)!;
+      const convertedSession = this.convertUnifiedToSession(session, projectId);
+      project.sessions.push(convertedSession);
+      project.totalSessions++;
+      project.totalPrompts += session.promptCount;
+
+      // Update lastActivityTime to the most recent
+      const sessionEnd = session.endTime;
+      if (!project.lastActivityTime || sessionEnd > project.lastActivityTime) {
+        project.lastActivityTime = sessionEnd;
+      }
+    }
+
+    // Sort sessions within each project by startTime (most recent first)
+    for (const project of projectMap.values()) {
+      project.sessions.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+    }
+
+    return Array.from(projectMap.values());
+  }
+
+  /**
+   * Merge projects from hook-captured and Claude sessions.
+   * Deduplicates by matching workspace paths.
+   */
+  private mergeProjects(hookProjects: Project[], claudeProjects: Project[]): Project[] {
+    // Create a map of hook projects by normalized path
+    const hookProjectsByPath = new Map<string, Project>();
+    for (const p of hookProjects) {
+      if (p.path) {
+        const normalizedPath = p.path.toLowerCase().replace(/\\/g, '/');
+        hookProjectsByPath.set(normalizedPath, p);
+      }
+    }
+
+    // Track which Claude projects were merged
+    const mergedClaudeProjectIds = new Set<string>();
+
+    // Merge Claude sessions into existing hook projects where paths match
+    for (const claudeProject of claudeProjects) {
+      if (!claudeProject.path) continue;
+      const normalizedPath = claudeProject.path.toLowerCase().replace(/\\/g, '/');
+      const existingProject = hookProjectsByPath.get(normalizedPath);
+
+      if (existingProject) {
+        // Merge Claude sessions into existing project
+        // Avoid duplicates by checking session IDs
+        const existingSessionIds = new Set(existingProject.sessions.map(s => s.id));
+        for (const claudeSession of claudeProject.sessions) {
+          if (!existingSessionIds.has(claudeSession.id)) {
+            existingProject.sessions.push(claudeSession);
+            existingProject.totalSessions++;
+            existingProject.totalPrompts += claudeSession.promptCount;
+          }
+        }
+        // Update lastActivityTime if Claude has more recent activity
+        if (claudeProject.lastActivityTime && (!existingProject.lastActivityTime || claudeProject.lastActivityTime > existingProject.lastActivityTime)) {
+          existingProject.lastActivityTime = claudeProject.lastActivityTime;
+        }
+        // Re-sort sessions by startTime
+        existingProject.sessions.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+        mergedClaudeProjectIds.add(claudeProject.id);
+      }
+    }
+
+    // Add Claude projects that weren't merged into existing projects
+    const unmergedClaudeProjects = claudeProjects.filter(p => !mergedClaudeProjectIds.has(p.id));
+
+    // Combine and sort all projects by lastActivityTime
+    const allProjects = [...hookProjects, ...unmergedClaudeProjects];
+    allProjects.sort((a, b) => {
+      const aTime = a.lastActivityTime?.getTime() || 0;
+      const bTime = b.lastActivityTime?.getTime() || 0;
+      return bTime - aTime;
+    });
+
+    return allProjects;
   }
 
   private async handleLoadMorePrompts(data?: { sessionId?: string; currentCount?: number }): Promise<void> {
@@ -234,13 +541,7 @@ export class SessionHandler extends BaseMessageHandler {
   private async handleV2GetPrompts(data?: { sessionId?: string; offset?: number; limit?: number }): Promise<void> {
     try {
       const sessionManagerService = this.sharedContext.sessionManagerService;
-      if (!sessionManagerService) {
-        this.send('v2Prompts', { prompts: [], total: 0, hasMore: false, offset: 0, limit: 20 });
-        return;
-      }
-      // If no sessionId provided, get prompts from active session
-      const activeSession = sessionManagerService.getActiveSession();
-      const sessionId = data?.sessionId || activeSession?.id;
+      const sessionId = data?.sessionId || sessionManagerService?.getActiveSession()?.id;
 
       if (!sessionId) {
         this.send('v2Prompts', {
@@ -250,6 +551,17 @@ export class SessionHandler extends BaseMessageHandler {
           offset: 0,
           limit: data?.limit || 20,
         });
+        return;
+      }
+
+      // Handle Claude sessions separately
+      if (this.isClaudeSession(sessionId)) {
+        await this.handleGetClaudePrompts(sessionId, data?.offset || 0, data?.limit || 20);
+        return;
+      }
+
+      if (!sessionManagerService) {
+        this.send('v2Prompts', { prompts: [], total: 0, hasMore: false, offset: 0, limit: 20 });
         return;
       }
 
@@ -269,6 +581,48 @@ export class SessionHandler extends BaseMessageHandler {
         offset: 0,
         limit: 20,
       });
+    }
+  }
+
+  /**
+   * Get prompts for a Claude Code session
+   * Shows the last user message (most recent first)
+   */
+  private async handleGetClaudePrompts(sessionId: string, offset: number, limit: number): Promise<void> {
+    const unifiedSessionService = this.sharedContext.unifiedSessionService;
+    if (!unifiedSessionService?.isReady()) {
+      this.send('v2Prompts', { prompts: [], total: 0, hasMore: false, offset, limit });
+      return;
+    }
+
+    try {
+      const details = await unifiedSessionService.getSessionDetails(sessionId);
+      if (!details) {
+        this.send('v2Prompts', { prompts: [], total: 0, hasMore: false, offset, limit });
+        return;
+      }
+
+      // Filter to user messages only and reverse to get most recent first
+      const userMessages = details.messages
+        .filter(m => m.role === 'user')
+        .reverse();
+
+      const total = userMessages.length;
+
+      // Apply pagination
+      const paginatedMessages = userMessages.slice(offset, offset + limit);
+      const prompts = paginatedMessages.map(m => this.convertMessageToPrompt(m, sessionId));
+
+      this.send('v2Prompts', {
+        prompts,
+        total,
+        hasMore: offset + limit < total,
+        offset,
+        limit,
+      });
+    } catch (error) {
+      console.error('[SessionHandler] Failed to get Claude prompts:', error);
+      this.send('v2Prompts', { prompts: [], total: 0, hasMore: false, offset, limit });
     }
   }
 

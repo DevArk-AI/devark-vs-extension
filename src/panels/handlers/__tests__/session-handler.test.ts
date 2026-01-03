@@ -187,24 +187,40 @@ describe('SessionHandler', () => {
 
   describe('v2GetSessionList - empty session filtering', () => {
     it('should filter out sessions with 0 prompts from top-level sessions', async () => {
-      const mockSessions = [
-        { id: 'sess-1', promptCount: 5, platform: 'claude_code' },
-        { id: 'sess-2', promptCount: 0, platform: 'claude_code' },
-        { id: 'sess-3', promptCount: 3, platform: 'cursor' },
-        { id: 'sess-4', promptCount: 0, platform: 'cursor' },
+      // Sessions are now derived from projects, so we test with projects containing sessions
+      const mockProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            { id: 'sess-1', promptCount: 5, platform: 'claude_code' },
+            { id: 'sess-2', promptCount: 0, platform: 'claude_code' },
+            { id: 'sess-3', promptCount: 3, platform: 'cursor' },
+            { id: 'sess-4', promptCount: 0, platform: 'cursor' },
+          ],
+        },
       ];
 
-      sharedContext.sessionManagerService!.getSessions = vi.fn().mockReturnValue(mockSessions);
-      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue([]);
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjects);
 
       await handler.handleMessage('v2GetSessionList', {});
 
+      // Sessions are flattened from filtered projects
       expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SessionList', {
         sessions: [
           { id: 'sess-1', promptCount: 5, platform: 'claude_code' },
           { id: 'sess-3', promptCount: 3, platform: 'cursor' },
         ],
-        projects: [],
+        projects: [
+          {
+            id: 'proj-1',
+            name: 'Project One',
+            sessions: [
+              { id: 'sess-1', promptCount: 5, platform: 'claude_code' },
+              { id: 'sess-3', promptCount: 3, platform: 'cursor' },
+            ],
+          },
+        ],
       });
     });
 
@@ -233,8 +249,12 @@ describe('SessionHandler', () => {
 
       await handler.handleMessage('v2GetSessionList', {});
 
+      // Sessions are now derived from projects (flattened)
       expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SessionList', {
-        sessions: [],
+        sessions: [
+          { id: 'sess-1', promptCount: 5, platform: 'claude_code' },
+          { id: 'sess-4', promptCount: 2, platform: 'cursor' },
+        ],
         projects: [
           {
             id: 'proj-1',
