@@ -680,6 +680,9 @@ export class UnifiedSessionService {
     // Use actual edited file paths, fall back to languages for display
     const fileContext: string[] = claude.metadata?.editedFiles || claude.metadata?.languages || [];
 
+    // Count actual user prompts (not tool results or assistant messages)
+    const promptCount = this.countActualUserPrompts(claude.messages || []);
+
     return {
       id: `claude-${claude.id}`,
       source: 'claude_code',
@@ -688,12 +691,38 @@ export class UnifiedSessionService {
       startTime,
       endTime,
       duration: durationMinutes,
-      promptCount: claude.messages?.length || 0,
+      promptCount,
       fileContext,
       status: 'historical',
       highlights: claude.highlights,  // Pass through conversation highlights
       rawData: claude
     };
+  }
+
+  /**
+   * Count actual user prompts in messages array (excludes tool results)
+   */
+  private countActualUserPrompts(messages: Array<{ role: string; content: string }>): number {
+    return messages.filter(m => m.role === 'user' && this.isActualUserPrompt(m.content)).length;
+  }
+
+  /**
+   * Check if message content is an actual user prompt (not tool result)
+   */
+  private isActualUserPrompt(content: string): boolean {
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+    // Skip tool results (these are machine-generated, not user prompts)
+    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
+      return false;
+    }
+    // Skip if content is only tool markers
+    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
+    if (toolMarkerPattern.test(content)) {
+      return false;
+    }
+    return true;
   }
 
   /**

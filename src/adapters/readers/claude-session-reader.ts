@@ -416,20 +416,29 @@ export class ClaudeSessionReader implements ISessionReader {
         return null;
       }
 
-      // Count total lines (messages) by reading full file as text
-      // This is faster than parsing JSON for each line
+      // Count actual user prompts (not tool results or assistant messages)
       const fullContent = await this.fileSystem.readFile(filePath);
       const allLines = fullContent.trim().split('\n').filter(l => l.trim());
-      const messageCount = allLines.length;
 
-      // Get last timestamp for duration calculation
+      let promptCount = 0;
       let lastTimestamp = firstTimestamp;
-      for (let i = allLines.length - 1; i >= 0; i--) {
+
+      // Parse all lines to count actual user prompts and get last timestamp
+      for (let i = 0; i < allLines.length; i++) {
         try {
           const data = JSON.parse(allLines[i]) as ClaudeLogEntry;
+
+          // Track last timestamp
           if (data.timestamp) {
             lastTimestamp = new Date(data.timestamp);
-            break;
+          }
+
+          // Only count actual user prompts (not tool results)
+          if (data.message?.role === 'user') {
+            const content = this.filterImageContent(data.message.content);
+            if (this.isActualUserPrompt(content)) {
+              promptCount++;
+            }
           }
         } catch {
           continue;
@@ -451,7 +460,7 @@ export class ClaudeSessionReader implements ISessionReader {
         duration: durationSeconds,
         projectPath: cwd,
         workspaceName,
-        promptCount: messageCount,
+        promptCount,
       };
     } catch {
       return null;
@@ -696,6 +705,27 @@ export class ClaudeSessionReader implements ISessionReader {
       sourceFile,
       highlights,
     };
+  }
+
+  /**
+   * Check if message content is an actual user prompt (not tool result)
+   * Tool results contain [Tool result] or [Tool: ...] markers
+   */
+  private isActualUserPrompt(content: string): boolean {
+    // Skip empty content
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+    // Skip tool results (these are machine-generated, not user prompts)
+    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
+      return false;
+    }
+    // Skip if content is only tool markers
+    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
+    if (toolMarkerPattern.test(content)) {
+      return false;
+    }
+    return true;
   }
 
   /**
