@@ -12,7 +12,8 @@
  */
 
 import * as vscode from 'vscode';
-import type { SettingKey, SettingValue } from './settings-types';
+import type { SettingKey, SettingValue, MappedSettingKey } from './settings-types';
+import { SETTING_KEY_TO_CONFIG_KEY } from './settings-types';
 
 /**
  * Configuration scope for settings updates
@@ -277,6 +278,7 @@ export class UnifiedSettingsService implements IUnifiedSettingsService {
       'llm.featureModels.promptImprovement',
       'onboarding.completed',
       'autoAnalyze.enabled',
+      'responseAnalysis.enabled',
       'detection.useHooks',
     ];
 
@@ -338,6 +340,7 @@ export class UnifiedSettingsService implements IUnifiedSettingsService {
       const allSettings: SettingKey[] = [
         'onboarding.completed',
         'autoAnalyze.enabled',
+        'responseAnalysis.enabled',
         'detection.useHooks',
         'llm.providers',
         'llm.activeProvider',
@@ -396,16 +399,15 @@ export class UnifiedSettingsService implements IUnifiedSettingsService {
   }
 
   /**
-   * Map setting key to VSCode configuration key
+   * Map setting key to VSCode configuration key (type-safe)
    * E.g., 'onboarding.completed' -> 'onboardingCompleted'
    */
-  private mapSettingKeyToConfigKey(key: string): string {
-    // For dotted keys, VSCode uses camelCase for the first part after the dot
-    if (key === 'onboarding.completed') return 'onboardingCompleted';
-    if (key === 'autoAnalyze.enabled') return 'autoAnalyze';
-    if (key === 'detection.useHooks') return 'useHookBasedDetection';
-
-    // For llm.* settings, keep the dot notation
+  private mapSettingKeyToConfigKey(key: SettingKey): string {
+    // Check if this key has a mapping
+    if (key in SETTING_KEY_TO_CONFIG_KEY) {
+      return SETTING_KEY_TO_CONFIG_KEY[key as MappedSettingKey];
+    }
+    // LLM settings and others pass through as-is
     return key;
   }
 }

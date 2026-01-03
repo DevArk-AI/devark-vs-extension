@@ -64,6 +64,21 @@ export const SettingValueType = {
 } as const
 
 /**
+ * Maps internal setting keys to VS Code configuration keys.
+ * Only settings that need transformation are included.
+ * LLM settings pass through as-is (handled by section prefix).
+ */
+export const SETTING_KEY_TO_CONFIG_KEY = {
+  'onboarding.completed': 'onboardingCompleted',
+  'autoAnalyze.enabled': 'autoAnalyze',
+  'responseAnalysis.enabled': 'responseAnalysis',
+  'detection.useHooks': 'useHookBasedDetection',
+} as const satisfies Partial<Record<SettingKey, string>>;
+
+/** Type for keys that have config key mappings */
+export type MappedSettingKey = keyof typeof SETTING_KEY_TO_CONFIG_KEY;
+
+/**
  * Discriminated union for compile-time type safety
  * When you call get<'llm.activeProvider'>(), TypeScript knows the return type is string
  */
