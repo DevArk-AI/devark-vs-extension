@@ -8,8 +8,8 @@
  * - Data statistics
  */
 
-import { useState } from 'react';
-import { X, ExternalLink, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ExternalLink, RefreshCw, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useAppV2 } from '../../AppV2';
 import { send } from '../../utils/vscode';
 
@@ -17,11 +17,52 @@ interface SettingsViewProps {
   onClose: () => void;
 }
 
+interface TestResult {
+  success: boolean;
+  error?: string;
+}
+
 export function SettingsView({ onClose }: SettingsViewProps) {
   const { state, dispatch } = useAppV2();
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   const activeProvider = state.providers.find((p) => p.id === state.activeProvider);
+
+  // Listen for testProvidersResult messages
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.type === 'testProvidersResult') {
+        setIsTesting(false);
+        const { results, error } = message.data;
+
+        if (error) {
+          setTestResult({ success: false, error });
+        } else if (state.activeProvider && results[state.activeProvider]) {
+          setTestResult(results[state.activeProvider]);
+        } else {
+          // Check if any provider succeeded
+          const resultValues = Object.values(results) as TestResult[];
+          const anySuccess = resultValues.some((r) => r.success);
+          setTestResult({ success: anySuccess, error: anySuccess ? undefined : 'No providers connected' });
+        }
+
+        // Clear result after 5 seconds
+        setTimeout(() => setTestResult(null), 5000);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [state.activeProvider]);
+
+  const handleTestConnection = () => {
+    setIsTesting(true);
+    setTestResult(null);
+    send('testProviders');
+  };
 
   const handleClearData = () => {
     if (confirm('Are you sure you want to clear all local data? This cannot be undone.')) {
@@ -107,9 +148,10 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             <div className="vl-flex vl-gap-sm">
               <button
                 className="vl-action-btn"
-                onClick={() => send('testProviders')}
+                onClick={handleTestConnection}
+                disabled={isTesting}
               >
-                Test Connection
+                {isTesting ? <><Loader2 size={12} className="vl-spin" /> Testing...</> : 'Test Connection'}
               </button>
               <button
                 className="vl-action-btn"
@@ -118,6 +160,17 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 Change Provider
               </button>
             </div>
+            {testResult && (
+              <div
+                style={{
+                  marginTop: 'var(--space-sm)',
+                  fontSize: '11px',
+                  color: testResult.success ? 'var(--score-good)' : 'var(--score-poor)',
+                }}
+              >
+                {testResult.success ? '✓ Connection successful' : `✗ ${testResult.error || 'Connection failed'}`}
+              </div>
+            )}
           </div>
 
           {/* Cursor CLI not detected */}

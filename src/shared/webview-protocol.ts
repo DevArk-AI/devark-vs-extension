@@ -292,6 +292,7 @@ export type ExtensionMessage =
   // -------- Providers --------
   | { type: 'providersUpdate'; data: { providers: ProviderInfo[]; active: string | null } }
   | { type: 'verifyApiKeyResult'; data: { providerId?: string; success: boolean; message?: string; error?: string; details?: unknown } }
+  | { type: 'testProvidersResult'; data: { results: Record<string, { success: boolean; error?: string; details?: unknown }>; error?: string } }
 
   // -------- Feature Models --------
   | { type: 'featureModelsUpdate'; data: { config: FeatureModelConfig | null } }

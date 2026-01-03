@@ -47,6 +47,7 @@ export class ProviderHandler extends BaseMessageHandler {
       'verifyApiKey',
       'setOllamaModel',
       'setOpenRouterModel',
+      'testProviders',
     ];
   }
 
@@ -83,6 +84,9 @@ export class ProviderHandler extends BaseMessageHandler {
         await this.handleSetOpenRouterModel(d.model);
         return true;
       }
+      case 'testProviders':
+        await this.handleTestProviders();
+        return true;
       default:
         return false;
     }
@@ -337,5 +341,21 @@ export class ProviderHandler extends BaseMessageHandler {
 
     // Refresh providers to show the updated model
     await this.handleGetProviders();
+  }
+
+  private async handleTestProviders(): Promise<void> {
+    const llmManager = ExtensionState.getLLMManager();
+    if (!llmManager) {
+      this.send('testProvidersResult', { results: {}, error: 'LLM Manager not available' });
+      return;
+    }
+
+    try {
+      const results = await llmManager.testAllProviders();
+      this.send('testProvidersResult', { results });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.send('testProvidersResult', { results: {}, error: errorMessage });
+    }
   }
 }
