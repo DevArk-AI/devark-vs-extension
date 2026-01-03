@@ -19,7 +19,8 @@ export const AnalyticsEvents = {
   // Configuration
   PROVIDER_SELECTED: 'vs-extension-provider-selected',
   MODEL_SELECTED: 'vs-extension-model-selected',
-  AUTO_ANALYZE_TOGGLED: 'vs-extension-auto-analyze-toggled',
+  AUTO_ANALYZE_PROMPT_TOGGLED: 'vs-extension-auto-analyze-prompt-toggled',
+  AUTO_ANALYZE_RESPONSE_TOGGLED: 'vs-extension-auto-analyze-response-toggled',
   HOOKS_INSTALLED: 'vs-extension-hooks-installed',
 
   // Session Sync

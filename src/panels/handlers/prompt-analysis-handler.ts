@@ -293,8 +293,8 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
   private async handleToggleAutoAnalyze(enabled: boolean): Promise<void> {
     await this.settingsService.set('autoAnalyze.enabled', enabled);
 
-    // Track auto-analyze toggle
-    ExtensionState.getAnalyticsService().track(AnalyticsEvents.AUTO_ANALYZE_TOGGLED, {
+    // Track auto-analyze prompt toggle
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.AUTO_ANALYZE_PROMPT_TOGGLED, {
       enabled,
     });
 
@@ -382,6 +382,12 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
    */
   private async handleToggleResponseAnalysis(enabled: boolean): Promise<void> {
     await this.settingsService.set('responseAnalysis.enabled', enabled);
+
+    // Track auto-analyze response toggle
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.AUTO_ANALYZE_RESPONSE_TOGGLED, {
+      enabled,
+    });
+
     this.send('responseAnalysisStatus', { enabled });
     vscode.window.showInformationMessage(
       enabled ? 'Response analysis enabled.' : 'Response analysis disabled.'
