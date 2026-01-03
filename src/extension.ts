@@ -14,6 +14,7 @@ import { createStatusBarManager } from './status-bar/StatusBarManager';
 import { createExtensionServices } from './di/container';
 import { UnifiedSettingsService } from './services/UnifiedSettingsService';
 import { WorkspaceContextService } from './services/WorkspaceContextService';
+import { AnalyticsEvents } from './services/analytics-events';
 
 // Import provider modules to trigger registration
 import './llm/providers/ollama-provider';
@@ -51,6 +52,16 @@ export async function activate(context: vscode.ExtensionContext) {
   // Must be created BEFORE LLMManager so SecureConfigStore is available
   const services = createExtensionServices(context);
   ExtensionState.setServices(services);
+
+  // Track extension activation
+  const isFirstActivation = !context.globalState.get<boolean>('devark.hasActivatedBefore');
+  services.analyticsService.track(AnalyticsEvents.ACTIVATED, {
+    first_time: isFirstActivation,
+    version: context.extension?.packageJSON?.version || 'unknown',
+  });
+  if (isFirstActivation) {
+    context.globalState.update('devark.hasActivatedBefore', true);
+  }
 
   // Configure secure storage for API keys on the global registry
   configureSecureStorage(services.secureConfigStore);

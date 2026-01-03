@@ -194,6 +194,13 @@ export class ExtensionState {
   }
 
   /**
+   * Get the Analytics service for Mixpanel tracking
+   */
+  static getAnalyticsService() {
+    return this.getServices().analyticsService;
+  }
+
+  /**
    * Reset all state (useful for testing and deactivation)
    */
   static reset(): void {

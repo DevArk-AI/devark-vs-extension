@@ -16,6 +16,7 @@ import { BaseMessageHandler, type MessageSender, type HandlerContext } from './b
 import { SharedContext } from './shared-context';
 import { ExtensionState, isCursorIDE } from '../../extension-state';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class HooksHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -186,6 +187,11 @@ export class HooksHandler extends BaseMessageHandler {
           });
           if (result.success) {
             results.push('Claude Code');
+            // Track hook installation
+            ExtensionState.getAnalyticsService().track(AnalyticsEvents.HOOKS_INSTALLED, {
+              tool: 'claude_code',
+              scope: 'global',
+            });
           } else {
             errors.push(`Claude Code: ${result.errors.map(e => e.error).join(', ')}`);
           }
@@ -197,6 +203,11 @@ export class HooksHandler extends BaseMessageHandler {
           });
           if (result.success) {
             results.push('Cursor');
+            // Track hook installation
+            ExtensionState.getAnalyticsService().track(AnalyticsEvents.HOOKS_INSTALLED, {
+              tool: 'cursor',
+              scope: 'global',
+            });
           } else {
             errors.push(`Cursor: ${result.errors.map(e => e.error).join(', ')}`);
           }
@@ -259,6 +270,11 @@ export class HooksHandler extends BaseMessageHandler {
       });
 
       if (result.success) {
+        // Track hook installation
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.HOOKS_INSTALLED, {
+          tool: 'cursor',
+          scope,
+        });
         if (this.sharedContext.promptDetectionService) {
           await this.sharedContext.promptDetectionService.start();
         }

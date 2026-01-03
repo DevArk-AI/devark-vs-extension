@@ -17,6 +17,7 @@ import { toSanitizedSession } from '../../core/session';
 import type { SessionIndex, SessionData } from '../../types';
 import type { UnifiedSession } from '../../services/UnifiedSessionService';
 import type { SyncProgressData } from '../../shared/webview-protocol';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class CloudAuthHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -146,6 +147,9 @@ export class CloudAuthHandler extends BaseMessageHandler {
       if (success) {
         console.log('[CloudAuthHandler] SSE auth succeeded, calling handleGetCloudStatus');
         vscode.window.showInformationMessage('Login successful!');
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.CLOUD_CONNECTED, {
+          provider: 'github',
+        });
         await this.handleGetCloudStatus();
         console.log('[CloudAuthHandler] handleGetCloudStatus completed');
       } else {
@@ -174,6 +178,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
     try {
       const authService = ExtensionState.getAuthService();
       await authService.logout();
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.CLOUD_DISCONNECTED);
       this.send('cloudStatus', { isConnected: false });
     } catch (error) {
       console.error('[CloudAuthHandler] Logout failed:', error);
@@ -182,6 +187,9 @@ export class CloudAuthHandler extends BaseMessageHandler {
 
   private async handleSyncNow(): Promise<void> {
     try {
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SYNC_STARTED, {
+        tool: 'mixed',
+      });
       const syncService = ExtensionState.getSyncService();
       const result = await syncService.sync();
 
@@ -193,6 +201,11 @@ export class CloudAuthHandler extends BaseMessageHandler {
       vscode.window.showInformationMessage(
         `Synced ${result.sessionsUploaded} sessions successfully!`
       );
+
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SESSIONS_SYNCED, {
+        session_count: result.sessionsUploaded,
+        tool: 'mixed',
+      });
 
       // Invalidate caches before refreshing status so we get fresh data
       this.invalidateSyncStatusCache();
@@ -341,6 +354,10 @@ export class CloudAuthHandler extends BaseMessageHandler {
       } | undefined;
 
       console.log('[CloudAuthHandler] Sync with filters:', options);
+
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SYNC_STARTED, {
+        tool: 'mixed',
+      });
 
       // Phase 1: Preparing
       this.sendProgress({
@@ -543,6 +560,11 @@ export class CloudAuthHandler extends BaseMessageHandler {
       this.send('syncComplete', {
         success: true,
         sessionsUploaded,
+      });
+
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SESSIONS_SYNCED, {
+        session_count: sessionsUploaded,
+        tool: 'mixed',
       });
 
       vscode.window.showInformationMessage(

@@ -3,6 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
 
+// Load .env file if it exists (for local development)
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split('=');
+    if (key && valueParts.length > 0) {
+      const value = valueParts.join('=').trim();
+      if (!process.env[key.trim()]) {
+        process.env[key.trim()] = value;
+      }
+    }
+  });
+}
+
 /**
  * Copy sql.js WASM file to dist folder
  * Required for sql.js to work in VS Code extension
@@ -174,6 +189,11 @@ const extensionConfig = {
   minify: production,
   logLevel: 'info',
   plugins: [esbuildProblemMatcherPlugin],
+  // Inject environment variables at build time
+  define: {
+    'process.env.MIXPANEL_TOKEN': JSON.stringify(process.env.MIXPANEL_TOKEN || ''),
+    'process.env.EXTENSION_VERSION': JSON.stringify(require('./package.json').version),
+  },
   tsconfigRaw: {
     compilerOptions: {
       experimentalDecorators: true,

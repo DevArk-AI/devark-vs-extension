@@ -14,6 +14,7 @@ import type { ISessionReader } from '../ports/readers/session-reader.interface';
 import type { IHookInstaller } from '../ports/hooks/hook-installer.interface';
 import type { CursorSessionReader } from '../cursor-integration/session-reader';
 import type { SecureConfigStore } from '../llm/config/secure-config-store';
+import type { IAnalyticsService } from '../services/analytics-service';
 
 /**
  * Extension services container interface.
@@ -49,4 +50,7 @@ export interface ExtensionServices {
 
   /** Secure storage for API keys */
   secureConfigStore: SecureConfigStore;
+
+  /** Analytics service for Mixpanel tracking */
+  analyticsService: IAnalyticsService;
 }

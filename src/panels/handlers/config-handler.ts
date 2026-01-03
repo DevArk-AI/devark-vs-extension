@@ -14,6 +14,7 @@ import { ExtensionState } from '../../extension-state';
 import type { FeatureType } from '../../llm/types';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class ConfigHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -102,6 +103,9 @@ export class ConfigHandler extends BaseMessageHandler {
 
   private async handleCompleteOnboarding(data: WebviewMessageData<'completeOnboarding'>): Promise<void> {
     await this.settingsService.set('onboarding.completed', true);
+
+    // Track onboarding completion
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.ONBOARDING_COMPLETED);
 
     if (data?.provider) {
       await this.settingsService.set('llm.activeProvider', data.provider);

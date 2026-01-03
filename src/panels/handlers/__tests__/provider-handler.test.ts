@@ -32,6 +32,10 @@ vi.mock('../../../extension-state', async () => {
         dispose: vi.fn(),
       }),
       getSecureConfigStore: vi.fn().mockImplementation(() => mockHolder),
+      getAnalyticsService: vi.fn().mockReturnValue({
+        track: vi.fn(),
+        isEnabled: vi.fn().mockReturnValue(false),
+      }),
       reset: vi.fn(),
     },
   };

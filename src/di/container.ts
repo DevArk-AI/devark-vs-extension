@@ -27,6 +27,7 @@ import { AuthService } from '../services/auth-service';
 import { SyncService } from '../services/sync-service';
 import { SymlinkManager } from '../bin/symlink-manager';
 import { SecureConfigStore } from '../llm/config/secure-config-store';
+import { AnalyticsService } from '../services/analytics-service';
 
 /**
  * Get the path to the sync script based on the extension's installation path.
@@ -147,6 +148,9 @@ export function createExtensionServices(
     cursorResponseHookPath
   );
 
+  // Analytics service
+  const analyticsService = new AnalyticsService();
+
   return {
     authService,
     syncService,
@@ -158,5 +162,6 @@ export function createExtensionServices(
     claudeHookInstaller,
     cursorHookInstaller,
     secureConfigStore,
+    analyticsService,
   };
 }

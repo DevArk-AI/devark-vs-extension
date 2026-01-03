@@ -21,6 +21,10 @@ vi.mock('../../../extension-state', () => ({
       uninstall: vi.fn().mockResolvedValue({ success: true, errors: [] }),
       getStatus: vi.fn().mockResolvedValue({ installed: true, hooks: [] }),
     }),
+    getAnalyticsService: vi.fn().mockReturnValue({
+      track: vi.fn(),
+      isEnabled: vi.fn().mockReturnValue(false),
+    }),
   },
   isCursorIDE: vi.fn().mockReturnValue(true),
 }));

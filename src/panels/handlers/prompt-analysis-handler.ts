@@ -18,6 +18,7 @@ import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
 import type { SessionSource } from '../../services/UnifiedSessionService';
 import { gatherPromptContext } from '../../services/context-utils';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class PromptAnalysisHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -117,6 +118,12 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       const scorePromise = scorer.scorePromptV2(prompt, undefined, context).then((result) => {
         console.log(`[PromptAnalysisHandler] Score ready: ${result.overall / 10} - streaming to UI`);
 
+        // Track prompt scoring
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.PROMPT_SCORED, {
+          score: result.overall / 10,
+          provider: llmManager.getActiveProviderInfo()?.type || 'unknown',
+        });
+
         this.send('scoreReceived', {
           score: result.overall / 10,
           categoryScores: {
@@ -134,6 +141,12 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       // 2. FIRE: Enhance prompt (stream result when ready, then score enhanced)
       const enhancePromise = enhancer.enhancePrompt(prompt, 'medium', undefined, context).then(async (result) => {
         console.log(`[PromptAnalysisHandler] Enhancement ready - streaming to UI`);
+
+        // Track prompt enhancement
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.PROMPT_ENHANCED, {
+          level: 'medium',
+          provider: llmManager.getActiveProviderInfo()?.type || 'unknown',
+        });
 
         this.send('enhancedPromptReady', {
           promptId,
@@ -279,6 +292,11 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
    */
   private async handleToggleAutoAnalyze(enabled: boolean): Promise<void> {
     await this.settingsService.set('autoAnalyze.enabled', enabled);
+
+    // Track auto-analyze toggle
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.AUTO_ANALYZE_TOGGLED, {
+      enabled,
+    });
 
     const claudeInstaller = ExtensionState.getClaudeHookInstaller();
     const cursorInstaller = ExtensionState.getCursorHookInstaller();

@@ -17,6 +17,8 @@ vi.mock('../../../extension-state', () => ({
         waitForCompletion: vi.fn().mockResolvedValue(true),
       }),
       logout: vi.fn().mockResolvedValue(undefined),
+      getToken: vi.fn().mockResolvedValue('test-token'),
+      verifyToken: vi.fn().mockResolvedValue(true),
     }),
     getSyncService: vi.fn().mockReturnValue({
       sync: vi.fn().mockResolvedValue({ success: true, sessionsUploaded: 5, errors: [] }),
@@ -24,6 +26,13 @@ vi.mock('../../../extension-state', () => ({
         syncedSessions: 10,
         lastSynced: new Date('2024-01-01'),
       }),
+    }),
+    getApiClient: vi.fn().mockReturnValue({
+      uploadSessions: vi.fn().mockResolvedValue({ success: true, sessionsProcessed: 2 }),
+    }),
+    getAnalyticsService: vi.fn().mockReturnValue({
+      track: vi.fn(),
+      isEnabled: vi.fn().mockReturnValue(false),
     }),
   },
 }));

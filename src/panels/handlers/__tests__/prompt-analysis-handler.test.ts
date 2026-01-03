@@ -32,6 +32,10 @@ vi.mock('../../../extension-state', () => ({
       resetAll: vi.fn().mockResolvedValue(undefined),
       dispose: vi.fn(),
     }),
+    getAnalyticsService: vi.fn().mockReturnValue({
+      track: vi.fn(),
+      isEnabled: vi.fn().mockReturnValue(false),
+    }),
   },
   isCursorIDE: vi.fn().mockReturnValue(false),
 }));

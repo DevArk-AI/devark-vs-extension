@@ -6,6 +6,16 @@ import type * as vscode from 'vscode';
 
 const mockUri = { fsPath: '/test/path' } as vscode.Uri;
 
+// Mock ExtensionState
+vi.mock('../../../extension-state', () => ({
+  ExtensionState: {
+    getAnalyticsService: vi.fn().mockReturnValue({
+      track: vi.fn(),
+      isEnabled: vi.fn().mockReturnValue(false),
+    }),
+  },
+}));
+
 describe('SummaryHandler', () => {
   let handler: SummaryHandler;
   let mockSender: MessageSender;

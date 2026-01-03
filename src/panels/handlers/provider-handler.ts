@@ -17,6 +17,7 @@ import { SummaryService } from '../../services/SummaryService';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
 import type { ProvidersConfigMap } from '../../services/settings-types';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class ProviderHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -155,6 +156,9 @@ export class ProviderHandler extends BaseMessageHandler {
     const llmManager = ExtensionState.getLLMManager();
     if (!llmManager) return;
 
+    // Get previous provider BEFORE making changes
+    const previousProvider = this.settingsService.getWithDefault('llm.activeProvider', 'none');
+
     try {
       // Get current providers configuration
       const currentProviders = this.settingsService.getWithDefault('llm.providers', {} as ProvidersConfigMap);
@@ -202,6 +206,12 @@ export class ProviderHandler extends BaseMessageHandler {
       }
 
       await this.handleGetProviders();
+
+      // Track provider selection
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.PROVIDER_SELECTED, {
+        provider: providerId,
+        previous_provider: previousProvider,
+      });
 
       vscode.window.showInformationMessage(`Switched to ${providerId} provider`);
     } catch (error) {
@@ -309,6 +319,12 @@ export class ProviderHandler extends BaseMessageHandler {
     // Update the entire providers object
     await this.settingsService.set('llm.providers', currentProviders);
 
+    // Track model selection
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.MODEL_SELECTED, {
+      provider: 'ollama',
+      model,
+    });
+
     // Refresh providers to show the updated model
     await this.handleGetProviders();
   }
@@ -326,6 +342,12 @@ export class ProviderHandler extends BaseMessageHandler {
 
     // Update the entire providers object
     await this.settingsService.set('llm.providers', currentProviders);
+
+    // Track model selection
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.MODEL_SELECTED, {
+      provider: 'openrouter',
+      model,
+    });
 
     // Reinitialize LLM Manager to pick up the new model config
     const llmManager = ExtensionState.getLLMManager();
@@ -352,6 +374,15 @@ export class ProviderHandler extends BaseMessageHandler {
 
     try {
       const results = await llmManager.testAllProviders();
+
+      // Track connection tests for each provider
+      for (const [providerId, result] of Object.entries(results)) {
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.LLM_CONNECTION_TESTED, {
+          provider: providerId,
+          success: result.success,
+        });
+      }
+
       this.send('testProvidersResult', { results });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
