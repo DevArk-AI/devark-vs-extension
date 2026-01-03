@@ -183,10 +183,10 @@ const extensionConfig = {
 };
 
 // Standalone sync script for hooks (CLI-free)
-const vibeSyncConfig = {
-  entryPoints: ['./src/bin/vibe-sync.ts'],
+const devarkSyncConfig = {
+  entryPoints: ['./src/bin/devark-sync.ts'],
   bundle: true,
-  outfile: './dist/bin/vibe-sync.js',
+  outfile: './dist/bin/devark-sync.js',
   external: ['vscode'],
   format: 'cjs',
   platform: 'node',
@@ -242,7 +242,7 @@ async function main() {
       // Watch mode
       const extensionCtx = await esbuild.context(extensionConfig);
       const webviewCtx = await esbuild.context(webviewConfig);
-      const vibeSyncCtx = await esbuild.context(vibeSyncConfig);
+      const vibeSyncCtx = await esbuild.context(devarkSyncConfig);
 
       await Promise.all([
         extensionCtx.watch(),
@@ -256,7 +256,7 @@ async function main() {
       await Promise.all([
         esbuild.build(extensionConfig),
         esbuild.build(webviewConfig),
-        esbuild.build(vibeSyncConfig),
+        esbuild.build(devarkSyncConfig),
       ]);
 
       console.log('[build] Build complete');

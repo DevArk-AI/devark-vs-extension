@@ -21,7 +21,7 @@
   ],
   "main": "./dist/extension.js",
   "bin": {
-    "devark-sync": "./dist/bin/vibe-sync.js"
+    "devark-sync": "./dist/bin/devark-sync.js"
   },
   "contributes": {
     "commands": [
