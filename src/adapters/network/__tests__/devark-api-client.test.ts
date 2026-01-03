@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DevArkApiClient } from '../vibe-log-api-client';
+import { DevArkApiClient } from '../devark-api-client';
 import { MockHttpClient } from '../../../../test/mocks/mock-http-client';
 import type { SanitizedSession, SessionMetadata } from '../../../types';
 

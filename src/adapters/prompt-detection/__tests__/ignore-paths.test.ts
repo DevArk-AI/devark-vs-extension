@@ -158,7 +158,7 @@ describe('ignore-paths', () => {
       expect(shouldIgnorePath('c:\\programs\\cursor')).toBe(true);
 
       // Unix paths can be case-insensitive too
-      expect(shouldIgnorePath('/HOME/USER/VIBE-LOG-HOOKS')).toBe(true);
+      expect(shouldIgnorePath('/HOME/USER/DEVARK-HOOKS')).toBe(true);
     });
   });
 
