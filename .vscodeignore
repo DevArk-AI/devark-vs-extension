@@ -40,3 +40,4 @@ test/**
 # Misc
 .DS_Store
 *.vsix
+nul

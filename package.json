@@ -13,8 +13,38 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other",
-    "Productivity"
+    "Programming Languages",
+    "Snippets",
+    "Education",
+    "Testing",
+    "Machine Learning"
+  ],
+  "pricing": "Free",
+  "keywords": [
+    "agent",
+    "AI",
+    "autonomous",
+    "chatgpt",
+    "Claude",
+    "coding",
+    "dev",
+    "llama",
+    "mcp",
+    "openrouter",
+    "sonnet",
+    "cursor",
+    "analytics",
+    "productivity",
+    "Opus",
+    "Analytics",
+    "Prompts",
+    "Workflows",
+    "Optimization",
+    "AI-Pair-programming",
+    "vibe-coding",
+    "analysis",
+    "logging",
+    "reports"
   ],
   "activationEvents": [
     "onStartupFinished"
