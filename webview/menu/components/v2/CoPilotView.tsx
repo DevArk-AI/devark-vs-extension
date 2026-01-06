@@ -159,18 +159,17 @@ export function CoPilotView() {
             promptCount={state.sessionContext.promptCount}
           />
         )}
-      </div>
 
-      {/* Level 4: COACH Section (Sticky at bottom) */}
-      <div className="vl-copilot-coach-sticky">
-        <CoachingSection
-          coaching={state.currentCoaching}
-          goal={state.currentGoal ?? undefined}
-          isListening={state.autoAnalyzeEnabled}
-          source={state.currentAnalysis?.source}
-          onUseSuggestion={handleUseSuggestion}
-          onDismissSuggestion={handleDismissSuggestion}
-        />
+        {/* Level 4: COACH Section (flows with content) */}
+        <div className="vl-copilot-coach-section">
+          <CoachingSection
+            coaching={state.currentCoaching}
+            isListening={state.autoAnalyzeEnabled}
+            source={state.currentAnalysis?.source}
+            onUseSuggestion={handleUseSuggestion}
+            onDismissSuggestion={handleDismissSuggestion}
+          />
+        </div>
       </div>
     </div>
   );

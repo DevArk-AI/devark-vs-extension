@@ -169,23 +169,6 @@ describe('CoachingSection', () => {
   });
 });
 
-describe('GoalProgressBar', () => {
-  it('should calculate progress class correctly', () => {
-    const getProgressClass = (progress: number) => {
-      if (progress >= 75) return 'progress-high';
-      if (progress >= 50) return 'progress-medium';
-      return 'progress-low';
-    };
-
-    expect(getProgressClass(80)).toBe('progress-high');
-    expect(getProgressClass(75)).toBe('progress-high');
-    expect(getProgressClass(60)).toBe('progress-medium');
-    expect(getProgressClass(50)).toBe('progress-medium');
-    expect(getProgressClass(30)).toBe('progress-low');
-    expect(getProgressClass(0)).toBe('progress-low');
-  });
-});
-
 describe('ContextBadge', () => {
   it('should determine if context exists', () => {
     const hasContext = (goalUsed?: string, promptsUsed = 0, snippetsUsed = 0) => {

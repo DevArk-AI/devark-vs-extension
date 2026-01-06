@@ -14,13 +14,11 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, Zap, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { GoalProgressBar } from './GoalProgressBar';
 import type { CoachingSuggestion, CoachingData } from '../../state/types-v2';
 import type { SessionSource } from '@shared/webview-protocol';
 
 interface CoachingSectionProps {
   coaching: CoachingData | null;
-  goal?: string;
   isListening: boolean;
   source?: SessionSource;
   onUseSuggestion: (suggestion: CoachingSuggestion) => void;
@@ -61,7 +59,6 @@ function formatEntitiesModified(entities: string[] | undefined): string {
 
 export function CoachingSection({
   coaching,
-  goal,
   isListening,
   source,
   onUseSuggestion,
@@ -149,14 +146,6 @@ export function CoachingSection({
 
       {/* Divider */}
       <div className="vl-coaching-divider" />
-
-      {/* Goal progress (if goal set) */}
-      {goal && coaching.analysis.goalProgress && (
-        <GoalProgressBar
-          goal={goal}
-          progress={coaching.analysis.goalProgress.after}
-        />
-      )}
 
       {/* NEXT STEP - Top suggestion */}
       {topSuggestion && (

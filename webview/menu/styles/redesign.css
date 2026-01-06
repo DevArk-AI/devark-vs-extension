@@ -5637,69 +5637,6 @@
   text-decoration: underline;
 }
 
-/* Goal Progress Bar */
-.vl-goal-progress {
-  margin: var(--space-md) 0;
-}
-
-.vl-goal-progress-compact {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--vscode-foreground);
-}
-
-.vl-goal-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-  font-size: 12px;
-}
-
-.vl-goal-label {
-  font-weight: 500;
-}
-
-.vl-goal-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.vl-goal-percent,
-.vl-goal-percent-label {
-  font-weight: 600;
-  color: var(--vscode-foreground);
-}
-
-.vl-goal-bar-container {
-  height: 6px;
-  background: var(--vscode-progressBar-background);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.vl-goal-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.vl-goal-bar-fill.progress-high {
-  background: var(--score-good);
-}
-
-.vl-goal-bar-fill.progress-medium {
-  background: var(--score-medium);
-}
-
-.vl-goal-bar-fill.progress-low {
-  background: var(--vl-accent);
-}
-
 /* Context Badge */
 .vl-context-badge {
   display: inline-flex;
@@ -7293,7 +7230,14 @@
   min-height: 0;
 }
 
-/* Sticky coaching section at bottom */
+/* Coach section (flows with content, not sticky) */
+.vl-copilot-coach-section {
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--vscode-panel-border);
+  padding-top: var(--space-md);
+}
+
+/* Legacy sticky coaching section (deprecated) */
 .vl-copilot-coach-sticky {
   flex-shrink: 0;
   border-top: 1px solid var(--vscode-panel-border);
