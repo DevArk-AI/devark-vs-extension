@@ -1,135 +1,96 @@
-# DevArk - Developer Analytics
+# DevArk
 
-**Your AI coding sessions, analyzed and improved**
+**Ever wonder where your coding time actually goes?**
 
-Ever wonder where your coding time actually goes when working with AI assistants? DevArk tracks your sessions with Cursor and Claude Code, then gives you insights that help you become a more effective AI-assisted developer.
+You finish a session with Cursor or Claude Code. Two hours vanished. What happened? Did you ship something, or did you spiral into a rabbit hole?
 
-## What You Get
+DevArk watches your AI coding sessions and tells you what you didn't know about how you work. And as you write prompts, it shows you how to make them clearer for Cursor and Claude Code.
 
-**Session Tracking**
-Automatically captures your AI coding sessions. No manual logging, no friction. Just code like you normally do.
+## Co-Pilot: Better Prompts, Better Results
 
-**AI-Powered Summaries**
-Get clear breakdowns of what you accomplished, what took longer than expected, and patterns in how you work with AI tools.
+Most developers write prompts, hit enter, and hope for the best. DevArk's Co-Pilot analyzes your prompts in real-time and shows you:
 
-**Weekly Reports**
-See your week at a glance. Which projects got attention? How did your prompting improve? Where did you get stuck?
+- **What's missing** - Context the AI needs but you didn't provide
+- **How to be clearer** - Specific improvements before you hit enter
+- **What to do next** - Suggested follow-ups based on where you are
 
-**Real-Time Prompt Feedback**
-As you write prompts, get suggestions to make them clearer and more effective. Better prompts mean better AI responses.
+A clearer prompt now saves 20 minutes of back-and-forth later. The Co-Pilot catches the gaps you don't notice.
 
-**Focus Tracking**
-Know when you and your AI assistant stayed on task vs. went down rabbit holes. Sometimes those tangents are valuable. Sometimes they're not.
+## Session Insights
 
-## Supported AI Tools
+After you're done coding, DevArk shows you what happened:
+
+- **Session breakdowns** - What you accomplished, what took longer than expected, what patterns emerge
+- **Weekly snapshots** - Which projects got attention, where you got stuck, how your prompting improved over time
+- **Focus patterns** - When you stayed on task vs. went exploring
+
+## How It Works
+
+1. Install the extension
+2. Code like you normally do
+3. Watch the Co-Pilot panel as you write prompts
+4. Check session insights after you're done
+
+Want deeper analysis? Sign up at [devark.ai](https://devark.ai) to sync your sessions and unlock team insights, historical trends, and advanced reports.
+
+## Works With
 
 - Cursor
 - Claude Code
 
-## LLM Providers
+## Choose Your Setup
 
-Choose what works for you:
+DevArk processes everything locally by default. Your code stays on your machine.
 
-- **Ollama** - Run locally, completely free
-- **OpenRouter** - Access to many models, pay per use
-- **Anthropic** - Direct API access
-- **Cursor CLI** - Uses your existing Cursor subscription
-- **Claude Code CLI** - Uses your existing Claude Code setup
+| Provider | Setup | Cost |
+|----------|-------|------|
+| **Ollama** | Local, runs on your machine | Free |
+| **Cursor CLI** | Uses your existing subscription | Included |
+| **Claude Code CLI** | Uses your existing setup | Included |
+| **OpenRouter** | Bring your own key | Pay per use |
 
 ## Installation
 
-1. Open VS Code or Cursor
-2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
-3. Search for "DevArk"
-4. Click Install
+**VS Code / Cursor:**
+```
+Ctrl+Shift+X → Search "DevArk" → Install
+```
 
-Or install from the command line:
+**Command line:**
 ```
 code --install-extension devark.devark
 ```
 
 ## Getting Started
 
-1. **Install the extension**
+1. Click the DevArk icon in your activity bar
+2. The setup wizard connects you to a provider (Ollama recommended for local-only)
+3. Start coding - the Co-Pilot activates automatically
 
-2. **Open the DevArk panel**
-   Click the DevArk icon in your activity bar, or use the command palette (Ctrl+Shift+P / Cmd+Shift+P) and search "DevArk"
+## Settings
 
-3. **Choose your LLM provider**
-   The setup wizard walks you through connecting to your preferred provider. Ollama is a good choice if you want to keep everything local.
+Search "DevArk" in settings to customize:
+- Which provider to use
+- Automatic vs. on-demand analysis
+- Report frequency
 
-4. **Start coding**
-   That's it. DevArk runs quietly in the background while you work.
-
-## Configuration
-
-Open settings and search for "DevArk" to customize:
-
-- **Provider** - Which LLM to use for analysis
-- **Auto-analyze** - Analyze sessions automatically or on demand
-- **Privacy mode** - Control what gets captured
-- **Report frequency** - Daily, weekly, or both
-
-### Provider Setup
-
-**Ollama (Local/Free)**
-1. Install Ollama from ollama.ai
-2. Pull a model: `ollama pull llama3.2`
-3. Select Ollama in DevArk settings
-
-**OpenRouter**
-1. Get an API key from openrouter.ai
-2. Enter it in DevArk settings
-
-**Anthropic**
-1. Get an API key from console.anthropic.com
-2. Enter it in DevArk settings
-
-**Cursor CLI / Claude Code CLI**
-These use your existing subscriptions. Just select them in settings and DevArk handles the rest.
-
-## Privacy
-
-Your code stays yours. DevArk processes session metadata locally by default. When using cloud providers for analysis, only high-level session information is sent, not your actual code.
-
-You control:
-- What gets tracked
-- Where analysis happens
-- What data leaves your machine
-
-## Commands
-
-Open the command palette and type "DevArk" to see all available commands:
-
-- View current session
-- Analyze session
-- View summaries
-- Open weekly report
-- Change provider
-- Sync sessions
-
-## Tips for Getting More Out of DevArk
+## Tips
 
 **Check your weekly reports**
 The patterns you'll notice after a few weeks are genuinely useful. Most developers are surprised by where their time actually goes.
 
 **Pay attention to prompt feedback**
-Small improvements in how you communicate with AI tools compound quickly. A clearer prompt now saves debugging time later.
+Small improvements in how you communicate with AI compound quickly. A clearer prompt now saves debugging time later.
 
 **Review sessions that felt unproductive**
 These often reveal patterns. Maybe certain types of tasks need a different approach. Maybe you're asking for too much at once.
 
-## Feedback and Support
+## Open Source
 
-Found a bug? Have an idea? We'd love to hear from you.
+MIT licensed. Read exactly what it does: [github.com/devark/devark-vs-extension](https://github.com/devark/devark-vs-extension)
 
-- GitHub Issues: [github.com/devark/devark-vs-extension](https://github.com/devark/devark-vs-extension)
-- Email: support@devark.ai
-
-## License
-
-MIT
+Questions or ideas? Open an issue.
 
 ---
 
-Built for developers who want to get better at working with AI, not just use it.
+*Write better prompts. Understand how you work. Ship more.*
