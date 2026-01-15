@@ -511,7 +511,8 @@ export class V2MessageHandler {
 
   private async handleOpenDashboard(): Promise<void> {
     try {
-      const dashboardUrl = 'https://app.devark.ai';
+      const apiClient = ExtensionState.getApiClient();
+      const dashboardUrl = apiClient.getBaseUrl();
       await vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
     } catch (error) {
       console.error('[V2MessageHandler] Failed to open dashboard:', error);

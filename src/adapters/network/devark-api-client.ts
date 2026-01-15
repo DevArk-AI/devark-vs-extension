@@ -45,6 +45,7 @@ export class DevArkApiClient implements IApiClient {
       sessionId?: string;
     }>('/api/auth/cli/session', {
       timestamp: new Date().toISOString(),
+      source: 'ide_extension',
     });
 
     const { authUrl, token, sessionId } = response.data;
@@ -58,7 +59,12 @@ export class DevArkApiClient implements IApiClient {
       throw new Error('Invalid auth response: missing token');
     }
 
-    return { authUrl, token: resultToken };
+    // Append source param for UI display on auth page
+    const authUrlWithSource = authUrl.includes('?')
+      ? `${authUrl}&source=ide_extension`
+      : `${authUrl}?source=ide_extension`;
+
+    return { authUrl: authUrlWithSource, token: resultToken };
   }
 
   async checkAuthCompletion(token: string): Promise<AuthCompletionResult> {
@@ -136,7 +142,9 @@ export class DevArkApiClient implements IApiClient {
         totalBatches: chunks.length,
       };
 
-      const response = await this.httpClient.post<UploadResult>('/cli/sessions', payload);
+      const response = await this.httpClient.post<UploadResult>('/cli/sessions', payload, {
+        headers: { 'x-devark-source': 'ide_extension' },
+      });
       results.push(response.data);
 
       uploadedCount += chunk.length;

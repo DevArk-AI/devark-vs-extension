@@ -60,7 +60,7 @@ describe('DevArkApiClient', () => {
 
       const result = await apiClient.createAuthSession();
 
-      expect(result.authUrl).toBe('https://app.devark.ai/auth?token=abc123');
+      expect(result.authUrl).toBe('https://app.devark.ai/auth?token=abc123&source=ide_extension');
       expect(result.token).toBe('temp-session-token');
 
       // Verify request was made
