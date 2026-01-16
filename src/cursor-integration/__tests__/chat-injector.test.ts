@@ -5,8 +5,6 @@ import { ChatInjector } from '../chat-injector';
 const mockClipboardReadText = vi.fn().mockResolvedValue('');
 const mockClipboardWriteText = vi.fn().mockResolvedValue(undefined);
 const mockExecuteCommand = vi.fn().mockResolvedValue(undefined);
-const mockShowInformationMessage = vi.fn();
-const mockShowWarningMessage = vi.fn();
 const mockGetExtension = vi.fn();
 
 vi.mock('vscode', () => ({
@@ -19,13 +17,20 @@ vi.mock('vscode', () => ({
   commands: {
     executeCommand: (command: string) => mockExecuteCommand(command),
   },
-  window: {
-    showInformationMessage: (msg: string) => mockShowInformationMessage(msg),
-    showWarningMessage: (msg: string) => mockShowWarningMessage(msg),
-  },
   extensions: {
     getExtension: (id: string) => mockGetExtension(id),
   },
+}));
+
+// Mock NotificationService
+const mockNotificationInfo = vi.fn();
+const mockNotificationWarn = vi.fn();
+
+vi.mock('../../services/NotificationService', () => ({
+  getNotificationService: () => ({
+    info: mockNotificationInfo,
+    warn: mockNotificationWarn,
+  }),
 }));
 
 describe('ChatInjector', () => {
@@ -110,7 +115,7 @@ describe('ChatInjector', () => {
 
       expect(result).toBe(true);
       expect(mockClipboardWriteText).toHaveBeenCalledWith('test prompt');
-      expect(mockShowWarningMessage).toHaveBeenCalledWith(
+      expect(mockNotificationWarn).toHaveBeenCalledWith(
         'Claude Code extension not installed - prompt copied to clipboard'
       );
     });
@@ -125,7 +130,7 @@ describe('ChatInjector', () => {
 
       expect(result).toBe(true);
       expect(mockExecuteCommand).toHaveBeenCalledWith('claude-vscode.focus');
-      expect(mockShowInformationMessage).toHaveBeenCalledWith(
+      expect(mockNotificationInfo).toHaveBeenCalledWith(
         'Prompt sent to Claude Code in this window'
       );
     });
@@ -153,7 +158,7 @@ describe('ChatInjector', () => {
 
       expect(result).toBe(false);
       expect(mockClipboardWriteText).toHaveBeenCalledWith('test prompt');
-      expect(mockShowWarningMessage).toHaveBeenCalledWith(
+      expect(mockNotificationWarn).toHaveBeenCalledWith(
         'Claude Code not active in this window - prompt copied to clipboard'
       );
     });

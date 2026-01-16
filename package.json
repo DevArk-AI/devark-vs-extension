@@ -7,7 +7,7 @@
   "icon": "resources/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/devark/devark-vs-extension"
+    "url": "https://github.com/DevArk-AI/devark-vs-extension"
   },
   "engines": {
     "vscode": "^1.85.0"

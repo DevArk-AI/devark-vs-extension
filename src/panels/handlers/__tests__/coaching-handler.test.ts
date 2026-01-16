@@ -12,17 +12,22 @@ vi.mock('vscode', () => ({
       writeText: vi.fn().mockResolvedValue(undefined),
     },
   },
-  window: {
-    showInformationMessage: vi.fn(),
-    showWarningMessage: vi.fn(),
-  },
 }));
 
 // Import the mocked module to get access to the mock functions
 import * as vscodeModule from 'vscode';
 const mockClipboardWriteText = vscodeModule.env.clipboard.writeText as Mock;
-const mockShowInformationMessage = vscodeModule.window.showInformationMessage as Mock;
-const mockShowWarningMessage = vscodeModule.window.showWarningMessage as Mock;
+
+// Mock NotificationService
+const mockNotificationInfo = vi.fn();
+const mockNotificationWarn = vi.fn();
+
+vi.mock('../../../services/NotificationService', () => ({
+  getNotificationService: () => ({
+    info: mockNotificationInfo,
+    warn: mockNotificationWarn,
+  }),
+}));
 
 const mockUri = { fsPath: '/test/path' } as vscode.Uri;
 
@@ -239,7 +244,7 @@ describe('CoachingHandler', () => {
       await handler.handleMessage('useCoachingSuggestion', { suggestion });
 
       expect(mockClipboardWriteText).toHaveBeenCalledWith(suggestion.suggestedPrompt);
-      expect(mockShowWarningMessage).toHaveBeenCalled();
+      expect(mockNotificationWarn).toHaveBeenCalled();
     });
 
     it('should fallback to clipboard when coaching has no source', async () => {
@@ -248,7 +253,7 @@ describe('CoachingHandler', () => {
       await handler.handleMessage('useCoachingSuggestion', { suggestion });
 
       expect(mockClipboardWriteText).toHaveBeenCalledWith(suggestion.suggestedPrompt);
-      expect(mockShowInformationMessage).toHaveBeenCalled();
+      expect(mockNotificationInfo).toHaveBeenCalled();
     });
   });
 });
