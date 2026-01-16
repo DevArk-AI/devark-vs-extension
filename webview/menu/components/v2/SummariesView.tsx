@@ -10,10 +10,10 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { Copy, ArrowRight, Calendar, Monitor, Terminal, Target, ArrowLeft, TrendingUp, BarChart3, Sparkles, FolderKanban, AlertTriangle } from 'lucide-react';
+import { Copy, ArrowRight, Calendar, Target, ArrowLeft, TrendingUp, BarChart3, Sparkles, FolderKanban, AlertTriangle } from 'lucide-react';
 import { useAppV2, formatDuration } from '../../AppV2';
 import { send } from '../../utils/vscode';
-import type { SummaryPeriod, DailySummary, WeeklySummary, MonthlySummary, StandupSummary, SessionsBySource, BusinessOutcome, DateRange, PromptQualityMetrics, ProjectBreakdownItem, SummaryError } from '../../state/types-v2';
+import type { SummaryPeriod, DailySummary, WeeklySummary, MonthlySummary, StandupSummary, BusinessOutcome, DateRange, PromptQualityMetrics, ProjectBreakdownItem, SummaryError } from '../../state/types-v2';
 import { DateRangePicker } from './DateRangePicker';
 
 export function SummariesView() {
@@ -401,17 +401,21 @@ function TodaySummaryView({
 
   // Normal today view
   if (todaySummary) {
+    const shortDateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const statsLine = buildSummaryStatsLine({
+      timeCoding: todaySummary.timeCoding,
+      sessions: todaySummary.sessions,
+      businessOutcomes: todaySummary.businessOutcomes
+    });
+
     return (
       <>
-        <div className="vl-summary-date">{dateString}</div>
+        <div className="vl-summary-date">Today - {shortDateStr}</div>
+
+        <SummaryStatsLine stats={statsLine} />
 
         {/* Error Banner (shows rate limit, auth errors, etc.) */}
         {todaySummary.source === 'fallback' && <ErrorBanner error={todaySummary.error} />}
-
-        {/* Session Sources (Cursor vs Claude Code) */}
-        <SessionSourcesDisplay sources={todaySummary.sessionsBySource} />
-
-        <QuickStats summary={todaySummary} />
 
         <WorkedOnSection items={todaySummary.workedOn} />
 
@@ -456,36 +460,6 @@ function QuickStats({ summary }: { summary: DailySummary }) {
         <span className="vl-stat-label">Sessions</span>
         <span className="vl-stat-value">{summary.sessions}</span>
       </div>
-    </div>
-  );
-}
-
-// Session Sources Display (shows Cursor vs Claude Code breakdown)
-function SessionSourcesDisplay({ sources }: { sources?: SessionsBySource }) {
-  if (!sources || sources.total === 0) return null;
-
-  const hasBothSources = sources.cursor > 0 && sources.claudeCode > 0;
-
-  return (
-    <div className="vl-session-sources" style={{
-      display: 'flex',
-      gap: 'var(--space-md)',
-      marginBottom: 'var(--space-lg)',
-      fontSize: '11px',
-      opacity: 0.8
-    }}>
-      <span style={{ fontWeight: 500 }}>Sources:</span>
-      {sources.cursor > 0 && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Monitor size={12} /> Cursor: {sources.cursor}
-        </span>
-      )}
-      {hasBothSources && <span style={{ opacity: 0.5 }}>|</span>}
-      {sources.claudeCode > 0 && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Terminal size={12} /> Claude Code: {sources.claudeCode}
-        </span>
-      )}
     </div>
   );
 }
@@ -925,31 +899,22 @@ function EnhancedProjectBreakdownSection({ projects }: { projects?: ProjectBreak
 // Weekly Summary View
 function WeeklySummaryView({ summary }: { summary: WeeklySummary }) {
   const dateRange = `${formatShortDate(summary.startDate)} - ${formatShortDate(summary.endDate)}`;
+  const statsLine = buildSummaryStatsLine({
+    timeCoding: summary.totalTime,
+    sessions: summary.sessions
+  });
 
   return (
     <>
-      <div className="vl-summary-date">This Week ({dateRange})</div>
+      <div className="vl-summary-date">This Week - {dateRange}</div>
+
+      <SummaryStatsLine stats={statsLine} />
 
       {/* Error Banner (shows rate limit, auth errors, etc.) */}
       {summary.source === 'fallback' && <ErrorBanner error={summary.error} />}
 
-      {/* Session Sources (Cursor vs Claude Code) */}
-      <SessionSourcesDisplay sources={summary.sessionsBySource} />
-
       {/* Executive Summary - show first for weekly reports */}
       <ExecutiveSummarySection items={summary.executiveSummary} />
-
-      <div className="vl-section-title">Quick Stats</div>
-      <div className="vl-quick-stats">
-        <div className="vl-stat-item">
-          <span className="vl-stat-label">Total time coding</span>
-          <span className="vl-stat-value">{formatDuration(summary.totalTime)}</span>
-        </div>
-        <div className="vl-stat-item">
-          <span className="vl-stat-label">Sessions</span>
-          <span className="vl-stat-value">{summary.sessions}</span>
-        </div>
-      </div>
 
       {/* Activity Distribution */}
       <ActivityDistributionSection distribution={summary.activityDistribution} />
@@ -1012,38 +977,24 @@ function WeeklySummaryView({ summary }: { summary: WeeklySummary }) {
 
 // Monthly Summary View
 function MonthlySummaryView({ summary }: { summary: MonthlySummary }) {
+  const statsLine = buildSummaryStatsLine({
+    timeCoding: summary.totalTime,
+    sessions: summary.sessions,
+    activeDays: summary.activeDays,
+    totalDays: summary.totalDays
+  });
+
   return (
     <>
-      <div className="vl-summary-date">
-        {summary.month} {summary.year}
-      </div>
+      <div className="vl-summary-date">This Month - {summary.month} {summary.year}</div>
+
+      <SummaryStatsLine stats={statsLine} />
 
       {/* Error Banner (shows rate limit, auth errors, etc.) */}
       {summary.source === 'fallback' && <ErrorBanner error={summary.error} />}
 
-      {/* Session Sources (Cursor vs Claude Code) */}
-      <SessionSourcesDisplay sources={summary.sessionsBySource} />
-
       {/* Executive Summary - show first for monthly reports */}
       <ExecutiveSummarySection items={summary.executiveSummary} />
-
-      <div className="vl-section-title">Quick Stats</div>
-      <div className="vl-quick-stats">
-        <div className="vl-stat-item">
-          <span className="vl-stat-label">Total time coding</span>
-          <span className="vl-stat-value">{formatDuration(summary.totalTime)}</span>
-        </div>
-        <div className="vl-stat-item">
-          <span className="vl-stat-label">Sessions</span>
-          <span className="vl-stat-value">{summary.sessions}</span>
-        </div>
-        <div className="vl-stat-item">
-          <span className="vl-stat-label">Active days</span>
-          <span className="vl-stat-value">
-            {summary.activeDays} / {summary.totalDays}
-          </span>
-        </div>
-      </div>
 
       {/* Activity Distribution */}
       <ActivityDistributionSection distribution={summary.activityDistribution} />
@@ -1210,7 +1161,7 @@ ${summary.weeklyBreakdown.map((w) => `Week ${w.week}: ${formatDuration(w.time)} 
   `.trim();
 }
 
-// Shared utilities for standup summary
+// Shared utilities for summary stats
 function countOutcomes(outcomes?: BusinessOutcome[]): Record<string, number> {
   return outcomes?.reduce((acc, o) => {
     acc[o.category] = (acc[o.category] || 0) + 1;
@@ -1226,16 +1177,54 @@ function groupOutcomesByProject(outcomes?: BusinessOutcome[]): Record<string, Bu
   }, {} as Record<string, BusinessOutcome[]>) || {};
 }
 
-function buildStatsLine(summary: StandupSummary): string[] {
-  const counts = countOutcomes(summary.previousWorkday.businessOutcomes);
+// Generic stats line builder for all summary types
+interface SummaryStatsInput {
+  timeCoding: number;
+  sessions: number;
+  businessOutcomes?: BusinessOutcome[];
+  activeDays?: number;
+  totalDays?: number;
+}
+
+function buildSummaryStatsLine(input: SummaryStatsInput): string[] {
+  const { timeCoding, sessions, businessOutcomes, activeDays, totalDays } = input;
+  const counts = countOutcomes(businessOutcomes);
+
   const stats = [
-    formatDuration(summary.totalTimeCoding),
-    `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`
+    formatDuration(timeCoding),
+    `${sessions} session${sessions !== 1 ? 's' : ''}`
   ];
+
+  if (activeDays !== undefined && totalDays !== undefined) {
+    stats.push(`${activeDays}/${totalDays} days`);
+  }
+
   if (counts.feature) stats.push(`${counts.feature} feature${counts.feature > 1 ? 's' : ''}`);
   if (counts.bugfix) stats.push(`${counts.bugfix} bug fix${counts.bugfix > 1 ? 'es' : ''}`);
   if (counts.refactor) stats.push(`${counts.refactor} refactor${counts.refactor > 1 ? 's' : ''}`);
+
   return stats;
+}
+
+// Reusable stats line component
+function SummaryStatsLine({ stats }: { stats: string[] }) {
+  if (stats.length === 0) return null;
+
+  return (
+    <div className="vl-standup-overall-stats">
+      {stats.map((stat, i) => (
+        <span key={i} className="vl-standup-stat-item">{stat}</span>
+      ))}
+    </div>
+  );
+}
+
+function buildStatsLine(summary: StandupSummary): string[] {
+  return buildSummaryStatsLine({
+    timeCoding: summary.totalTimeCoding,
+    sessions: summary.totalSessions,
+    businessOutcomes: summary.previousWorkday.businessOutcomes
+  });
 }
 
 function formatStandupSummaryAsText(summary: StandupSummary): string {
@@ -1271,24 +1260,27 @@ function CustomSummaryView({
   summary: DailySummary;
   dateRange: { startDate: Date; endDate: Date } | null;
 }) {
-  const formatDateRange = () => {
+  const formatDateRangeStr = () => {
     if (!dateRange) return '';
     const start = formatShortDate(dateRange.startDate);
     const end = formatShortDate(dateRange.endDate);
     return start === end ? start : `${start} - ${end}`;
   };
 
+  const statsLine = buildSummaryStatsLine({
+    timeCoding: summary.timeCoding,
+    sessions: summary.sessions,
+    businessOutcomes: summary.businessOutcomes
+  });
+
   return (
     <>
-      <div className="vl-summary-date">Custom Period ({formatDateRange()})</div>
+      <div className="vl-summary-date">Custom - {formatDateRangeStr()}</div>
+
+      <SummaryStatsLine stats={statsLine} />
 
       {/* Error Banner (shows rate limit, auth errors, etc.) */}
       {summary.source === 'fallback' && <ErrorBanner error={summary.error} />}
-
-      {/* Session Sources (Cursor vs Claude Code) */}
-      <SessionSourcesDisplay sources={summary.sessionsBySource} />
-
-      <QuickStats summary={summary} />
 
       <WorkedOnSection items={summary.workedOn} />
 
