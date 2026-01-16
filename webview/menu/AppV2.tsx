@@ -619,7 +619,7 @@ export function AppV2() {
     postMessage('getCloudStatus');
     postMessage('getConfig');
     postMessage('getEditorInfo'); // Get editor info (Cursor vs VS Code)
-    postMessage('tabChanged', { tab: 'copilot' }); // Notify initial tab (copilot is default)
+    postMessage('tabChanged', { tab: 'summaries' }); // Notify initial tab (summaries is default)
 
     // Request V2 data (Stream A/B integration)
     postMessage('v2GetActiveSession'); // Get active session info
@@ -742,15 +742,6 @@ export function AppV2() {
         {state.currentView === 'main' && (
           <nav className="vl-tabs">
             <button
-              className={`vl-tab ${state.currentTab === 'copilot' ? 'active' : ''}`}
-              onClick={() => {
-                dispatch({ type: 'SET_TAB', payload: 'copilot' });
-                postMessage('tabChanged', { tab: 'copilot' });
-              }}
-            >
-              Co-Pilot
-            </button>
-            <button
               className={`vl-tab ${state.currentTab === 'summaries' ? 'active' : ''}`}
               onClick={() => {
                 dispatch({ type: 'SET_TAB', payload: 'summaries' });
@@ -758,6 +749,15 @@ export function AppV2() {
               }}
             >
               Reports
+            </button>
+            <button
+              className={`vl-tab ${state.currentTab === 'copilot' ? 'active' : ''}`}
+              onClick={() => {
+                dispatch({ type: 'SET_TAB', payload: 'copilot' });
+                postMessage('tabChanged', { tab: 'copilot' });
+              }}
+            >
+              Co-Pilot
             </button>
             <button
               className={`vl-tab ${state.currentTab === 'account' ? 'active' : ''}`}

@@ -1,7 +1,7 @@
 import type { AppStateV2 } from './types-v2';
 
 export const initialState: AppStateV2 = {
-  currentTab: 'copilot',
+  currentTab: 'summaries',
   currentView: 'loading',
   cloud: {
     isConnected: false,
