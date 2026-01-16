@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import type { ExtensionServices } from './types';
+import { DEFAULT_CONFIG } from '../ports/storage/config-storage.interface';
 
 // Adapters
 import { VSCodeTokenStorage } from '../adapters/storage/vscode-secret-storage';
@@ -97,7 +98,7 @@ export function createExtensionServices(
   const httpClient = new FetchHttpClient();
 
   // API client (token is set by AuthService when needed)
-  const serverUrl = process.env.DEVARK_API_URL;
+  const serverUrl = process.env.DEVARK_API_URL || DEFAULT_CONFIG.apiUrl;
   const apiClient = new DevArkApiClient(httpClient, serverUrl);
 
   // Auth service

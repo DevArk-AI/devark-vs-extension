@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DevArkApiClient } from '../devark-api-client';
 import { MockHttpClient } from '../../../../test/mocks/mock-http-client';
+import { DEFAULT_CONFIG } from '../../../ports/storage/config-storage.interface';
 import type { SanitizedSession, SessionMetadata } from '../../../types';
 
 // Helper to create a sample sanitized session
@@ -46,7 +47,7 @@ describe('DevArkApiClient', () => {
 
   beforeEach(() => {
     httpClient = new MockHttpClient();
-    apiClient = new DevArkApiClient(httpClient);
+    apiClient = new DevArkApiClient(httpClient, DEFAULT_CONFIG.apiUrl);
   });
 
   describe('createAuthSession()', () => {

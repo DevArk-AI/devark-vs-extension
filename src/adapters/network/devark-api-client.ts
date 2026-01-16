@@ -23,16 +23,15 @@ import type {
   InstructionsFetchResult,
 } from '../../types';
 
-const DEFAULT_BASE_URL = 'https://app.devark.ai';
 const CHUNK_SIZE = 100;
 
 export class DevArkApiClient implements IApiClient {
   private readonly httpClient: IHttpClient;
   private readonly baseUrl: string;
 
-  constructor(httpClient: IHttpClient, baseUrl?: string) {
+  constructor(httpClient: IHttpClient, baseUrl: string) {
     this.httpClient = httpClient;
-    this.baseUrl = baseUrl || DEFAULT_BASE_URL;
+    this.baseUrl = baseUrl;
     this.httpClient.setBaseUrl(this.baseUrl);
   }
 

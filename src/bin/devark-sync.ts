@@ -193,12 +193,16 @@ if (require.main === module) {
         const { ClaudeSessionReader } = await import(
           '../adapters/readers/claude-session-reader'
         );
+        const { DEFAULT_CONFIG } = await import(
+          '../ports/storage/config-storage.interface'
+        );
 
         // Production adapters
         const fs = new NodeFileSystem();
         const tokenStorage = new FileTokenStorage(fs);
         const httpClient = new FetchHttpClient();
-        const apiClient = new DevArkApiClient(httpClient);
+        const serverUrl = process.env.DEVARK_API_URL || DEFAULT_CONFIG.apiUrl;
+        const apiClient = new DevArkApiClient(httpClient, serverUrl);
         const syncState = new FileSyncStateStorage(fs);
 
         // Set auth token on API client if available
