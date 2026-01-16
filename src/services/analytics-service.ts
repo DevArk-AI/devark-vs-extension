@@ -6,6 +6,7 @@
  */
 
 import type { AnalyticsEvent } from './analytics-events';
+import { MIXPANEL_TOKEN } from '../config/analytics.config';
 
 /** Function to check if user is registered to cloud */
 export type AuthStatusChecker = () => Promise<boolean>;
@@ -53,7 +54,7 @@ function getDistinctId(): string {
 }
 
 export class AnalyticsService implements IAnalyticsService {
-  private readonly token: string | undefined;
+  private readonly token: string;
   private readonly distinctId: string;
   private readonly apiUrl = 'https://api.mixpanel.com/track';
   private authStatusChecker: AuthStatusChecker | null = null;
@@ -61,15 +62,10 @@ export class AnalyticsService implements IAnalyticsService {
   private authStatusCacheTime = 0;
   private readonly AUTH_CACHE_TTL = 30000; // 30 seconds
 
-  constructor(token?: string) {
-    this.token = token || process.env.MIXPANEL_TOKEN;
+  constructor() {
+    this.token = MIXPANEL_TOKEN;
     this.distinctId = getDistinctId();
-
-    if (this.token) {
-      console.log('[Analytics] Initialized with Mixpanel tracking');
-    } else {
-      console.log('[Analytics] No token configured, tracking disabled');
-    }
+    console.log(`[Analytics] Initialized (${process.env.NODE_ENV})`);
   }
 
   setAuthStatusChecker(checker: AuthStatusChecker): void {
@@ -77,7 +73,7 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   isEnabled(): boolean {
-    return !!this.token && this.token !== 'placeholder-mixpanel-token';
+    return true;
   }
 
   track(event: AnalyticsEvent, properties: Record<string, unknown> = {}): void {
@@ -91,7 +87,7 @@ export class AnalyticsService implements IAnalyticsService {
         event,
         properties: {
           distinct_id: this.distinctId,
-          token: this.token!,
+          token: this.token,
           time: Math.floor(Date.now() / 1000),
           $insert_id: generateInsertId(),
           // Standard properties

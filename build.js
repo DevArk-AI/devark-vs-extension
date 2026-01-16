@@ -191,7 +191,7 @@ const extensionConfig = {
   plugins: [esbuildProblemMatcherPlugin],
   // Inject environment variables at build time
   define: {
-    'process.env.MIXPANEL_TOKEN': JSON.stringify(process.env.MIXPANEL_TOKEN || ''),
+    'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development'),
     'process.env.EXTENSION_VERSION': JSON.stringify(require('./package.json').version),
   },
   tsconfigRaw: {
