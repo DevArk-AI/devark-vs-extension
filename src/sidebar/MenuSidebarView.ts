@@ -18,8 +18,34 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
   private messageHandler?: V2MessageHandler;
   private static statusBarManager?: StatusBarManager;
   private static extensionContext?: vscode.ExtensionContext;
+  private static _instance: MenuSidebarView | undefined;
+  private badgeCount = 0;
 
   constructor(private readonly extensionUri: vscode.Uri) {
+    MenuSidebarView._instance = this;
+  }
+
+  /**
+   * Get the singleton instance of MenuSidebarView
+   */
+  public static getInstance(): MenuSidebarView | undefined {
+    return MenuSidebarView._instance;
+  }
+
+  public setBadge(count: number, tooltip: string): void {
+    if (this._view) {
+      this._view.badge = count > 0 ? { tooltip, value: count } : undefined;
+    }
+    this.badgeCount = count;
+  }
+
+  public incrementBadge(tooltip?: string): void {
+    this.badgeCount++;
+    this.setBadge(this.badgeCount, tooltip || `${this.badgeCount} new event${this.badgeCount === 1 ? '' : 's'}`);
+  }
+
+  public clearBadge(): void {
+    this.setBadge(0, '');
   }
 
   /**
@@ -45,6 +71,14 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
     _token: vscode.CancellationToken
   ): void | Thenable<void> {
     this._view = webviewView;
+
+    // Restore badge if notifications occurred before view was available
+    if (this.badgeCount > 0) {
+      this._view.badge = {
+        tooltip: `${this.badgeCount} new event${this.badgeCount === 1 ? '' : 's'}`,
+        value: this.badgeCount
+      };
+    }
 
     // Configure webview options
     webviewView.webview.options = {
@@ -86,6 +120,13 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
     // Handle view disposal
     webviewView.onDidDispose(() => {
       this.dispose();
+    });
+
+    // Clear badge when sidebar becomes visible (VIB-74)
+    webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible) {
+        this.clearBadge();
+      }
     });
 
     // Listen for theme changes and notify webview (VIB-65)

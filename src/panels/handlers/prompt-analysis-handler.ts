@@ -19,6 +19,7 @@ import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsServ
 import type { SessionSource } from '../../services/UnifiedSessionService';
 import { gatherPromptContext } from '../../services/context-utils';
 import { AnalyticsEvents } from '../../services/analytics-events';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class PromptAnalysisHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -91,13 +92,13 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
   private async handleAnalyzePrompt(prompt: string, _regenerate: boolean = false): Promise<void> {
     const llmManager = ExtensionState.getLLMManager();
     if (!llmManager) {
-      vscode.window.showErrorMessage('No LLM provider configured');
+      getNotificationService().error('No LLM provider configured');
       return;
     }
 
     const activeProvider = llmManager.getActiveProvider();
     if (!activeProvider) {
-      vscode.window.showErrorMessage('No active LLM provider');
+      getNotificationService().error('No active LLM provider');
       return;
     }
 
@@ -189,7 +190,7 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
 
       if (!scoreResult) {
         console.error('[PromptAnalysisHandler] Scoring failed - cannot complete analysis');
-        vscode.window.showErrorMessage('Analysis failed: Scoring did not complete');
+        getNotificationService().error('Analysis failed: Scoring did not complete');
         return;
       }
 
@@ -231,7 +232,7 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       });
     } catch (error) {
       console.error('[PromptAnalysisHandler] Analysis failed:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -265,25 +266,25 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       if (chatInjector) {
         const success = await chatInjector.injectIntoCursor(prompt);
         if (success) {
-          vscode.window.showInformationMessage('Prompt injected into Cursor chat');
+          getNotificationService().info('Prompt injected into Cursor chat');
         } else {
           await vscode.env.clipboard.writeText(prompt);
-          vscode.window.showWarningMessage('Could not inject - prompt copied to clipboard');
+          getNotificationService().warn('Could not inject - prompt copied to clipboard');
         }
       } else {
         await vscode.env.clipboard.writeText(prompt);
-        vscode.window.showInformationMessage('Prompt copied to clipboard');
+        getNotificationService().info('Prompt copied to clipboard');
       }
     } else if (source === 'claude_code') {
       if (chatInjector) {
         await chatInjector.injectIntoClaudeCode(prompt);
       } else {
         await vscode.env.clipboard.writeText(prompt);
-        vscode.window.showInformationMessage('Prompt copied to clipboard');
+        getNotificationService().info('Prompt copied to clipboard');
       }
     } else {
       await vscode.env.clipboard.writeText(prompt);
-      vscode.window.showInformationMessage('Prompt copied to clipboard');
+      getNotificationService().info('Prompt copied to clipboard');
     }
   }
 
@@ -347,16 +348,16 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
           promptDetectionService.updateConfig({ enabled: true, autoAnalyze: true });
           await promptDetectionService.start();
           const status = promptDetectionService.getStatus();
-          vscode.window.showInformationMessage(`Auto-analyze enabled! ${status.activeAdapters} adapters active.`);
+          getNotificationService().info(`Auto-analyze enabled! ${status.activeAdapters} adapters active.`);
         } else {
           console.log('[PromptAnalysisHandler] Stopping prompt detection...');
           promptDetectionService.updateConfig({ enabled: false });
           promptDetectionService.stop();
-          vscode.window.showInformationMessage('Auto-analyze disabled.');
+          getNotificationService().info('Auto-analyze disabled.');
         }
       } catch (error) {
         console.error('[PromptAnalysisHandler] Failed to toggle prompt detection:', error);
-        vscode.window.showErrorMessage(
+        getNotificationService().error(
           `Failed to ${enabled ? 'enable' : 'disable'} auto-analyze: ${
             error instanceof Error ? error.message : 'Unknown error'
           }`
@@ -389,7 +390,7 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
     });
 
     this.send('responseAnalysisStatus', { enabled });
-    vscode.window.showInformationMessage(
+    getNotificationService().info(
       enabled ? 'Response analysis enabled.' : 'Response analysis disabled.'
     );
   }

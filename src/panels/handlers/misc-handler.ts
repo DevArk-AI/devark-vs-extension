@@ -19,6 +19,7 @@ import { ExtensionState, isCursorIDE, getEditorName } from '../../extension-stat
 import type { FeatureType } from '../../llm/types';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
+import { getNotificationService } from '../../services/NotificationService';
 
 // Enable for verbose logging
 const DEBUG_MISC_HANDLER = false;
@@ -261,7 +262,7 @@ export class MiscHandler extends BaseMessageHandler {
     await settingsManager.resetFeatureModels();
 
     await this.handleGetFeatureModels();
-    vscode.window.showInformationMessage('Feature models reset to defaults');
+    getNotificationService().info('Feature models reset to defaults');
   }
 
   /**
@@ -342,7 +343,7 @@ export class MiscHandler extends BaseMessageHandler {
     // Reset status bar
     this.sharedContext.statusBarManager?.resetDailyStats();
 
-    vscode.window.showInformationMessage('Local data cleared');
+    getNotificationService().info('Local data cleared');
 
     // Notify webview
     this.send('promptHistoryLoaded', {
@@ -356,7 +357,7 @@ export class MiscHandler extends BaseMessageHandler {
     if (this.sharedContext.promptHistoryStore) {
       await this.sharedContext.promptHistoryStore.clearAll();
     }
-    vscode.window.showInformationMessage('Prompt history cleared');
+    getNotificationService().info('Prompt history cleared');
 
     // Notify webview
     this.send('promptHistoryLoaded', {
@@ -372,7 +373,7 @@ export class MiscHandler extends BaseMessageHandler {
 
   private async handleShowAllPrompts(): Promise<void> {
     // TODO: Show all prompts in a webview or quick pick
-    vscode.window.showInformationMessage('View all prompts feature coming soon!');
+    getNotificationService().info('View all prompts feature coming soon!');
   }
 
   // ============ TAB/EDITOR ============
@@ -403,7 +404,7 @@ export class MiscHandler extends BaseMessageHandler {
       await vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
     } catch (error) {
       console.error('[MiscHandler] Failed to open dashboard:', error);
-      vscode.window.showErrorMessage('Failed to open dashboard');
+      getNotificationService().error('Failed to open dashboard');
     }
   }
 
@@ -462,7 +463,7 @@ export class MiscHandler extends BaseMessageHandler {
       );
 
       if (result.success) {
-        vscode.window.showInformationMessage(
+        getNotificationService().info(
           `Successfully uploaded ${result.sessionsUploaded} sessions!`
         );
       }
@@ -507,7 +508,7 @@ export class MiscHandler extends BaseMessageHandler {
           });
         }
       );
-      vscode.window.showInformationMessage('Claude hooks installed successfully!');
+      getNotificationService().info('Claude hooks installed successfully!');
       this.send('installClaudeHooksComplete', { success: true });
     } catch (error) {
       console.error('[MiscHandler] Failed to install Claude hooks:', error);

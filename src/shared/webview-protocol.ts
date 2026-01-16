@@ -393,6 +393,9 @@ export type ExtensionMessage =
   | { type: 'testResponse'; data: { received: unknown } }
   | { type: 'testCLIResponse'; data: { success: boolean; healthCheck?: { authenticated: boolean } } }
   | { type: 'uploadClaudeSessionsComplete'; data: unknown }
+
+  // -------- Notifications (VIB-74) --------
+  | { type: 'notification'; data: { level: 'info' | 'warning' | 'error'; message: string; action?: { label: string; command: string } } }
   ;
 
 // ============================================================

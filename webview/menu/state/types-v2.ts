@@ -627,7 +627,7 @@ export interface AppStateV2 {
   weekendRecap: DailySummary[] | null;
   weeklySummary: WeeklySummary | null;
   monthlySummary: MonthlySummary | null;
-  customSummary: DailySummary | null; // For custom date range
+  customSummary: WeeklySummary | null; // For custom date range (uses enhanced format)
   isLoadingSummary: boolean;
   loadingProgress: number;
   loadingMessage: string;
@@ -679,7 +679,7 @@ export type ActionV2 =
   | { type: 'SET_WEEKEND_RECAP'; payload: DailySummary[] }
   | { type: 'SET_WEEKLY_SUMMARY'; payload: WeeklySummary }
   | { type: 'SET_MONTHLY_SUMMARY'; payload: MonthlySummary }
-  | { type: 'SET_CUSTOM_SUMMARY'; payload: DailySummary }
+  | { type: 'SET_CUSTOM_SUMMARY'; payload: WeeklySummary }
   | { type: 'SET_STANDUP_SUMMARY'; payload: StandupSummary | null }
   | { type: 'START_LOADING_SUMMARY'; payload: string }
   | { type: 'UPDATE_LOADING_PROGRESS'; payload: { progress: number; message: string } }

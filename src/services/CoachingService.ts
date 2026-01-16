@@ -18,7 +18,7 @@
  * - Total: ~2.5 seconds
  */
 
-import * as vscode from 'vscode';
+import { getNotificationService } from './NotificationService';
 import type { CapturedResponse } from './types/response-types';
 import type { CapturedPrompt } from './HookBasedPromptService';
 import type {
@@ -577,7 +577,8 @@ Only return the JSON array, no other text.
   }
 
   /**
-   * Show VS Code toast notification
+   * Show in-app notification for coaching
+   * Uses the badge/toast system instead of VS Code notifications
    */
   private async showToast(): Promise<void> {
     const coaching = this.getCurrentCoaching();
@@ -586,43 +587,16 @@ Only return the JSON array, no other text.
     }
     const topSuggestion = coaching.suggestions[0];
 
-    const action = await vscode.window.showInformationMessage(
-      `${coaching.analysis.summary} | ${topSuggestion.title}`,
-      'View in CoPilot',
-      'Use Prompt',
-      'Not Now'
+    // Use in-app notification with action to view in sidebar
+    getNotificationService().info(
+      `${topSuggestion.title}`,
+      {
+        action: {
+          label: 'View',
+          command: 'devark.showMenu',
+        },
+      }
     );
-
-    switch (action) {
-      case 'View in CoPilot':
-        await vscode.commands.executeCommand('devark.showMenu');
-        break;
-
-      case 'Use Prompt':
-        await this.injectPrompt(topSuggestion.suggestedPrompt);
-        break;
-
-      case 'Not Now':
-        this.cooldownUntil = Date.now() + this.config.cooldownDuration;
-        if (DEBUG_COACHING) {
-          console.log('[CoachingService] User dismissed - cooldown until:', new Date(this.cooldownUntil));
-        }
-        break;
-    }
-  }
-
-  /**
-   * Inject a prompt into the active editor or clipboard
-   */
-  private async injectPrompt(prompt: string): Promise<void> {
-    try {
-      // Try the vibelog command first
-      await vscode.commands.executeCommand('devark.useImprovedPrompt', { prompt });
-    } catch {
-      // Fallback: copy to clipboard
-      await vscode.env.clipboard.writeText(prompt);
-      vscode.window.showInformationMessage('Prompt copied to clipboard');
-    }
   }
 
   /**

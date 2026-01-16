@@ -26,6 +26,7 @@ import { CoPilotSuggestion } from './components/v2/CoPilotSuggestion';
 import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
 import { PromptLabView } from './components/v2/PromptLabView';
 import { CloudStatusBar, type CloudStatus } from './components/v2/CloudStatusBar';
+import { NotificationToast, useNotifications } from './components/v2/NotificationToast';
 import type { CoPilotSuggestionData } from './state/types-v2';
 import { shouldDisplayCoaching } from './utils/coaching-validation';
 
@@ -91,6 +92,9 @@ export function AppV2() {
   const [howScoresWorkOpen, setHowScoresWorkOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(false);
+
+  // Notification state (VIB-74)
+  const { notifications, addNotification, dismissNotification } = useNotifications();
 
   // Get active provider info
   const activeProvider = state.providers.find((p) => p.id === state.activeProvider);
@@ -609,6 +613,19 @@ export function AppV2() {
             payload: message.data,
           });
           break;
+
+        // ========================================
+        // NOTIFICATION HANDLERS (VIB-74)
+        // ========================================
+        case 'notification':
+          if (message.data?.message) {
+            addNotification(
+              message.data.level || 'info',
+              message.data.message,
+              message.data.action
+            );
+          }
+          break;
       }
     };
 
@@ -940,6 +957,13 @@ export function AppV2() {
         <HowScoresWorkModal
           isOpen={howScoresWorkOpen}
           onClose={() => setHowScoresWorkOpen(false)}
+        />
+
+        {/* Notification Toast (VIB-74) */}
+        <NotificationToast
+          notifications={notifications}
+          onDismiss={dismissNotification}
+          onAction={(command) => postMessage('openExternal', { url: command })}
         />
       </div>
     </AppContextV2.Provider>

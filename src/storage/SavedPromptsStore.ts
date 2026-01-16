@@ -10,6 +10,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getNotificationService } from '../services/NotificationService';
 
 export interface SavedPrompt {
   id: string;
@@ -145,7 +146,7 @@ export class SavedPromptsStore {
 
     // Warn if approaching limit
     if (prompts.length >= SavedPromptsStore.WARN_THRESHOLD) {
-      vscode.window.showWarningMessage(
+      getNotificationService().warn(
         `You have ${prompts.length} saved prompts. Maximum is ${SavedPromptsStore.MAX_PROMPTS}.`
       );
     }

@@ -15,6 +15,7 @@ import { createExtensionServices } from './di/container';
 import { UnifiedSettingsService } from './services/UnifiedSettingsService';
 import { WorkspaceContextService } from './services/WorkspaceContextService';
 import { AnalyticsEvents } from './services/analytics-events';
+import { getNotificationService } from './services/NotificationService';
 
 // Import provider modules to trigger registration
 import './llm/providers/ollama-provider';
@@ -136,16 +137,11 @@ export async function activate(context: vscode.ExtensionContext) {
   } catch (error) {
     console.warn('⚠ LLM Manager initialization failed:', error);
 
-    // Show notification to user
-    vscode.window.showWarningMessage(
-      'Vibe-Log: No LLM provider configured. Copilot features will be unavailable. ' +
-      'Please configure Ollama or OpenRouter in settings.',
-      'Open Settings'
-    ).then(selection => {
-      if (selection === 'Open Settings') {
-        vscode.commands.executeCommand('workbench.action.openSettings', 'devark.llm');
-      }
-    });
+    // Show notification to user (VIB-74: badge + toast)
+    getNotificationService().warn(
+      'No LLM provider configured. Copilot features will be unavailable.',
+      { action: { label: 'Open Settings', command: 'workbench.action.openSettings?devark.llm' } }
+    );
   }
 
   // Store in context for access by panels
@@ -170,19 +166,15 @@ export async function activate(context: vscode.ExtensionContext) {
         await llmManager.reinitialize();
         const providerInfo = llmManager.getActiveProviderInfo();
         console.log(`[Extension] Reinitialized with provider: ${providerInfo?.type}`);
-        vscode.window.showInformationMessage(`LLM provider updated to: ${providerInfo?.type}`);
+        getNotificationService().info(`LLM provider updated to: ${providerInfo?.type}`);
         // Update status bar with new provider
         statusBarManager.refreshProviderStatus();
       } catch (error) {
         console.error('[Extension] Failed to reinitialize LLM manager:', error);
-        vscode.window.showWarningMessage(
-          'Failed to apply LLM configuration changes. Please check your settings.',
-          'Open Settings'
-        ).then(action => {
-          if (action === 'Open Settings') {
-            vscode.commands.executeCommand('workbench.action.openSettings', 'devark.llm');
-          }
-        });
+        getNotificationService().warn(
+          'Failed to apply LLM configuration changes. Check your settings.',
+          { action: { label: 'Open Settings', command: 'workbench.action.openSettings?devark.llm' } }
+        );
       }
     }
   });
@@ -232,11 +224,8 @@ export async function activate(context: vscode.ExtensionContext) {
       await context.workspaceState.update('devark.debugMode', debugMode);
 
       const status = debugMode ? 'ON' : 'OFF';
-      const icon = debugMode ? '🔍' : '💤';
 
-      vscode.window.showInformationMessage(
-        `${icon} Vibe-Log Debug Mode: ${status}`
-      );
+      getNotificationService().info(`Debug Mode: ${status}`);
 
       console.log(`[Extension] Debug mode ${status}`);
       console.log(`[Extension] DEVARK_DEBUG environment variable: ${process.env.DEVARK_DEBUG}`);
@@ -249,9 +238,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('devark.copilot.summarizeSession', async () => {
       try {
         if (!llmManager.getActiveProvider()) {
-          vscode.window.showErrorMessage(
-            'No LLM provider configured. Please configure Ollama or OpenRouter in settings.'
-          );
+          getNotificationService().error('No LLM provider configured. Please configure Ollama or OpenRouter in settings.');
           return;
         }
 
@@ -276,14 +263,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
           const summary = await summarizer.summarizeSession(sessionData);
 
-          vscode.window.showInformationMessage(
-            'Session Summary',
-            { modal: true, detail: summary }
-          );
+          getNotificationService().info(`Summary: ${summary.substring(0, 100)}...`);
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to generate summary: ${errorMessage}`);
+        getNotificationService().error(`Failed to generate summary: ${errorMessage}`);
       }
     })
   );
@@ -295,14 +279,10 @@ export async function activate(context: vscode.ExtensionContext) {
         const configuredProviders = llmManager.getConfiguredProviders();
 
         if (configuredProviders.length === 0) {
-          vscode.window.showWarningMessage(
+          getNotificationService().warn(
             'No LLM providers configured. Please configure at least one provider in settings.',
-            'Open Settings'
-          ).then(action => {
-            if (action === 'Open Settings') {
-              vscode.commands.executeCommand('workbench.action.openSettings', 'devark.llm');
-            }
-          });
+            { action: { label: 'Open Settings', command: 'workbench.action.openSettings?devark.llm' } }
+          );
           return;
         }
 
@@ -330,35 +310,20 @@ export async function activate(context: vscode.ExtensionContext) {
           const summaryText = ProviderE2ETester.formatSummary(summary);
           console.log('[Provider Test Results]\n' + summaryText);
 
-          // Show summary in info message
+          // Show summary notification
           const resultIcon = summary.passedProviders === summary.testedProviders ? '✓' : '⚠';
           const summaryMessage = `${resultIcon} Tested ${summary.testedProviders} provider(s): ${summary.passedProviders} passed, ${summary.failedProviders} failed`;
 
-          const choice = await vscode.window.showInformationMessage(
-            summaryMessage,
-            'View Details',
-            'View in Output'
-          );
-
-          if (choice === 'View Details') {
-            // Show detailed results in a new text document
-            const doc = await vscode.workspace.openTextDocument({
-              content: summaryText,
-              language: 'plaintext'
-            });
-            await vscode.window.showTextDocument(doc);
-          } else if (choice === 'View in Output') {
-            // Show in output channel
-            const outputChannel = vscode.window.createOutputChannel('Vibe-Log Provider Tests');
-            outputChannel.clear();
-            outputChannel.appendLine(summaryText);
-            outputChannel.show();
+          if (summary.failedProviders > 0) {
+            getNotificationService().warn(summaryMessage);
+          } else {
+            getNotificationService().info(summaryMessage);
           }
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('[Extension] Provider test failed:', error);
-        vscode.window.showErrorMessage(`Provider tests failed: ${errorMessage}`);
+        getNotificationService().error(`Provider tests failed: ${errorMessage}`);
       }
     })
   );
@@ -368,9 +333,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('devark.copilot.scorePrompt', async () => {
       try {
         if (!llmManager.getActiveProvider()) {
-          vscode.window.showErrorMessage(
-            'No LLM provider configured. Please configure Ollama or OpenRouter in settings.'
-          );
+          getNotificationService().error('No LLM provider configured. Please configure Ollama or OpenRouter in settings.');
           return;
         }
 
@@ -395,27 +358,11 @@ export async function activate(context: vscode.ExtensionContext) {
           // Use V2 scoring for full 5-dimension breakdown
           const score = await scorer.scorePromptV2(prompt);
 
-          const message = [
-            `Overall Score: ${score.overall}/100`,
-            ``,
-            `Specificity: ${score.specificity}/10`,
-            `Context: ${score.context}/10`,
-            `Intent: ${score.intent}/10`,
-            `Actionability: ${score.actionability}/10`,
-            `Constraints: ${score.constraints}/10`,
-            ``,
-            `Suggestions:`,
-            ...score.suggestions.map(s => `• ${s}`)
-          ].join('\n');
-
-          vscode.window.showInformationMessage(
-            'Prompt Score',
-            { modal: true, detail: message }
-          );
+          getNotificationService().info(`Prompt Score: ${score.overall}/100`);
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to score prompt: ${errorMessage}`);
+        getNotificationService().error(`Failed to score prompt: ${errorMessage}`);
       }
     })
   );
@@ -425,9 +372,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('devark.copilot.enhancePrompt', async () => {
       try {
         if (!llmManager.getActiveProvider()) {
-          vscode.window.showErrorMessage(
-            'No LLM provider configured. Please configure Ollama or OpenRouter in settings.'
-          );
+          getNotificationService().error('No LLM provider configured. Please configure Ollama or OpenRouter in settings.');
           return;
         }
 
@@ -466,25 +411,11 @@ export async function activate(context: vscode.ExtensionContext) {
             level as 'light' | 'medium' | 'aggressive'
           );
 
-          const message = [
-            `Original:`,
-            result.original,
-            ``,
-            `Enhanced:`,
-            result.enhanced,
-            ``,
-            `Improvements:`,
-            ...result.improvements.map(i => `• ${i}`)
-          ].join('\n');
-
-          vscode.window.showInformationMessage(
-            'Enhanced Prompt',
-            { modal: true, detail: message }
-          );
+          getNotificationService().info(`Enhanced prompt (${result.improvements.length} improvements)`);
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to enhance prompt: ${errorMessage}`);
+        getNotificationService().error(`Failed to enhance prompt: ${errorMessage}`);
       }
     })
   );
@@ -500,20 +431,18 @@ export async function activate(context: vscode.ExtensionContext) {
         }, async () => {
           const results = await llmManager.testAllProviders();
 
-          const messages = Object.entries(results).map(([provider, result]) => {
-            return result.success
-              ? `✓ ${provider}: Connected`
-              : `✗ ${provider}: ${result.error}`;
-          });
+          const succeeded = Object.values(results).filter(r => r.success).length;
+          const total = Object.keys(results).length;
 
-          vscode.window.showInformationMessage(
-            'Connection Test Results',
-            { modal: true, detail: messages.join('\n') }
-          );
+          if (succeeded === total) {
+            getNotificationService().info(`Connection test: ${succeeded}/${total} providers connected`);
+          } else {
+            getNotificationService().warn(`Connection test: ${succeeded}/${total} providers connected`);
+          }
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Connection test failed: ${errorMessage}`);
+        getNotificationService().error(`Connection test failed: ${errorMessage}`);
       }
     })
   );
@@ -524,13 +453,13 @@ export async function activate(context: vscode.ExtensionContext) {
       try {
         const provider = llmManager.getActiveProvider();
         if (!provider) {
-          vscode.window.showErrorMessage('No LLM provider is active. Please configure a provider first.');
+          getNotificationService().error('No LLM provider is active. Please configure a provider first.');
           return;
         }
 
         const providerInfo = llmManager.getActiveProviderInfo();
         if (providerInfo?.type !== 'ollama') {
-          vscode.window.showInformationMessage('Model selection is currently only supported for Ollama provider.');
+          getNotificationService().info('Model selection is currently only supported for Ollama provider.');
           return;
         }
 
@@ -544,14 +473,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const models = await provider.listModels();
 
             if (models.length === 0) {
-              vscode.window.showWarningMessage(
-                'No models found on Ollama server. Pull a model with: ollama pull <model-name>',
-                'Open Terminal'
-              ).then(action => {
-                if (action === 'Open Terminal') {
-                  vscode.commands.executeCommand('workbench.action.terminal.new');
-                }
-              });
+              getNotificationService().warn('No models found on Ollama server. Pull a model with: ollama pull <model-name>');
               return;
             }
 
@@ -581,15 +503,15 @@ export async function activate(context: vscode.ExtensionContext) {
             };
             await settingsService.set('llm.providers', updatedProviders);
 
-            vscode.window.showInformationMessage(`✓ Ollama model changed to: ${selected.label}`);
+            getNotificationService().info(`Ollama model changed to: ${selected.label}`);
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-            vscode.window.showErrorMessage(`Failed to fetch models: ${errorMsg}`);
+            getNotificationService().error(`Failed to fetch models: ${errorMsg}`);
           }
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to select model: ${errorMessage}`);
+        getNotificationService().error(`Failed to select model: ${errorMessage}`);
       }
     })
   );
@@ -623,14 +545,13 @@ export async function activate(context: vscode.ExtensionContext) {
         // Reinitialize to apply changes
         await llmManager.reinitialize();
 
-        vscode.window.showInformationMessage(`✓ Switched to ${choice.label} provider`);
+        getNotificationService().info(`Switched to ${choice.label} provider`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to switch provider: ${errorMessage}\n\nPlease configure the provider in settings.`, 'Open Settings').then(action => {
-          if (action === 'Open Settings') {
-            vscode.commands.executeCommand('workbench.action.openSettings', 'devark.llm');
-          }
-        });
+        getNotificationService().error(
+          `Failed to switch provider: ${errorMessage}`,
+          { action: { label: 'Open Settings', command: 'workbench.action.openSettings?devark.llm' } }
+        );
       }
     })
   );
@@ -671,14 +592,14 @@ export async function activate(context: vscode.ExtensionContext) {
         });
 
         if (result.success) {
-          vscode.window.showInformationMessage('Hooks installed successfully! Auto-capture and response detection are now enabled.');
+          getNotificationService().info('Hooks installed successfully! Auto-capture is now enabled.');
         } else {
           const errors = result.errors.map(e => e.error).join(', ');
-          vscode.window.showErrorMessage(`Failed to install hooks: ${errors}`);
+          getNotificationService().error(`Failed to install hooks: ${errors}`);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to install Cursor hooks: ${errorMessage}`);
+        getNotificationService().error(`Failed to install Cursor hooks: ${errorMessage}`);
       }
     })
   );

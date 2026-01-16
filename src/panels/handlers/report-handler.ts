@@ -15,6 +15,7 @@
 import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
+import { getNotificationService } from '../../services/NotificationService';
 
 interface GenerateReportData {
   type: 'daily' | 'weekly' | 'custom';
@@ -193,21 +194,21 @@ export class ReportHandler extends BaseMessageHandler {
 
   private async handleCopyReport(): Promise<void> {
     if (!this.currentReportHtml) {
-      vscode.window.showWarningMessage('No report to copy');
+      getNotificationService().warn('No report to copy');
       return;
     }
 
     try {
       await vscode.env.clipboard.writeText(this.currentReportHtml);
-      vscode.window.showInformationMessage('Report copied to clipboard');
+      getNotificationService().info('Report copied to clipboard');
     } catch (error) {
-      vscode.window.showErrorMessage('Failed to copy report');
+      getNotificationService().error('Failed to copy report');
     }
   }
 
   private async handleDownloadReport(): Promise<void> {
     if (!this.currentReportHtml) {
-      vscode.window.showWarningMessage('No report to download');
+      getNotificationService().warn('No report to download');
       return;
     }
 
@@ -224,15 +225,15 @@ export class ReportHandler extends BaseMessageHandler {
       if (uri) {
         const encoder = new TextEncoder();
         await vscode.workspace.fs.writeFile(uri, encoder.encode(this.currentReportHtml));
-        vscode.window.showInformationMessage(`Report saved to ${uri.fsPath}`);
+        getNotificationService().info(`Report saved to ${uri.fsPath}`);
       }
     } catch (error) {
-      vscode.window.showErrorMessage('Failed to save report');
+      getNotificationService().error('Failed to save report');
     }
   }
 
   private handleShareReport(): void {
-    vscode.window.showInformationMessage(
+    getNotificationService().info(
       'Share functionality requires cloud sync. Use Copy to share manually.'
     );
   }

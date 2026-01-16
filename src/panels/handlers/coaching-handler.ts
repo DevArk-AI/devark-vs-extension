@@ -13,6 +13,7 @@ import { SharedContext } from './shared-context';
 import { getCoachingService } from '../../services/CoachingService';
 import type { CoachingSuggestion } from '../../services/types/coaching-types';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class CoachingHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -78,23 +79,23 @@ export class CoachingHandler extends BaseMessageHandler {
         const success = await chatInjector.injectIntoCursor(prompt);
         if (!success) {
           await vscode.env.clipboard.writeText(prompt);
-          vscode.window.showWarningMessage('Could not inject - prompt copied to clipboard');
+          getNotificationService().warn('Could not inject - prompt copied to clipboard');
         }
       } else {
         await vscode.env.clipboard.writeText(prompt);
-        vscode.window.showInformationMessage('Prompt copied to clipboard');
+        getNotificationService().info('Prompt copied to clipboard');
       }
     } else if (source === 'claude_code') {
       if (chatInjector) {
         await chatInjector.injectIntoClaudeCode(prompt);
       } else {
         await vscode.env.clipboard.writeText(prompt);
-        vscode.window.showInformationMessage('Prompt copied to clipboard');
+        getNotificationService().info('Prompt copied to clipboard');
       }
     } else {
       // Source unknown - fallback to clipboard
       await vscode.env.clipboard.writeText(prompt);
-      vscode.window.showInformationMessage('Prompt copied to clipboard');
+      getNotificationService().info('Prompt copied to clipboard');
     }
 
     // Dismiss the suggestion

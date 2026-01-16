@@ -48,6 +48,7 @@ import { ReportHandler } from './handlers/report-handler';
 import { StatsHandler } from './handlers/stats-handler';
 import { SuggestionHandler } from './handlers/suggestion-handler';
 import { ConfigHandler } from './handlers/config-handler';
+import { getNotificationService } from '../services/NotificationService';
 import { SharedContext } from './handlers/shared-context';
 import type { BaseMessageHandler } from './handlers/base-handler';
 import type { WebviewMessageType, WebviewMessageData } from '../shared/webview-protocol';
@@ -502,7 +503,7 @@ export class V2MessageHandler {
 
   private async handleShowAllPrompts(): Promise<void> {
     // TODO: Show all prompts in a webview or quick pick
-    vscode.window.showInformationMessage('View all prompts feature coming soon!');
+    getNotificationService().info('View all prompts feature coming soon!');
   }
 
   // ========================================
@@ -516,7 +517,7 @@ export class V2MessageHandler {
       await vscode.env.openExternal(vscode.Uri.parse(dashboardUrl));
     } catch (error) {
       console.error('[V2MessageHandler] Failed to open dashboard:', error);
-      vscode.window.showErrorMessage('Failed to open dashboard');
+      getNotificationService().error('Failed to open dashboard');
     }
   }
 
@@ -660,7 +661,7 @@ export class V2MessageHandler {
       );
 
       if (result.success) {
-        vscode.window.showInformationMessage(
+        getNotificationService().info(
           `Successfully uploaded ${result.sessionsUploaded} sessions!`
         );
       }
@@ -705,7 +706,7 @@ export class V2MessageHandler {
           });
         }
       );
-      vscode.window.showInformationMessage('Claude hooks installed successfully!');
+      getNotificationService().info('Claude hooks installed successfully!');
       this.sendMessage('installClaudeHooksComplete', { success: true });
     } catch (error) {
       console.error('[V2MessageHandler] Failed to install Claude hooks:', error);

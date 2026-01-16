@@ -17,6 +17,7 @@ import { SharedContext } from './shared-context';
 import { ExtensionState, isCursorIDE } from '../../extension-state';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import { AnalyticsEvents } from '../../services/analytics-events';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class HooksHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -215,13 +216,13 @@ export class HooksHandler extends BaseMessageHandler {
       }
 
       if (results.length > 0) {
-        vscode.window.showInformationMessage(`Hooks installed for: ${results.join(', ')}`);
+        getNotificationService().info(`Hooks installed for: ${results.join(', ')}`);
       }
       if (errors.length > 0) {
-        vscode.window.showWarningMessage(`Some hooks failed: ${errors.join('; ')}`);
+        getNotificationService().warn(`Some hooks failed: ${errors.join('; ')}`);
       }
     } catch (error) {
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Hook installation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -255,9 +256,9 @@ export class HooksHandler extends BaseMessageHandler {
     this.send('uninstallHooksComplete', { success, errors: allErrors });
 
     if (success && uninstalled.length > 0) {
-      vscode.window.showInformationMessage(`Hooks uninstalled for: ${uninstalled.join(', ')}`);
+      getNotificationService().info(`Hooks uninstalled for: ${uninstalled.join(', ')}`);
     } else if (allErrors.length > 0) {
-      vscode.window.showWarningMessage(`Uninstall errors: ${allErrors.join('; ')}`);
+      getNotificationService().warn(`Uninstall errors: ${allErrors.join('; ')}`);
     }
   }
 
@@ -278,14 +279,14 @@ export class HooksHandler extends BaseMessageHandler {
         if (this.sharedContext.promptDetectionService) {
           await this.sharedContext.promptDetectionService.start();
         }
-        vscode.window.showInformationMessage('Cursor hooks installed successfully!');
+        getNotificationService().info('Cursor hooks installed successfully!');
       } else {
         const errors = result.errors.map(e => e.error).join(', ');
-        vscode.window.showErrorMessage(`Failed to install hooks: ${errors}`);
+        getNotificationService().error(`Failed to install hooks: ${errors}`);
       }
     } catch (error) {
       console.error('[HooksHandler] Failed to install Cursor hooks:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Failed to install Cursor hooks: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }

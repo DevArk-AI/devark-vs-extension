@@ -8,6 +8,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getNotificationService } from '../services/NotificationService';
 
 /**
  * Shows a quick pick selection dialog (replaces inquirer select prompts)
@@ -213,15 +214,16 @@ export function showNotification(
   type: 'info' | 'warning' | 'error' = 'info'
 ): void {
   try {
+    const notificationService = getNotificationService();
     switch (type) {
       case 'info':
-        vscode.window.showInformationMessage(message);
+        notificationService.info(message);
         break;
       case 'warning':
-        vscode.window.showWarningMessage(message);
+        notificationService.warn(message);
         break;
       case 'error':
-        vscode.window.showErrorMessage(message);
+        notificationService.error(message);
         break;
     }
   } catch (error) {

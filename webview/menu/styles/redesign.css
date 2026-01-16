@@ -3013,6 +3013,30 @@
   padding-left: var(--space-xs);
 }
 
+/* Date Picker Apply Button */
+.vl-date-apply-btn {
+  width: 100%;
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vl-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.vl-date-apply-btn:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+}
+
+.vl-date-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .vl-date-picker-controls {
   display: flex;
   align-items: center;
@@ -3084,6 +3108,7 @@
   border-radius: 0;
   padding-top: var(--space-sm);
   padding-bottom: var(--space-sm);
+  position: relative;
 }
 
 .react-datepicker__current-month {
@@ -3091,6 +3116,8 @@
   font-size: 13px;
   font-weight: 600;
   margin-bottom: var(--space-sm);
+  padding: 0 32px; /* Space for prev/next buttons */
+  text-align: center;
 }
 
 /* Screen reader only text - hide visually but keep for accessibility */
@@ -3224,23 +3251,51 @@
 
 /* Navigation buttons */
 .react-datepicker__navigation {
-  top: 12px;
-  width: 24px;
-  height: 24px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-sm);
   transition: background-color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
 }
 
 .react-datepicker__navigation:hover {
   background-color: var(--vscode-toolbar-hoverBackground);
 }
 
+/* Hide the text labels, keep the arrows */
+.react-datepicker__navigation-icon {
+  position: relative;
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+
+/* Hide the "Previous Month" / "Next Month" text */
+.react-datepicker__navigation-icon::after {
+  display: none !important;
+}
+
 .react-datepicker__navigation-icon::before {
   border-color: var(--vscode-foreground);
   border-width: 2px 2px 0 0;
-  width: 6px;
-  height: 6px;
-  top: 8px;
+  width: 8px;
+  height: 8px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.react-datepicker__navigation-icon--previous::before {
+  transform: translate(-25%, -50%) rotate(-135deg);
+}
+
+.react-datepicker__navigation-icon--next::before {
+  transform: translate(-75%, -50%) rotate(45deg);
 }
 
 .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
@@ -3248,11 +3303,11 @@
 }
 
 .react-datepicker__navigation--previous {
-  left: 8px;
+  left: 4px;
 }
 
 .react-datepicker__navigation--next {
-  right: 8px;
+  right: 4px;
 }
 
 /* Mobile responsiveness */
@@ -7934,4 +7989,127 @@
   font-size: 10px;
   opacity: 0.5;
   margin-top: var(--space-md);
+}
+
+/* ========================================
+   NOTIFICATION TOAST (VIB-74)
+   ======================================== */
+
+.vl-notification-container {
+  position: fixed;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: calc(100% - var(--space-lg) * 2);
+  width: 320px;
+  pointer-events: none;
+}
+
+.vl-notification-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-notifications-background, var(--vscode-editor-background));
+  border: 1px solid var(--vscode-notifications-border, var(--vscode-input-border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: vl-toast-slide-in 200ms ease-out;
+  pointer-events: auto;
+}
+
+@keyframes vl-toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-notification-info {
+  border-left: 3px solid var(--vl-accent);
+}
+
+.vl-notification-warning {
+  border-left: 3px solid var(--score-medium);
+}
+
+.vl-notification-error {
+  border-left: 3px solid var(--score-low);
+}
+
+.vl-notification-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vl-notification-info .vl-notification-icon {
+  color: var(--vl-accent);
+}
+
+.vl-notification-warning .vl-notification-icon {
+  color: var(--score-medium);
+}
+
+.vl-notification-error .vl-notification-icon {
+  color: var(--score-low);
+}
+
+.vl-notification-message {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.vl-notification-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--vl-accent);
+  background: transparent;
+  border: 1px solid var(--vl-accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.vl-notification-action:hover {
+  background: var(--vl-accent);
+  color: white;
+}
+
+.vl-notification-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+
+.vl-notification-close:hover {
+  opacity: 1;
+  background: var(--vl-subtle-bg);
 }

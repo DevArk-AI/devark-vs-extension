@@ -23,6 +23,7 @@ import { getSessionManager } from './index';
 import { gatherPromptContext } from './context-utils';
 import type { PromptData, MessageData } from '../cursor-integration/types';
 import type { ChatContext } from '../cursor-integration/context-manager';
+import { getNotificationService } from './NotificationService';
 
 export interface AutoAnalyzeConfig {
   enabled: boolean;
@@ -725,7 +726,7 @@ export class AutoAnalyzeService {
       message: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    vscode.window.showErrorMessage(
+    getNotificationService().error(
       `Auto-analyze initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }

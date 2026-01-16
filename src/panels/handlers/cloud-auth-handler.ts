@@ -18,6 +18,7 @@ import type { SessionIndex, SessionData } from '../../types';
 import type { UnifiedSession } from '../../services/UnifiedSessionService';
 import type { SyncProgressData } from '../../shared/webview-protocol';
 import { AnalyticsEvents } from '../../services/analytics-events';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class CloudAuthHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -137,7 +138,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
       const { authUrl, waitForCompletion } = await authService.startLogin();
 
       // Open browser for auth
-      vscode.window.showInformationMessage('Opening browser for authentication...');
+      getNotificationService().info('Opening browser for authentication...');
       vscode.env.openExternal(vscode.Uri.parse(authUrl));
 
       // Wait for SSE completion (handles timeout internally - 5 minutes)
@@ -146,17 +147,17 @@ export class CloudAuthHandler extends BaseMessageHandler {
 
       if (success) {
         console.log('[CloudAuthHandler] SSE auth succeeded, calling handleGetCloudStatus');
-        vscode.window.showInformationMessage('Login successful!');
+        getNotificationService().info('Login successful!');
         ExtensionState.getAnalyticsService().track(AnalyticsEvents.CLOUD_CONNECTED, {
           provider: 'github',
         });
         await this.handleGetCloudStatus();
         console.log('[CloudAuthHandler] handleGetCloudStatus completed');
       } else {
-        vscode.window.showErrorMessage('Login failed. Please try again.');
+        getNotificationService().error('Login failed. Please try again.');
       }
     } catch (error) {
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -198,7 +199,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
         throw new Error(errorMsg);
       }
 
-      vscode.window.showInformationMessage(
+      getNotificationService().info(
         `Synced ${result.sessionsUploaded} sessions successfully!`
       );
 
@@ -220,11 +221,11 @@ export class CloudAuthHandler extends BaseMessageHandler {
     } catch (error: unknown) {
       // Handle auth errors
       if (error instanceof Error && error.message.includes('auth')) {
-        vscode.window.showWarningMessage('Please login first');
+        getNotificationService().warn('Please login first');
         return;
       }
 
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -381,7 +382,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
           current: 0,
           total: 0,
         });
-        vscode.window.showWarningMessage('Please login first');
+        getNotificationService().warn('Please login first');
         return;
       }
 
@@ -395,7 +396,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
           current: 0,
           total: 0,
         });
-        vscode.window.showWarningMessage('Session expired. Please login again.');
+        getNotificationService().warn('Session expired. Please login again.');
         return;
       }
 
@@ -488,7 +489,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
           current: 0,
           total: totalSessions,
         });
-        vscode.window.showWarningMessage('Could not extract session data for upload.');
+        getNotificationService().warn('Could not extract session data for upload.');
         return;
       }
 
@@ -567,7 +568,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
         tool: 'mixed',
       });
 
-      vscode.window.showInformationMessage(
+      getNotificationService().info(
         `Synced ${sessionsUploaded} sessions successfully!`
       );
 
@@ -596,7 +597,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
         error: errorMessage,
       });
 
-      vscode.window.showErrorMessage(`Sync failed: ${errorMessage}`);
+      getNotificationService().error(`Sync failed: ${errorMessage}`);
     } finally {
       this.syncAbortController = null;
     }

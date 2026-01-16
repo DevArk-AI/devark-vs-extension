@@ -8,7 +8,6 @@
  * - Regenerate enhancements for variety
  */
 
-import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { ExtensionState } from '../../extension-state';
@@ -16,6 +15,7 @@ import { generateSavedPromptId, type SavedPrompt } from '../../storage/SavedProm
 import type { AnalyzedPrompt } from '../../storage/PromptHistoryStore';
 import { gatherPromptContext } from '../../services/context-utils';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class PromptLabHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -77,13 +77,13 @@ export class PromptLabHandler extends BaseMessageHandler {
   private async handleAnalyzePromptLabPrompt(prompt: string, regenerate: boolean = false): Promise<void> {
     const llmManager = ExtensionState.getLLMManager();
     if (!llmManager) {
-      vscode.window.showErrorMessage('No LLM provider configured');
+      getNotificationService().error('No LLM provider configured');
       return;
     }
 
     const activeProvider = llmManager.getActiveProvider();
     if (!activeProvider) {
-      vscode.window.showErrorMessage('No active LLM provider');
+      getNotificationService().error('No active LLM provider');
       return;
     }
 
@@ -162,13 +162,13 @@ export class PromptLabHandler extends BaseMessageHandler {
       // Guard: For initial analysis, need score; for regenerate, only need enhancement
       if (!regenerate && !scoreResult) {
         console.error('[PromptLabHandler] Scoring failed');
-        vscode.window.showErrorMessage('Prompt Lab analysis failed: Scoring did not complete');
+        getNotificationService().error('Prompt Lab analysis failed: Scoring did not complete');
         return;
       }
 
       if (!enhanceResult) {
         console.error('[PromptLabHandler] Enhancement failed');
-        vscode.window.showErrorMessage('Prompt Lab analysis failed: Enhancement did not complete');
+        getNotificationService().error('Prompt Lab analysis failed: Enhancement did not complete');
         return;
       }
 
@@ -199,7 +199,7 @@ export class PromptLabHandler extends BaseMessageHandler {
       });
     } catch (error) {
       console.error('[PromptLabHandler] Analysis failed:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Prompt Lab analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -230,10 +230,10 @@ export class PromptLabHandler extends BaseMessageHandler {
 
       await savedPromptsStore.savePrompt(prompt);
       await this.handleGetSavedPrompts();
-      vscode.window.showInformationMessage('Prompt saved to library');
+      getNotificationService().info('Prompt saved to library');
     } catch (error) {
       console.error('[PromptLabHandler] Save prompt failed:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         error instanceof Error ? error.message : 'Failed to save prompt'
       );
     }

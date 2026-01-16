@@ -8,6 +8,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getNotificationService } from '../services/NotificationService';
 
 export class ChatInjector {
   /**
@@ -118,7 +119,7 @@ export class ChatInjector {
     if (!claudeCodeExt) {
       console.warn('[ChatInjector] Claude Code extension not found');
       await vscode.env.clipboard.writeText(prompt);
-      vscode.window.showWarningMessage('Claude Code extension not installed - prompt copied to clipboard');
+      getNotificationService().warn('Claude Code extension not installed - prompt copied to clipboard');
       return true;
     }
 
@@ -152,7 +153,7 @@ export class ChatInjector {
       // Restore clipboard
       this.restoreClipboardAsync(previousClipboard);
 
-      vscode.window.showInformationMessage('Prompt sent to Claude Code in this window');
+      getNotificationService().info('Prompt sent to Claude Code in this window');
       return true;
     } catch (error) {
       console.error('[ChatInjector] Claude Code injection failed:', error);
@@ -160,7 +161,7 @@ export class ChatInjector {
       // Restore clipboard and fallback to copy-only
       this.restoreClipboardAsync(previousClipboard);
       await vscode.env.clipboard.writeText(prompt);
-      vscode.window.showWarningMessage('Claude Code not active in this window - prompt copied to clipboard');
+      getNotificationService().warn('Claude Code not active in this window - prompt copied to clipboard');
       return false;
     }
   }

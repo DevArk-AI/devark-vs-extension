@@ -65,6 +65,7 @@ export function DateRangePicker({
     // SINGLE DATE MODE: One calendar
     return (
       <div className="vl-date-range-picker">
+        <div className="vl-calendar-label">Select Date</div>
         <DatePicker
           selected={startDate}
           onChange={handleSingleDateChange}

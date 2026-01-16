@@ -9,7 +9,6 @@
  * - Configure provider-specific models
  */
 
-import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { ExtensionState } from '../../extension-state';
@@ -18,6 +17,7 @@ import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
 import type { ProvidersConfigMap } from '../../services/settings-types';
 import { AnalyticsEvents } from '../../services/analytics-events';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class ProviderHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -144,9 +144,9 @@ export class ProviderHandler extends BaseMessageHandler {
     console.log('[ProviderHandler] Test result for', providerId, ':', result);
 
     if (result?.success) {
-      vscode.window.showInformationMessage(`${providerId} is now connected!`);
+      getNotificationService().info(`${providerId} is now connected!`);
     } else {
-      vscode.window.showWarningMessage(`${providerId} detection: ${result?.error || 'Not available'}`);
+      getNotificationService().warn(`${providerId} detection: ${result?.error || 'Not available'}`);
     }
 
     await this.handleGetProviders();
@@ -213,10 +213,10 @@ export class ProviderHandler extends BaseMessageHandler {
         previous_provider: previousProvider,
       });
 
-      vscode.window.showInformationMessage(`Switched to ${providerId} provider`);
+      getNotificationService().info(`Switched to ${providerId} provider`);
     } catch (error) {
       console.error('[ProviderHandler] Failed to switch provider:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Failed to switch to ${providerId}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -269,7 +269,7 @@ export class ProviderHandler extends BaseMessageHandler {
           currentProviders.openrouter.model = model;
           await this.settingsService.set('llm.providers', currentProviders);
 
-          vscode.window.showInformationMessage('OpenRouter API key verified and saved securely!');
+          getNotificationService().info('OpenRouter API key verified and saved securely!');
 
           this.send('verifyApiKeyResult', {
             providerId,

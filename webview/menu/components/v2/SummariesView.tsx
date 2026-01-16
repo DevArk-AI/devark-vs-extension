@@ -20,10 +20,20 @@ export function SummariesView() {
   const { state, dispatch } = useAppV2();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateMode, setDateMode] = useState<'single' | 'range'>('single');
+  const [pendingStartDate, setPendingStartDate] = useState<Date | null>(null);
+  const [pendingEndDate, setPendingEndDate] = useState<Date | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // No auto-load - user must click Analyze button
   // (Removed useEffect that auto-loaded summaries)
+
+  // Initialize pending dates when dropdown opens
+  useEffect(() => {
+    if (showDatePicker) {
+      setPendingStartDate(state.customDateRange?.startDate || null);
+      setPendingEndDate(state.customDateRange?.endDate || null);
+    }
+  }, [showDatePicker, state.customDateRange]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -77,17 +87,21 @@ export function SummariesView() {
   };
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
-    if (startDate && endDate) {
+    // Update pending dates without closing dropdown
+    setPendingStartDate(startDate);
+    setPendingEndDate(endDate);
+  };
+
+  const handleApplyDateRange = () => {
+    if (pendingStartDate && pendingEndDate) {
       // Set the custom date range in state
-      dispatch({ type: 'SET_CUSTOM_DATE_RANGE', payload: { startDate, endDate } });
+      dispatch({ type: 'SET_CUSTOM_DATE_RANGE', payload: { startDate: pendingStartDate, endDate: pendingEndDate } });
 
       // Switch to custom period
       dispatch({ type: 'SET_SUMMARY_PERIOD', payload: 'custom' });
 
       // Close the dropdown
       setShowDatePicker(false);
-
-      // Don't auto-analyze - user must click Analyze button
     }
   };
 
@@ -211,11 +225,19 @@ export function SummariesView() {
           </div>
 
           <DateRangePicker
-            startDate={state.customDateRange?.startDate || null}
-            endDate={state.customDateRange?.endDate || null}
+            startDate={pendingStartDate}
+            endDate={pendingEndDate}
             onChange={handleDateRangeChange}
             isSingleDate={dateMode === 'single'}
           />
+
+          <button
+            className="vl-date-apply-btn"
+            onClick={handleApplyDateRange}
+            disabled={!pendingStartDate || !pendingEndDate}
+          >
+            Apply
+          </button>
         </div>
       )}
 
@@ -901,7 +923,8 @@ function WeeklySummaryView({ summary }: { summary: WeeklySummary }) {
   const dateRange = `${formatShortDate(summary.startDate)} - ${formatShortDate(summary.endDate)}`;
   const statsLine = buildSummaryStatsLine({
     timeCoding: summary.totalTime,
-    sessions: summary.sessions
+    sessions: summary.sessions,
+    businessOutcomes: summary.businessOutcomes
   });
 
   return (
@@ -981,7 +1004,8 @@ function MonthlySummaryView({ summary }: { summary: MonthlySummary }) {
     timeCoding: summary.totalTime,
     sessions: summary.sessions,
     activeDays: summary.activeDays,
-    totalDays: summary.totalDays
+    totalDays: summary.totalDays,
+    businessOutcomes: summary.businessOutcomes
   });
 
   return (
@@ -1252,12 +1276,12 @@ function formatStandupSummaryAsText(summary: StandupSummary): string {
   return text.trim();
 }
 
-// Custom Date Range Summary View
+// Custom Date Range Summary View - uses enhanced WeeklySummary format
 function CustomSummaryView({
   summary,
   dateRange,
 }: {
-  summary: DailySummary;
+  summary: WeeklySummary;
   dateRange: { startDate: Date; endDate: Date } | null;
 }) {
   const formatDateRangeStr = () => {
@@ -1268,7 +1292,7 @@ function CustomSummaryView({
   };
 
   const statsLine = buildSummaryStatsLine({
-    timeCoding: summary.timeCoding,
+    timeCoding: summary.totalTime,
     sessions: summary.sessions,
     businessOutcomes: summary.businessOutcomes
   });
@@ -1282,12 +1306,67 @@ function CustomSummaryView({
       {/* Error Banner (shows rate limit, auth errors, etc.) */}
       {summary.source === 'fallback' && <ErrorBanner error={summary.error} />}
 
-      <WorkedOnSection items={summary.workedOn} />
+      {/* Executive Summary */}
+      <ExecutiveSummarySection items={summary.executiveSummary} />
 
-      {/* Business Outcomes */}
-      <BusinessOutcomesSection outcomes={summary.businessOutcomes} />
+      {/* Activity Distribution */}
+      <ActivityDistributionSection distribution={summary.activityDistribution} />
 
-      <SuggestedFocus title="Suggested Focus" items={summary.suggestedFocus} />
+      {/* Prompt Quality */}
+      <PromptQualitySection quality={summary.promptQuality} />
+
+      {/* Enhanced Project Breakdown */}
+      <EnhancedProjectBreakdownSection projects={summary.projectBreakdown} />
+
+      {/* Daily Breakdown */}
+      {summary.dailyBreakdown && summary.dailyBreakdown.length > 0 && (
+        <>
+          <div className="vl-section-title">Daily Breakdown</div>
+          <table className="vl-daily-breakdown">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Prompts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summary.dailyBreakdown.map((day, i) => (
+                <tr key={i}>
+                  <td>{day.day}</td>
+                  <td>{formatDuration(day.time)}</td>
+                  <td>{day.prompts}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Fallback Top Projects */}
+      {!summary.projectBreakdown && summary.topProjects && summary.topProjects.length > 0 && (
+        <>
+          <div className="vl-section-title">Top Projects</div>
+          <div className="vl-work-summary">
+            {summary.topProjects.map((project, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: 'var(--space-sm) 0',
+                  fontSize: '12px',
+                }}
+              >
+                <span>{project.name}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>
+                  {formatDuration(project.time)} | {project.prompts} prompts
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* AI Provider Info */}
       {summary.providerInfo && (

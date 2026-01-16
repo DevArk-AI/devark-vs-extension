@@ -884,7 +884,8 @@ export class SummaryService {
       executiveSummary: aiResult.executiveSummary,
       activityDistribution: aiResult.activityDistribution,
       promptQuality: aiResult.promptQuality,
-      projectBreakdown: aiResult.projectBreakdown
+      projectBreakdown: aiResult.projectBreakdown,
+      businessOutcomes: aiResult.businessOutcomes
     };
   }
 
@@ -956,7 +957,8 @@ export class SummaryService {
       executiveSummary: aiResult.executiveSummary,
       activityDistribution: aiResult.activityDistribution,
       promptQuality: aiResult.promptQuality,
-      projectBreakdown: aiResult.projectBreakdown
+      projectBreakdown: aiResult.projectBreakdown,
+      businessOutcomes: aiResult.businessOutcomes
     };
   }
 

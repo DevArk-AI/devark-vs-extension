@@ -26,6 +26,7 @@ import { safeJSONParse } from '../core/utils/safe-json';
 import { HookFileProcessor } from '../adapters/hooks';
 import { NodeSyncFileSystem } from '../adapters/readers';
 import type { SessionSource } from './UnifiedSessionService';
+import { getNotificationService } from './NotificationService';
 
 export interface CapturedPrompt {
   id: string;
@@ -1028,14 +1029,14 @@ export class HookBasedPromptService {
         message: 'Cursor hooks installed successfully',
       });
 
-      vscode.window.showInformationMessage(
+      getNotificationService().info(
         `DevArk hooks installed! Restart Cursor to activate.`
       );
 
       return true;
     } catch (error) {
       console.error('[HookBasedPromptService] Failed to install hooks:', error);
-      vscode.window.showErrorMessage(
+      getNotificationService().error(
         `Failed to install hooks: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       return false;

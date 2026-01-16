@@ -12,7 +12,8 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
       return { ...state, summaryPeriod: action.payload };
 
     case 'SET_CUSTOM_DATE_RANGE':
-      return { ...state, customDateRange: action.payload };
+      // Clear existing custom summary when date range changes to force re-analysis
+      return { ...state, customDateRange: action.payload, customSummary: null };
 
     case 'SET_CLOUD_STATE':
       return { ...state, cloud: { ...state.cloud, ...action.payload, isLoading: false } };

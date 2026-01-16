@@ -756,8 +756,9 @@ export class SummaryHandler extends BaseMessageHandler {
     const summaryService = this.sharedContext.summaryService;
 
     if (!unifiedSessionService) {
-      const emptySummary = this.generateEmptySummary('daily');
-      emptySummary.date = startDate;
+      const emptySummary = this.generateEmptyWeeklySummary();
+      emptySummary.startDate = startDate;
+      emptySummary.endDate = endDate;
       this.send('summaryData', { type: 'custom', summary: emptySummary });
       return;
     }
@@ -772,8 +773,9 @@ export class SummaryHandler extends BaseMessageHandler {
       if (DEBUG_SUMMARY_HANDLER) console.log(`[SummaryHandler] Found ${bySource.total} unified sessions for custom range (Cursor: ${bySource.cursor}, Claude Code: ${bySource.claudeCode})`);
 
       if (unifiedSessions.length === 0) {
-        const emptySummary = this.generateEmptySummary('daily');
-        emptySummary.date = startDate;
+        const emptySummary = this.generateEmptyWeeklySummary();
+        emptySummary.startDate = startDate;
+        emptySummary.endDate = endDate;
         this.send('loadingProgress', { progress: 100, message: 'No sessions found in date range' });
         this.send('summaryData', { type: 'custom', summary: emptySummary });
         return;
@@ -788,11 +790,16 @@ export class SummaryHandler extends BaseMessageHandler {
       const hasAvailableLLM = await this.isLLMAvailable();
 
       if (!hasAvailableLLM || !summaryService) {
-        // Fallback to basic parsing
+        // Fallback to basic parsing using weekly format
         this.send('loadingProgress', { progress: 100, message: 'Using basic analysis (no AI available)' });
-        const basicSummary = this.parseCursorSessions(cursorFormatSessions, startDate);
-        basicSummary.sessionsBySource = bySource;
-        this.send('summaryData', { type: 'custom', summary: basicSummary });
+        const fallbackSummary = summaryService!.generateFallbackWeeklySummary({
+          sessions: cursorFormatSessions,
+          date: startDate,
+          timeframe: 'weekly',
+          dateRange: { start: startDate, end: endDate }
+        });
+        fallbackSummary.sessionsBySource = bySource;
+        this.send('summaryData', { type: 'custom', summary: fallbackSummary });
         return;
       }
 
@@ -808,23 +815,18 @@ export class SummaryHandler extends BaseMessageHandler {
 
       this.send('loadingProgress', { progress: 80, message: 'Generating AI summary...' });
 
-      // Generate AI summary via SummaryService
-      console.log('[SummaryHandler] Calling summaryService.generateDailySummary with custom date range...');
-      const aiResult = await summaryService.generateDailySummary({
+      // Generate AI summary using weekly format for enhanced insights
+      console.log('[SummaryHandler] Calling summaryService.generateWeeklySummary for custom date range...');
+      const summary = await summaryService.generateWeeklySummary({
         sessions: enrichedSessions,
         date: startDate,
+        timeframe: 'weekly',
         userInstructions: customInstructions,
         dateRange: {
           start: startDate,
           end: endDate
         }
       });
-
-      console.log('[SummaryHandler] AI result received for custom range:', JSON.stringify(aiResult, null, 2));
-
-      // Convert to UI format
-      console.log('[SummaryHandler] Converting AI result to UI format...');
-      const summary = summaryService.convertToDailySummary(aiResult, enrichedSessions, startDate);
 
       // Add session source breakdown to summary
       summary.sessionsBySource = bySource;
@@ -842,25 +844,33 @@ export class SummaryHandler extends BaseMessageHandler {
         throw error;
       }
 
-      // Fallback
+      // Fallback using weekly format
       try {
         const { sessions: unifiedSessions, bySource } = await unifiedSessionService.getSessionsForDateRange(startDate, endDate);
         if (unifiedSessions.length === 0) {
-          const emptySummary = this.generateEmptySummary('daily');
-          emptySummary.date = startDate;
+          const emptySummary = this.generateEmptyWeeklySummary();
+          emptySummary.startDate = startDate;
+          emptySummary.endDate = endDate;
           this.send('summaryData', { type: 'custom', summary: emptySummary });
         } else {
           const cursorFormatSessions = unifiedSessionService.convertToCursorSessions(unifiedSessions);
-          const basicSummary = this.parseCursorSessions(cursorFormatSessions, startDate);
-          basicSummary.sessionsBySource = bySource;
-          this.send('summaryData', { type: 'custom', summary: basicSummary });
+          const summaryService = this.sharedContext.summaryService;
+          const fallbackSummary = summaryService!.generateFallbackWeeklySummary({
+            sessions: cursorFormatSessions,
+            date: startDate,
+            timeframe: 'weekly',
+            dateRange: { start: startDate, end: endDate }
+          });
+          fallbackSummary.sessionsBySource = bySource;
+          this.send('summaryData', { type: 'custom', summary: fallbackSummary });
         }
       } catch (fallbackError: unknown) {
         if (this.isFileLockError(fallbackError)) {
           throw fallbackError;
         }
-        const emptySummary = this.generateEmptySummary('daily');
-        emptySummary.date = startDate;
+        const emptySummary = this.generateEmptyWeeklySummary();
+        emptySummary.startDate = startDate;
+        emptySummary.endDate = endDate;
         this.send('summaryData', { type: 'custom', summary: emptySummary });
       }
     }

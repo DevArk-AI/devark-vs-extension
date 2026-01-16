@@ -7,7 +7,6 @@
  * - Data management (clearLocalData, clearPromptHistory, getPromptHistory)
  */
 
-import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { ExtensionState } from '../../extension-state';
@@ -15,6 +14,7 @@ import type { FeatureType } from '../../llm/types';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
 import { AnalyticsEvents } from '../../services/analytics-events';
+import { getNotificationService } from '../../services/NotificationService';
 
 export class ConfigHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -161,7 +161,7 @@ export class ConfigHandler extends BaseMessageHandler {
     const settingsManager = llmManager.getSettingsManager();
     await settingsManager.resetFeatureModels();
     await this.handleGetFeatureModels();
-    vscode.window.showInformationMessage('Feature models reset to defaults');
+    getNotificationService().info('Feature models reset to defaults');
   }
 
   private async handleGetAvailableModelsForFeature(): Promise<void> {
@@ -207,7 +207,7 @@ export class ConfigHandler extends BaseMessageHandler {
     await this.extensionContext.globalState.update('copilot.v2.sidebarWidth', undefined);
 
     this.sharedContext.statusBarManager?.resetDailyStats();
-    vscode.window.showInformationMessage('Local data cleared');
+    getNotificationService().info('Local data cleared');
 
     this.send('promptHistoryLoaded', {
       history: [],
@@ -221,7 +221,7 @@ export class ConfigHandler extends BaseMessageHandler {
     if (promptHistoryStore) {
       await promptHistoryStore.clearAll();
     }
-    vscode.window.showInformationMessage('Prompt history cleared');
+    getNotificationService().info('Prompt history cleared');
 
     this.send('promptHistoryLoaded', {
       history: [],
