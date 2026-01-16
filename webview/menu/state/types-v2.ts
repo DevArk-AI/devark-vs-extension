@@ -8,7 +8,7 @@ import type { SessionSource } from '@shared/webview-protocol';
 
 // Tab navigation
 export type MainTab = 'copilot' | 'summaries' | 'account';
-export type SummaryPeriod = 'today' | 'week' | 'month' | 'custom';
+export type SummaryPeriod = 'standup' | 'today' | 'week' | 'month' | 'custom';
 
 // Sidebar types
 export type SidebarState = 'collapsed' | 'default' | 'expanded';
@@ -451,6 +451,24 @@ export interface DailySummary {
   error?: SummaryError;
 }
 
+export interface StandupSummary {
+  previousWorkday: DailySummary;
+  previousWorkdayDate: Date;
+  weekendActivity?: {
+    hasSaturday: boolean;
+    hasSunday: boolean;
+    totalMinutes: number;
+    projectsWorkedOn: string[];
+  };
+  totalSessions: number;
+  totalTimeCoding: number;
+  sessionsBySource?: SessionsBySource;
+  suggestedFocusForToday: string[];
+  source?: 'ai' | 'fallback';
+  providerInfo?: { model: string; provider: string };
+  error?: SummaryError;
+}
+
 export interface WeeklySummary {
   startDate: Date;
   endDate: Date;
@@ -603,6 +621,7 @@ export interface AppStateV2 {
   // Summaries
   summaryPeriod: SummaryPeriod;
   customDateRange: DateRange | null; // For custom period
+  standupSummary: StandupSummary | null; // For standup prep
   todaySummary: DailySummary | null;
   yesterdaySummary: DailySummary | null;
   weekendRecap: DailySummary[] | null;
@@ -661,6 +680,7 @@ export type ActionV2 =
   | { type: 'SET_WEEKLY_SUMMARY'; payload: WeeklySummary }
   | { type: 'SET_MONTHLY_SUMMARY'; payload: MonthlySummary }
   | { type: 'SET_CUSTOM_SUMMARY'; payload: DailySummary }
+  | { type: 'SET_STANDUP_SUMMARY'; payload: StandupSummary | null }
   | { type: 'START_LOADING_SUMMARY'; payload: string }
   | { type: 'UPDATE_LOADING_PROGRESS'; payload: { progress: number; message: string } }
   | { type: 'FINISH_LOADING_SUMMARY' }

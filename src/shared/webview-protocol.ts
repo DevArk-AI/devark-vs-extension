@@ -236,7 +236,7 @@ export type WebviewMessage =
   | { type: 'v2GetContextSummary' }
 
   // -------- Summaries --------
-  | { type: 'getSummary'; data: { period: 'today' | 'week' | 'month' | 'custom'; startDate?: string; endDate?: string } }
+  | { type: 'getSummary'; data: { period: 'standup' | 'today' | 'week' | 'month' | 'custom'; startDate?: string; endDate?: string } }
 
   // -------- Cloud & Auth --------
   | { type: 'loginWithGithub' }

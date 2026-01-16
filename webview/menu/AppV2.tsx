@@ -233,7 +233,9 @@ export function AppV2() {
         case 'summaryData':
           // Don't update if loading was cancelled
           if (!state.summaryLoadingCancelled) {
-            if (message.data.type === 'today') {
+            if (message.data.type === 'standup') {
+              dispatch({ type: 'SET_STANDUP_SUMMARY', payload: message.data.summary });
+            } else if (message.data.type === 'today') {
               dispatch({ type: 'SET_TODAY_SUMMARY', payload: message.data.summary });
             } else if (message.data.type === 'yesterday') {
               dispatch({ type: 'SET_YESTERDAY_SUMMARY', payload: message.data.summary });

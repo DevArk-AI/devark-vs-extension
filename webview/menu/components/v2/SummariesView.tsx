@@ -13,7 +13,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Copy, ArrowRight, Calendar, Monitor, Terminal, Target, ArrowLeft, TrendingUp, BarChart3, Sparkles, FolderKanban, AlertTriangle } from 'lucide-react';
 import { useAppV2, formatDuration } from '../../AppV2';
 import { send } from '../../utils/vscode';
-import type { SummaryPeriod, DailySummary, WeeklySummary, MonthlySummary, SessionsBySource, BusinessOutcome, DateRange, PromptQualityMetrics, ProjectBreakdownItem, SummaryError } from '../../state/types-v2';
+import type { SummaryPeriod, DailySummary, WeeklySummary, MonthlySummary, StandupSummary, SessionsBySource, BusinessOutcome, DateRange, PromptQualityMetrics, ProjectBreakdownItem, SummaryError } from '../../state/types-v2';
 import { DateRangePicker } from './DateRangePicker';
 
 export function SummariesView() {
@@ -105,7 +105,9 @@ export function SummariesView() {
 
   const handleCopyAsText = () => {
     let text = '';
-    if (state.summaryPeriod === 'today' && state.todaySummary) {
+    if (state.summaryPeriod === 'standup' && state.standupSummary) {
+      text = formatStandupSummaryAsText(state.standupSummary);
+    } else if (state.summaryPeriod === 'today' && state.todaySummary) {
       text = formatDailySummaryAsText(state.todaySummary);
     } else if (state.summaryPeriod === 'week' && state.weeklySummary) {
       text = formatWeeklySummaryAsText(state.weeklySummary);
@@ -121,6 +123,7 @@ export function SummariesView() {
 
   // Check if we have data for current period
   const hasData =
+    (state.summaryPeriod === 'standup' && state.standupSummary !== null) ||
     (state.summaryPeriod === 'today' && state.todaySummary !== null) ||
     (state.summaryPeriod === 'week' && state.weeklySummary !== null) ||
     (state.summaryPeriod === 'month' && state.monthlySummary !== null) ||
@@ -136,6 +139,12 @@ export function SummariesView() {
         {/* Show either period buttons OR custom date display */}
         {state.summaryPeriod !== 'custom' ? (
           <div className="vl-period-selector">
+            <button
+              className={`vl-period-btn ${state.summaryPeriod === 'standup' ? 'active' : ''}`}
+              onClick={() => handlePeriodChange('standup')}
+            >
+              Standup
+            </button>
             <button
               className={`vl-period-btn ${state.summaryPeriod === 'today' ? 'active' : ''}`}
               onClick={() => handlePeriodChange('today')}
@@ -217,15 +226,20 @@ export function SummariesView() {
             <Calendar size={48} />
           </div>
           <h3 className="vl-analyze-title">
-            {state.summaryPeriod === 'custom'
-              ? state.customDateRange
-                ? `Analyze ${formatCustomDateRange(state.customDateRange)}`
-                : 'Select a date to analyze'
-              : `Analyze ${getPeriodLabel(state.summaryPeriod)}`
+            {state.summaryPeriod === 'standup'
+              ? 'Ready for your standup?'
+              : state.summaryPeriod === 'custom'
+                ? state.customDateRange
+                  ? `Analyze ${formatCustomDateRange(state.customDateRange)}`
+                  : 'Select a date to analyze'
+                : `Analyze ${getPeriodLabel(state.summaryPeriod)}`
             }
           </h3>
           <p className="vl-analyze-description">
-            Get AI-powered insights on your coding sessions, time spent, and productivity patterns.
+            {state.summaryPeriod === 'standup'
+              ? "Yesterday's work and today's focus, ready to share."
+              : 'Get insights on your coding sessions, time spent, and productivity patterns.'
+            }
           </p>
           <button
             className="vl-analyze-button"
@@ -236,6 +250,11 @@ export function SummariesView() {
             Analyze Sessions
           </button>
         </div>
+      )}
+
+      {/* Standup View */}
+      {state.summaryPeriod === 'standup' && state.standupSummary && (
+        <StandupPrepView summary={state.standupSummary} />
       )}
 
       {/* Today View */}
@@ -268,10 +287,17 @@ export function SummariesView() {
       )}
 
       {/* Copy Button */}
-      <button className="vl-copy-btn" onClick={handleCopyAsText}>
-        <Copy size={14} />
-        Copy as text
-      </button>
+      {hasData && (
+        <button className="vl-copy-btn" onClick={handleCopyAsText}>
+          <Copy size={14} />
+          Copy as text
+        </button>
+      )}
+
+      {/* Daily Standup CTA - shown for standup view */}
+      {state.summaryPeriod === 'standup' && state.standupSummary && (
+        <DailyStandupCTA />
+      )}
     </div>
   );
 }
@@ -1115,6 +1141,8 @@ function formatShortDate(date: Date): string {
 
 function getPeriodLabel(period: SummaryPeriod): string {
   switch (period) {
+    case 'standup':
+      return 'Standup Prep';
     case 'today':
       return 'Today';
     case 'week':
@@ -1182,6 +1210,59 @@ ${summary.weeklyBreakdown.map((w) => `Week ${w.week}: ${formatDuration(w.time)} 
   `.trim();
 }
 
+// Shared utilities for standup summary
+function countOutcomes(outcomes?: BusinessOutcome[]): Record<string, number> {
+  return outcomes?.reduce((acc, o) => {
+    acc[o.category] = (acc[o.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+}
+
+function groupOutcomesByProject(outcomes?: BusinessOutcome[]): Record<string, BusinessOutcome[]> {
+  return outcomes?.reduce((acc, o) => {
+    if (!acc[o.project]) acc[o.project] = [];
+    acc[o.project].push(o);
+    return acc;
+  }, {} as Record<string, BusinessOutcome[]>) || {};
+}
+
+function buildStatsLine(summary: StandupSummary): string[] {
+  const counts = countOutcomes(summary.previousWorkday.businessOutcomes);
+  const stats = [
+    formatDuration(summary.totalTimeCoding),
+    `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`
+  ];
+  if (counts.feature) stats.push(`${counts.feature} feature${counts.feature > 1 ? 's' : ''}`);
+  if (counts.bugfix) stats.push(`${counts.bugfix} bug fix${counts.bugfix > 1 ? 'es' : ''}`);
+  if (counts.refactor) stats.push(`${counts.refactor} refactor${counts.refactor > 1 ? 's' : ''}`);
+  return stats;
+}
+
+function formatStandupSummaryAsText(summary: StandupSummary): string {
+  const statsLine = buildStatsLine(summary);
+  const outcomesByProject = groupOutcomesByProject(summary.previousWorkday.businessOutcomes);
+  let text = `Yesterday (${statsLine.join(', ')}):\n`;
+
+  if (Object.keys(outcomesByProject).length > 0) {
+    Object.entries(outcomesByProject).forEach(([project, outcomes]) => {
+      text += `- ${project}: ${outcomes.map(o => o.objective).join(', ')}\n`;
+    });
+  } else if (summary.previousWorkday.workedOn?.length > 0) {
+    summary.previousWorkday.workedOn.forEach(item => { text += `- ${item}\n`; });
+  }
+
+  if (summary.weekendActivity?.hasSaturday || summary.weekendActivity?.hasSunday) {
+    text += `\nWeekend: ${formatDuration(summary.weekendActivity.totalMinutes)} on ${summary.weekendActivity.projectsWorkedOn.join(', ')}\n`;
+  }
+
+  if (summary.suggestedFocusForToday?.length > 0) {
+    text += `\nFocus:\n`;
+    summary.suggestedFocusForToday.forEach(item => { text += `- ${item}\n`; });
+  }
+
+  return text.trim();
+}
+
 // Custom Date Range Summary View
 function CustomSummaryView({
   summary,
@@ -1219,6 +1300,73 @@ function CustomSummaryView({
       {/* AI Provider Info */}
       {summary.providerInfo && (
         <div style={{ fontSize: '10px', opacity: 0.5, marginTop: 'var(--space-md)' }}>
+          Analysis by {summary.providerInfo.provider} ({summary.providerInfo.model})
+        </div>
+      )}
+    </>
+  );
+}
+
+// Standup Prep View Component - uses shared utilities
+function StandupPrepView({ summary }: { summary: StandupSummary }) {
+  const dayName = new Date(summary.previousWorkdayDate).toLocaleDateString('en-US', { weekday: 'long' });
+  const dateStr = new Date(summary.previousWorkdayDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const statsLine = buildStatsLine(summary);
+  const outcomesByProject = groupOutcomesByProject(summary.previousWorkday.businessOutcomes);
+
+  return (
+    <>
+      {/* Header with date */}
+      <div className="vl-summary-date">Standup Prep - {dayName}, {dateStr}</div>
+
+      {/* Overall stats right under the title */}
+      <div className="vl-standup-overall-stats">
+        {statsLine.map((stat, i) => (
+          <span key={i} className="vl-standup-stat-item">{stat}</span>
+        ))}
+      </div>
+
+      {/* Yesterday Section - title outside box */}
+      <div className="vl-standup-label">Yesterday</div>
+      <div className="vl-standup-section">
+        {Object.keys(outcomesByProject).length > 0 ? (
+          Object.entries(outcomesByProject).map(([project, outcomes]) => (
+            <div key={project} className="vl-standup-project">
+              <div className="vl-standup-project-name">{project}</div>
+              {outcomes.map((o, i) => (
+                <div key={i} className="vl-standup-item">{o.objective}</div>
+              ))}
+            </div>
+          ))
+        ) : (
+          summary.previousWorkday.workedOn?.map((item, i) => (
+            <div key={i} className="vl-standup-item">{item}</div>
+          ))
+        )}
+      </div>
+
+      {/* Weekend Activity */}
+      {(summary.weekendActivity?.hasSaturday || summary.weekendActivity?.hasSunday) && (
+        <div className="vl-standup-weekend">
+          Weekend: {formatDuration(summary.weekendActivity!.totalMinutes)} on {summary.weekendActivity!.projectsWorkedOn.join(', ')}
+        </div>
+      )}
+
+      {/* Suggested Focus - title outside box */}
+      {summary.suggestedFocusForToday?.length > 0 && (
+        <>
+          <div className="vl-standup-label">Today's Focus</div>
+          <div className="vl-standup-section">
+            {summary.suggestedFocusForToday.map((item, i) => (
+              <div key={i} className="vl-standup-item">{item}</div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {summary.providerInfo && (
+        <div className="vl-provider-info">
           Analysis by {summary.providerInfo.provider} ({summary.providerInfo.model})
         </div>
       )}

@@ -22,6 +22,41 @@ import { AnalyticsEvents } from '../../services/analytics-events';
 const DEBUG_SUMMARY_HANDLER = false;
 
 /**
+ * Calculate previous workday date and weekend dates for standup
+ * Mon -> Friday (3 days ago), Sun -> Friday, Sat -> Friday, Tue-Fri -> Yesterday
+ */
+function calculatePreviousWorkday(now: Date): {
+  previousWorkday: Date;
+  checkWeekend: boolean;
+  saturdayDate?: Date;
+  sundayDate?: Date;
+} {
+  const dayOfWeek = now.getDay();
+  const previousWorkday = new Date(now);
+  let checkWeekend = false;
+  let saturdayDate: Date | undefined;
+  let sundayDate: Date | undefined;
+
+  if (dayOfWeek === 1) { // Monday
+    previousWorkday.setDate(now.getDate() - 3);
+    checkWeekend = true;
+    saturdayDate = new Date(now);
+    saturdayDate.setDate(now.getDate() - 2);
+    sundayDate = new Date(now);
+    sundayDate.setDate(now.getDate() - 1);
+  } else if (dayOfWeek === 0) { // Sunday
+    previousWorkday.setDate(now.getDate() - 2);
+    checkWeekend = true;
+    saturdayDate = new Date(now);
+    saturdayDate.setDate(now.getDate() - 1);
+  } else { // Tue-Sat
+    previousWorkday.setDate(now.getDate() - 1);
+  }
+
+  return { previousWorkday, checkWeekend, saturdayDate, sundayDate };
+}
+
+/**
  * Empty summary structure for when no sessions exist
  */
 interface EmptySummary {
@@ -64,7 +99,7 @@ export class SummaryHandler extends BaseMessageHandler {
   }
 
   private async handleGetSummary(
-    period: 'today' | 'week' | 'month' | 'custom',
+    period: 'standup' | 'today' | 'week' | 'month' | 'custom',
     startDateStr?: string,
     endDateStr?: string
   ): Promise<void> {
@@ -75,7 +110,9 @@ export class SummaryHandler extends BaseMessageHandler {
     this.send('loadingProgress', { progress: 10, message: 'Loading sessions...' });
 
     try {
-      if (period === 'today') {
+      if (period === 'standup') {
+        await this.generateStandupSummary();
+      } else if (period === 'today') {
         await this.generateTodaySummary();
       } else if (period === 'week') {
         await this.generateWeeklySummary();
@@ -229,6 +266,233 @@ export class SummaryHandler extends BaseMessageHandler {
         this.send('summaryData', { type: 'today', summary: emptySummary });
       }
     }
+  }
+
+  /**
+   * Generate standup summary showing previous workday data with weekend bonus
+   * Uses smart date logic: Monday shows Friday, Sunday shows Friday, other days show yesterday
+   */
+  private async generateStandupSummary(): Promise<void> {
+    const unifiedSessionService = this.sharedContext.unifiedSessionService;
+    const summaryService = this.sharedContext.summaryService;
+
+    if (!unifiedSessionService) {
+      const emptySummary = this.generateEmptyStandupSummary();
+      this.send('summaryData', { type: 'standup', summary: emptySummary });
+      return;
+    }
+
+    try {
+      // Progress: 20%
+      this.send('loadingProgress', { progress: 20, message: 'Calculating previous workday...' });
+
+      // Use shared date calculation
+      const now = new Date();
+      const { previousWorkday, checkWeekend, saturdayDate, sundayDate } = calculatePreviousWorkday(now);
+
+      // Set to start and end of the previous workday
+      const previousWorkdayStart = new Date(previousWorkday);
+      previousWorkdayStart.setHours(0, 0, 0, 0);
+      const previousWorkdayEnd = new Date(previousWorkday);
+      previousWorkdayEnd.setHours(23, 59, 59, 999);
+
+      if (DEBUG_SUMMARY_HANDLER) console.log(`[SummaryHandler] Standup: Previous workday is ${previousWorkday.toDateString()}`);
+
+      // Progress: 30%
+      this.send('loadingProgress', { progress: 30, message: 'Fetching previous workday sessions...' });
+
+      // Fetch previous workday sessions
+      const { sessions: workdaySessions, bySource } = await unifiedSessionService.getSessionsForDateRange(
+        previousWorkdayStart,
+        previousWorkdayEnd
+      );
+
+      if (DEBUG_SUMMARY_HANDLER) console.log(`[SummaryHandler] Found ${workdaySessions.length} sessions for previous workday`);
+
+      // Progress: 40%
+      let weekendActivity: {
+        hasSaturday: boolean;
+        hasSunday: boolean;
+        totalMinutes: number;
+        projectsWorkedOn: string[];
+      } | undefined;
+
+      if (checkWeekend) {
+        this.send('loadingProgress', { progress: 40, message: 'Checking for weekend activity...' });
+
+        const weekendProjects = new Set<string>();
+        let weekendMinutes = 0;
+        let hasSaturday = false;
+        let hasSunday = false;
+
+        // Check Saturday
+        if (saturdayDate) {
+          const satStart = new Date(saturdayDate);
+          satStart.setHours(0, 0, 0, 0);
+          const satEnd = new Date(saturdayDate);
+          satEnd.setHours(23, 59, 59, 999);
+
+          const { sessions: satSessions } = await unifiedSessionService.getSessionsForDateRange(satStart, satEnd);
+          if (satSessions.length > 0) {
+            hasSaturday = true;
+            satSessions.forEach(s => {
+              weekendMinutes += Math.floor((s.endTime.getTime() - s.startTime.getTime()) / 60000);
+              weekendProjects.add(s.workspaceName);
+            });
+          }
+        }
+
+        // Check Sunday
+        if (sundayDate) {
+          const sunStart = new Date(sundayDate);
+          sunStart.setHours(0, 0, 0, 0);
+          const sunEnd = new Date(sundayDate);
+          sunEnd.setHours(23, 59, 59, 999);
+
+          const { sessions: sunSessions } = await unifiedSessionService.getSessionsForDateRange(sunStart, sunEnd);
+          if (sunSessions.length > 0) {
+            hasSunday = true;
+            sunSessions.forEach(s => {
+              weekendMinutes += Math.floor((s.endTime.getTime() - s.startTime.getTime()) / 60000);
+              weekendProjects.add(s.workspaceName);
+            });
+          }
+        }
+
+        if (hasSaturday || hasSunday) {
+          weekendActivity = {
+            hasSaturday,
+            hasSunday,
+            totalMinutes: weekendMinutes,
+            projectsWorkedOn: Array.from(weekendProjects)
+          };
+          if (DEBUG_SUMMARY_HANDLER) console.log(`[SummaryHandler] Weekend activity found:`, weekendActivity);
+        }
+      }
+
+      // Handle empty previous workday
+      if (workdaySessions.length === 0) {
+        const emptySummary = this.generateEmptyStandupSummary();
+        emptySummary.previousWorkdayDate = previousWorkday;
+        emptySummary.weekendActivity = weekendActivity;
+        this.send('loadingProgress', { progress: 100, message: 'No sessions found for previous workday' });
+        this.send('summaryData', { type: 'standup', summary: emptySummary });
+        return;
+      }
+
+      // Progress: 50%
+      this.send('loadingProgress', { progress: 50, message: 'Checking for AI providers...' });
+
+      // Convert unified sessions to CursorSession format for SummaryService compatibility
+      const cursorFormatSessions = unifiedSessionService.convertToCursorSessions(workdaySessions);
+
+      // Check if any LLM is available
+      const hasAvailableLLM = await this.isLLMAvailable();
+
+      if (!hasAvailableLLM || !summaryService) {
+        // Fallback to basic parsing
+        this.send('loadingProgress', { progress: 100, message: 'Using basic analysis (no AI available)' });
+        const basicSummary = this.parseCursorSessions(cursorFormatSessions, previousWorkday);
+        basicSummary.sessionsBySource = bySource;
+
+        const standupSummary = {
+          previousWorkday: basicSummary,
+          previousWorkdayDate: previousWorkday,
+          weekendActivity,
+          totalSessions: basicSummary.sessions,
+          totalTimeCoding: basicSummary.timeCoding,
+          sessionsBySource: bySource,
+          suggestedFocusForToday: basicSummary.suggestedFocus || [],
+          source: 'fallback' as const
+        };
+        this.send('summaryData', { type: 'standup', summary: standupSummary });
+        return;
+      }
+
+      // Progress: 60%
+      const providerName = await this.getActiveProviderName();
+      if (DEBUG_SUMMARY_HANDLER) console.log(`[SummaryHandler] Using AI provider: ${providerName}`);
+      this.send('loadingProgress', { progress: 60, message: `Analyzing sessions with ${providerName}...` });
+
+      // Get custom instructions if available
+      const customInstructions = await this.getUserCustomInstructions();
+
+      // Enrich sessions with file context
+      const enrichedSessions = await this.enrichSessionsWithFiles(cursorFormatSessions);
+
+      // Progress: 80%
+      this.send('loadingProgress', { progress: 80, message: 'Generating AI summary...' });
+
+      // Generate AI summary for previous workday
+      const aiResult = await summaryService.generateDailySummary({
+        sessions: enrichedSessions,
+        date: previousWorkday,
+        userInstructions: customInstructions
+      });
+
+      // Convert to UI format
+      const dailySummary = summaryService.convertToDailySummary(aiResult, enrichedSessions, previousWorkday);
+      dailySummary.sessionsBySource = bySource;
+      dailySummary.businessOutcomes = aiResult.businessOutcomes;
+
+      // Build standup summary
+      const standupSummary = {
+        previousWorkday: dailySummary,
+        previousWorkdayDate: previousWorkday,
+        weekendActivity,
+        totalSessions: dailySummary.sessions,
+        totalTimeCoding: dailySummary.timeCoding,
+        sessionsBySource: bySource,
+        suggestedFocusForToday: dailySummary.suggestedFocus || [],
+        source: 'ai' as const,
+        providerInfo: dailySummary.providerInfo
+      };
+
+      // Progress: 100%
+      this.send('loadingProgress', { progress: 100, message: `Standup prep generated by ${providerName}` });
+      this.send('summaryData', { type: 'standup', summary: standupSummary });
+
+      // Track session summarized
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SESSION_SUMMARIZED, {
+        provider: providerName,
+        type: 'standup'
+      });
+
+    } catch (error: unknown) {
+      console.error('[SummaryHandler] Error generating standup summary:', error);
+
+      // Re-throw file lock errors to be handled by handleGetSummary
+      if (this.isFileLockError(error)) {
+        throw error;
+      }
+
+      // Fallback to empty standup
+      const emptySummary = this.generateEmptyStandupSummary();
+      this.send('summaryData', { type: 'standup', summary: emptySummary });
+    }
+  }
+
+  /**
+   * Generate empty standup summary when no sessions exist
+   */
+  private generateEmptyStandupSummary(): {
+    previousWorkday: ReturnType<SummaryHandler['generateEmptySummary']>;
+    previousWorkdayDate: Date;
+    weekendActivity?: { hasSaturday: boolean; hasSunday: boolean; totalMinutes: number; projectsWorkedOn: string[] };
+    totalSessions: number;
+    totalTimeCoding: number;
+    suggestedFocusForToday: string[];
+    source: 'fallback';
+  } {
+    const { previousWorkday } = calculatePreviousWorkday(new Date());
+    return {
+      previousWorkday: this.generateEmptySummary('daily'),
+      previousWorkdayDate: previousWorkday,
+      totalSessions: 0,
+      totalTimeCoding: 0,
+      suggestedFocusForToday: ['Start coding and your standup will be ready tomorrow!'],
+      source: 'fallback'
+    };
   }
 
   /**

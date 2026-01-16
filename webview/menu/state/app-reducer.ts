@@ -179,6 +179,9 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
     case 'SET_CUSTOM_SUMMARY':
       return { ...state, customSummary: action.payload };
 
+    case 'SET_STANDUP_SUMMARY':
+      return { ...state, standupSummary: action.payload };
+
     case 'START_LOADING_SUMMARY':
       return {
         ...state,
