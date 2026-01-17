@@ -136,6 +136,7 @@ export interface Session {
   goal?: string;
   goalSetAt?: Date;
   goalCompletedAt?: Date;
+  goalProgress?: number; // 0-100 percentage, LLM-inferred progress toward goal
   isActive: boolean;
   // User-defined custom name for the session
   customName?: string;

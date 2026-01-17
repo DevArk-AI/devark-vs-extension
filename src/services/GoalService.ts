@@ -9,8 +9,9 @@
  */
 
 import { getSessionManager } from './SessionManagerService';
-import { PromptRecord } from './types/session-types';
+import { PromptRecord, Session } from './types/session-types';
 import { ExtensionState } from '../extension-state';
+import { GoalProgressAnalyzer, GoalProgressOutput } from '../copilot/goal-progress-analyzer';
 
 /**
  * Goal inference result
@@ -56,12 +57,21 @@ export interface GoalServiceConfig {
   minConfidence: number;
   /** Time without goal before suggesting (minutes) */
   noGoalSuggestionDelayMinutes: number;
+  /** Minimum prompts before first goal progress analysis */
+  minPromptsForProgressAnalysis: number;
+  /** Analyze goal progress every N prompts */
+  progressAnalysisInterval: number;
+  /** Minimum time between analyses (ms) */
+  progressAnalysisDebounceMs: number;
 }
 
 const DEFAULT_CONFIG: GoalServiceConfig = {
   minPromptsForInference: 1,
   minConfidence: 0.3,
   noGoalSuggestionDelayMinutes: 0,
+  minPromptsForProgressAnalysis: 2,
+  progressAnalysisInterval: 3, // Analyze every 3 prompts
+  progressAnalysisDebounceMs: 30000, // 30 seconds minimum between analyses
 };
 
 /**
@@ -88,6 +98,15 @@ const DEVELOPMENT_THEMES: Record<string, string[]> = {
 export class GoalService {
   private static instance: GoalService | null = null;
   private config: GoalServiceConfig = DEFAULT_CONFIG;
+
+  // Track last analysis time per session to debounce
+  private lastAnalysisTime: Map<string, number> = new Map();
+  // Track prompt count at last analysis per session
+  private lastAnalysisPromptCount: Map<string, number> = new Map();
+  // Pending analysis timers per session
+  private pendingAnalysis: Map<string, NodeJS.Timeout> = new Map();
+  // Callback for notifying webview of progress updates
+  private progressUpdateCallback: ((sessionId: string, progress: GoalProgressOutput) => void) | null = null;
 
   private constructor() {}
 
@@ -167,6 +186,183 @@ export class GoalService {
       session.goalCompletedAt = undefined;
     }
     console.log('[GoalService] Goal cleared');
+  }
+
+  /**
+   * Analyze goal progress for a session using LLM
+   * Updates the session's goalProgress field with the inferred percentage
+   *
+   * @param sessionId - Session to analyze (or active session if not provided)
+   * @returns The goal progress analysis result, or null if analysis failed
+   */
+  public async analyzeGoalProgress(sessionId?: string): Promise<GoalProgressOutput | null> {
+    const sessionManager = getSessionManager();
+
+    // Find the session to analyze
+    let session: Session | null = null;
+    if (sessionId) {
+      const sessions = sessionManager.getSessions();
+      session = sessions.find(s => s.id === sessionId) || null;
+    } else {
+      session = sessionManager.getActiveSession();
+    }
+
+    if (!session) {
+      console.warn('[GoalService] No session found for goal progress analysis');
+      return null;
+    }
+
+    // Skip if session has no prompts
+    if (session.promptCount === 0 || session.prompts.length === 0) {
+      console.log('[GoalService] Session has no prompts, skipping goal progress analysis');
+      return {
+        progress: 0,
+        reasoning: 'Session has no prompts yet.',
+      };
+    }
+
+    // Get LLM provider
+    const llmManager = ExtensionState.getLLMManager();
+    if (!llmManager) {
+      console.warn('[GoalService] No LLM provider available for goal progress analysis');
+      return null;
+    }
+
+    try {
+      // Create the analyzer and run analysis
+      const analyzer = new GoalProgressAnalyzer(llmManager);
+      const result = await analyzer.analyzeProgress(session, session.goal);
+
+      // Update the session with the progress
+      await sessionManager.updateSession(session.id, {
+        goalProgress: result.progress,
+      });
+
+      console.log('[GoalService] Goal progress analyzed:', {
+        sessionId: session.id,
+        progress: result.progress,
+        reasoning: result.reasoning,
+      });
+
+      return result;
+    } catch (error) {
+      console.error('[GoalService] Goal progress analysis failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Register a callback to be notified when goal progress is updated
+   * Used by message handlers to push updates to webview
+   */
+  public setProgressUpdateCallback(
+    callback: (sessionId: string, progress: GoalProgressOutput) => void
+  ): void {
+    this.progressUpdateCallback = callback;
+  }
+
+  /**
+   * Called when a new prompt is added to a session
+   * Triggers goal progress analysis if conditions are met:
+   * - Session has no goalProgress yet and has minimum prompts
+   * - OR enough prompts have been added since last analysis
+   * - AND debounce time has passed
+   */
+  public onPromptAdded(sessionId: string): void {
+    const sessionManager = getSessionManager();
+    const sessions = sessionManager.getSessions();
+    const session = sessions.find(s => s.id === sessionId);
+
+    if (!session) {
+      return;
+    }
+
+    const promptCount = session.promptCount;
+    const hasGoalProgress = session.goalProgress !== undefined && session.goalProgress > 0;
+    const lastAnalysisCount = this.lastAnalysisPromptCount.get(sessionId) || 0;
+    const lastAnalysisAt = this.lastAnalysisTime.get(sessionId) || 0;
+    const now = Date.now();
+
+    // Determine if we should analyze
+    let shouldAnalyze = false;
+    let reason = '';
+
+    // Case 1: No goal progress yet and we have minimum prompts
+    if (!hasGoalProgress && promptCount >= this.config.minPromptsForProgressAnalysis) {
+      shouldAnalyze = true;
+      reason = 'no progress data yet';
+    }
+    // Case 2: Enough prompts since last analysis
+    else if (promptCount - lastAnalysisCount >= this.config.progressAnalysisInterval) {
+      shouldAnalyze = true;
+      reason = `${this.config.progressAnalysisInterval} prompts since last analysis`;
+    }
+
+    if (!shouldAnalyze) {
+      return;
+    }
+
+    // Check debounce
+    const timeSinceLastAnalysis = now - lastAnalysisAt;
+    if (lastAnalysisAt > 0 && timeSinceLastAnalysis < this.config.progressAnalysisDebounceMs) {
+      // Schedule analysis after debounce period
+      const existingTimer = this.pendingAnalysis.get(sessionId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      const delay = this.config.progressAnalysisDebounceMs - timeSinceLastAnalysis;
+      console.log(`[GoalService] Debouncing goal progress analysis for ${sessionId}, will run in ${delay}ms`);
+
+      const timer = setTimeout(() => {
+        this.pendingAnalysis.delete(sessionId);
+        this.triggerProgressAnalysis(sessionId, reason);
+      }, delay);
+
+      this.pendingAnalysis.set(sessionId, timer);
+      return;
+    }
+
+    // Analyze immediately
+    this.triggerProgressAnalysis(sessionId, reason);
+  }
+
+  /**
+   * Internal method to trigger goal progress analysis
+   */
+  private async triggerProgressAnalysis(sessionId: string, reason: string): Promise<void> {
+    // Check if LLM manager is available before attempting analysis
+    try {
+      const llmManager = ExtensionState.getLLMManager();
+      if (!llmManager) {
+        console.log('[GoalService] No LLM provider available, skipping auto goal progress analysis');
+        return;
+      }
+    } catch {
+      // LLM manager not initialized - skip analysis silently
+      console.log('[GoalService] LLM manager not initialized, skipping auto goal progress analysis');
+      return;
+    }
+
+    console.log(`[GoalService] Auto-triggering goal progress analysis for ${sessionId}: ${reason}`);
+
+    // Update tracking
+    this.lastAnalysisTime.set(sessionId, Date.now());
+
+    const sessionManager = getSessionManager();
+    const sessions = sessionManager.getSessions();
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      this.lastAnalysisPromptCount.set(sessionId, session.promptCount);
+    }
+
+    // Run analysis
+    const result = await this.analyzeGoalProgress(sessionId);
+
+    // Notify via callback if registered
+    if (result && this.progressUpdateCallback) {
+      this.progressUpdateCallback(sessionId, result);
+    }
   }
 
   /**

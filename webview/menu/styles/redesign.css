@@ -8113,3 +8113,400 @@
   opacity: 1;
   background: var(--vl-subtle-bg);
 }
+
+/* ========================================
+   ACTIVITY RINGS (Phase 1 - UI Redesign)
+   Apple Health-style session visualization
+   ======================================== */
+
+.vl-activity-rings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* SessionRingCard - compact ring + info card */
+.vl-session-ring-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 80px;
+}
+
+.vl-session-ring-card:hover {
+  background: var(--vl-subtle-bg);
+  border-color: var(--vl-border);
+}
+
+.vl-session-ring-card.selected {
+  background: var(--vl-selected-bg);
+  border-color: var(--vl-accent);
+}
+
+.vl-session-ring-card.active {
+  /* Active sessions have a subtle glow */
+}
+
+.vl-session-ring-card__rings {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pulse indicator for active sessions */
+.vl-session-ring-card__pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--score-good);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.vl-session-ring-card__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.vl-session-ring-card__name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vl-session-ring-card__duration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--font-mono);
+}
+
+.vl-session-ring-card__status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--score-good);
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Ring color legend (for tooltips/help) */
+.vl-ring-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 11px;
+}
+
+.vl-ring-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-ring-legend__color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.vl-ring-legend__color--goal {
+  background: #e06c75;
+}
+
+.vl-ring-legend__color--context {
+  background: #98c379;
+}
+
+.vl-ring-legend__color--activity {
+  background: #61afef;
+}
+
+.vl-ring-legend__label {
+  color: var(--vscode-foreground);
+}
+
+/* Session Ring Tooltip - appears on hover below the card */
+.vl-ring-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vscode-editorWidget-background, #252526);
+  border: 1px solid var(--vscode-editorWidget-border, #454545);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+  max-width: 240px;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+}
+
+/* Tooltip arrow pointing up */
+.vl-ring-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: var(--vscode-editorWidget-border, #454545);
+}
+
+.vl-ring-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: var(--vscode-editorWidget-background, #252526);
+  z-index: 1;
+}
+
+/* Show tooltip on card hover */
+.vl-session-ring-card:hover .vl-ring-tooltip,
+.vl-session-ring-card:focus .vl-ring-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip header */
+.vl-ring-tooltip__header {
+  margin-bottom: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--vl-border);
+}
+
+.vl-ring-tooltip__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin: 0;
+}
+
+.vl-ring-tooltip__subtitle {
+  font-size: 10px;
+  color: var(--vl-text-secondary);
+  margin-top: 2px;
+}
+
+/* Ring breakdown list */
+.vl-ring-tooltip__rings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vl-ring-tooltip__ring-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vl-ring-tooltip__ring-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vl-ring-tooltip__ring-color--goal {
+  background: #e06c75;
+}
+
+.vl-ring-tooltip__ring-color--context {
+  background: #98c379;
+}
+
+.vl-ring-tooltip__ring-color--activity {
+  background: #61afef;
+}
+
+.vl-ring-tooltip__ring-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.vl-ring-tooltip__ring-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vscode-foreground);
+}
+
+.vl-ring-tooltip__ring-value {
+  font-size: 10px;
+  color: var(--vl-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Goal context at bottom of tooltip */
+.vl-ring-tooltip__goal {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--vl-border);
+  font-size: 10px;
+  color: var(--vl-text-secondary);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Light theme tooltip */
+[data-vscode-theme-kind="vscode-light"] .vl-ring-tooltip {
+  background: var(--vscode-editorWidget-background, #f3f3f3);
+  border-color: var(--vscode-editorWidget-border, #c8c8c8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-ring-tooltip::after {
+  border-bottom-color: var(--vscode-editorWidget-border, #c8c8c8);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-ring-tooltip::before {
+  border-bottom-color: var(--vscode-editorWidget-background, #f3f3f3);
+}
+
+/* High contrast tooltip */
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-ring-tooltip {
+  background: var(--vscode-editorWidget-background, #000);
+  border: 2px solid var(--vscode-contrastBorder);
+}
+
+/* High contrast mode adjustments */
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-session-ring-card {
+  border-color: var(--vscode-contrastBorder);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-session-ring-card:hover,
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-session-ring-card.selected {
+  border-color: var(--vscode-focusBorder);
+}
+
+/* Light theme adjustments */
+[data-vscode-theme-kind="vscode-light"] .vl-session-ring-card__name {
+  color: var(--vscode-editor-foreground);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-session-ring-card:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ========================================
+   RINGS HEADER - Cockpit Style Header
+   Phase 2: Fixed header with 3 rings
+   ======================================== */
+
+.vl-rings-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--vl-surface-bg);
+  border-bottom: 1px solid var(--vl-border);
+}
+
+.vl-rings-header__slots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-lg);
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Empty state styling */
+.vl-rings-header--empty {
+  opacity: 0.7;
+}
+
+.vl-rings-header__empty-message {
+  margin-top: var(--space-sm);
+  font-size: 11px;
+  color: var(--vl-text-secondary);
+  text-align: center;
+}
+
+/* Empty ring slot placeholder */
+.vl-rings-header__empty-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  opacity: 0.4;
+}
+
+.vl-rings-header__empty-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.vl-rings-header__empty-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vl-text-secondary);
+}
+
+.vl-rings-header__empty-status {
+  font-size: 10px;
+  color: var(--vl-text-muted);
+}
+
+/* High contrast mode */
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-rings-header {
+  border-bottom-color: var(--vscode-contrastBorder);
+}
+
+/* Light theme */
+[data-vscode-theme-kind="vscode-light"] .vl-rings-header {
+  background: var(--vscode-sideBar-background, #f3f3f3);
+}

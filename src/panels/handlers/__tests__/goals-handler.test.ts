@@ -55,10 +55,11 @@ describe('GoalsHandler', () => {
       expect(types).toContain('v2InferGoal');
       expect(types).toContain('v2MaybeLaterGoal');
       expect(types).toContain('v2DontAskGoal');
+      expect(types).toContain('v2AnalyzeGoalProgress');
       expect(types).toContain('editGoal');
       expect(types).toContain('completeGoal');
       expect(types).toContain('v2ClearGoal');
-      expect(types).toHaveLength(9);
+      expect(types).toHaveLength(10);
     });
   });
 

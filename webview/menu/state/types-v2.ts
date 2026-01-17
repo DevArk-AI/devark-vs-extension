@@ -76,6 +76,7 @@ export interface Session {
   isActive: boolean;
   hasUnreadActivity?: boolean; // Indicates new activity user hasn't seen
   goal?: string;
+  goalProgress?: number; // 0-100 percentage, LLM-inferred progress toward goal
   customName?: string; // User-defined name for the session
 }
 

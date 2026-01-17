@@ -37,3 +37,10 @@ export { PersonalProgress } from './PersonalProgress';
 export { SessionGoal } from './SessionGoal';
 export { GoalInferenceModal } from './GoalInferenceModal';
 export { CoPilotSuggestion } from './CoPilotSuggestion';
+
+// Activity Rings components (Phase 1 - UI Redesign)
+export { ActivityRings, type RingData, type ActivityRingsProps } from './ActivityRings';
+export { SessionRingCard, type SessionRingCardProps } from './SessionRingCard';
+
+// Rings Header (Phase 2 - Cockpit Header)
+export { RingsHeader, type RingsHeaderProps } from './RingsHeader';

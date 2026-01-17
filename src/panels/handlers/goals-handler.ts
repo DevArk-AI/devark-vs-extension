@@ -24,6 +24,39 @@ export class GoalsHandler extends BaseMessageHandler {
   ) {
     super(messageSender, handlerContext);
     this.sharedContext = sharedContext;
+
+    // Register callback for auto-triggered goal progress updates
+    this.registerProgressUpdateCallback();
+  }
+
+  /**
+   * Register callback so GoalService can push auto-analyzed progress to webview
+   */
+  private registerProgressUpdateCallback(): void {
+    try {
+      const goalService = this.sharedContext.goalService;
+      if (goalService && typeof goalService.setProgressUpdateCallback === 'function') {
+        goalService.setProgressUpdateCallback((sessionId, progress) => {
+          console.log('[GoalsHandler] Auto-analyzed goal progress update:', { sessionId, progress: progress.progress });
+          this.send('v2GoalProgressAnalysis', {
+            success: true,
+            sessionId,
+            progress: progress.progress,
+            reasoning: progress.reasoning,
+            inferredGoal: progress.inferredGoal,
+            accomplishments: progress.accomplishments,
+            remaining: progress.remaining,
+            autoTriggered: true, // Flag to indicate this was auto-triggered
+          });
+
+          // Also refresh session list to update rings
+          this.refreshSessionList();
+        });
+      }
+    } catch (error) {
+      // Goal service not available - skip registration
+      console.warn('[GoalsHandler] Could not register progress update callback:', error);
+    }
   }
 
   getHandledMessageTypes(): string[] {
@@ -35,6 +68,7 @@ export class GoalsHandler extends BaseMessageHandler {
       'v2InferGoal',
       'v2MaybeLaterGoal',
       'v2DontAskGoal',
+      'v2AnalyzeGoalProgress',
       'editGoal',
       'completeGoal',
     ];
@@ -66,6 +100,11 @@ export class GoalsHandler extends BaseMessageHandler {
       case 'v2DontAskGoal':
         await this.handleV2DontAskGoal();
         return true;
+      case 'v2AnalyzeGoalProgress': {
+        const d = data as { sessionId?: string };
+        await this.handleV2AnalyzeGoalProgress(d.sessionId);
+        return true;
+      }
       case 'editGoal':
         this.handleEditGoal();
         return true;
@@ -188,6 +227,42 @@ export class GoalsHandler extends BaseMessageHandler {
     } catch (error) {
       console.error('[GoalsHandler] Failed to infer goal:', error);
       this.send('v2GoalInference', { inference: null });
+    }
+  }
+
+  /**
+   * Analyze goal progress for a session using LLM
+   * Updates the session's goalProgress field and returns the analysis
+   */
+  private async handleV2AnalyzeGoalProgress(sessionId?: string): Promise<void> {
+    try {
+      const goalService = this.sharedContext.goalService;
+      if (!goalService) {
+        this.send('v2GoalProgressAnalysis', { success: false, error: 'Goal service not initialized' });
+        return;
+      }
+
+      console.log('[GoalsHandler] Analyzing goal progress...', { sessionId });
+      const result = await goalService.analyzeGoalProgress(sessionId);
+
+      if (result) {
+        this.send('v2GoalProgressAnalysis', {
+          success: true,
+          progress: result.progress,
+          reasoning: result.reasoning,
+          inferredGoal: result.inferredGoal,
+          accomplishments: result.accomplishments,
+          remaining: result.remaining,
+        });
+
+        // Refresh session list to update UI with new progress
+        await this.refreshSessionList();
+      } else {
+        this.send('v2GoalProgressAnalysis', { success: false, error: 'Analysis failed' });
+      }
+    } catch (error) {
+      console.error('[GoalsHandler] Failed to analyze goal progress:', error);
+      this.send('v2GoalProgressAnalysis', { success: false, error: 'Analysis failed' });
     }
   }
 

@@ -19,6 +19,7 @@ import type {
 } from '../types/session-types';
 import { generateId, truncateText } from '../types/session-types';
 import { MAX_PROMPTS_PER_SESSION } from './types';
+import { getGoalService } from '../GoalService';
 
 const DEFAULT_PROMPTS_PER_PAGE = 10;
 const DEFAULT_TRUNCATE_LENGTH = 100;
@@ -142,6 +143,14 @@ export class PromptManagementService {
 
     // Save state
     await this.saveState();
+
+    // Trigger goal progress analysis check (non-blocking)
+    try {
+      getGoalService().onPromptAdded(session.id);
+    } catch (error) {
+      // Don't fail prompt add if goal service has issues
+      console.warn('[PromptManagementService] Goal progress check failed:', error);
+    }
 
     return prompt;
   }

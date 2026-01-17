@@ -221,6 +221,7 @@ export type WebviewMessage =
   | { type: 'v2InferGoal'; data?: { sessionId?: string } }
   | { type: 'v2CompleteGoal' }
   | { type: 'v2ClearGoal' }
+  | { type: 'v2AnalyzeGoalProgress'; data?: { sessionId?: string } }
   | { type: 'editGoal'; data: { goal: string } }
   | { type: 'completeGoal' }
 
@@ -345,6 +346,7 @@ export type ExtensionMessage =
   | { type: 'v2GoalCleared'; data: Record<string, never> }
   | { type: 'v2GoalInferenceDismissed'; data: { reason: string } }
   | { type: 'v2GoalInference'; data: { suggestedGoal?: string; confidence?: number; detectedTheme?: string; inference?: unknown; error?: string } }
+  | { type: 'v2GoalProgressAnalysis'; data: { success: boolean; sessionId?: string; progress?: number; reasoning?: string; inferredGoal?: string; accomplishments?: string[]; remaining?: string[]; error?: string; autoTriggered?: boolean } }
   | { type: 'openGoalEditor'; data: { currentGoal: string | null | undefined } }
 
   // -------- Suggestions --------

@@ -1,0 +1,215 @@
+/**
+ * SessionRingCard Component
+ *
+ * Displays session status as activity rings with label, name, and duration.
+ * Used in the cockpit header to show top active sessions at a glance.
+ *
+ * Layout:
+ *   [  ◐◑◐  ]    ← Activity rings
+ *   auth-feat     ← Session name (goal or custom name)
+ *     26m         ← Duration
+ */
+
+import { useMemo } from 'react';
+import { ActivityRings, type RingData } from './ActivityRings';
+import type { Session, CoachingData } from '../../state/types-v2';
+import { PLATFORM_CONFIG } from '../../state/types-v2';
+
+export interface SessionRingCardProps {
+  /** Session data */
+  session: Session;
+  /** Coaching data for goal progress (optional) */
+  coaching?: CoachingData | null;
+  /** Theme for styling */
+  theme?: 'light' | 'dark' | 'high-contrast';
+  /** Size of the rings */
+  ringSize?: number;
+  /** Click handler */
+  onClick?: () => void;
+  /** Whether this is the currently selected session */
+  isSelected?: boolean;
+}
+
+/**
+ * Format session duration for display
+ */
+function formatDuration(startTime: Date, lastActivityTime: Date): string {
+  const diffMs = lastActivityTime.getTime() - startTime.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return '<1m';
+  if (diffMins < 60) return `${diffMins}m`;
+
+  const hours = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+
+/**
+ * Get display name for session
+ * Priority: customName > goal (truncated) > platform label
+ */
+function getSessionDisplayName(session: Session): string {
+  if (session.customName) {
+    return session.customName.length > 12
+      ? session.customName.slice(0, 12) + '…'
+      : session.customName;
+  }
+  if (session.goal) {
+    return session.goal.length > 12
+      ? session.goal.slice(0, 12) + '…'
+      : session.goal;
+  }
+  return PLATFORM_CONFIG[session.platform].label;
+}
+
+/**
+ * Map session data to ring fill values (0-1)
+ */
+function computeRingData(
+  session: Session,
+  coaching?: CoachingData | null
+): RingData {
+  // Goal ring: Use coaching goalProgress.after if available,
+  // otherwise fall back to session.goalProgress (LLM-inferred),
+  // otherwise 0
+  const coachingProgress = coaching?.analysis?.goalProgress?.after;
+  const sessionProgress = session.goalProgress;
+  const goalProgress = coachingProgress ?? sessionProgress ?? 0;
+  const goal = goalProgress / 100; // Convert 0-100 to 0-1
+
+  // Activity ring: Based on promptCount and isActive status
+  // Active sessions get a boost, more prompts = more filled
+  // Normalize: ~20 prompts = full ring
+  const promptFactor = Math.min(session.promptCount / 20, 1);
+  const activityBoost = session.isActive ? 0.3 : 0;
+  const activity = Math.min(promptFactor + activityBoost, 1);
+
+  // Context ring: Placeholder for now
+  // In the future this will track token/context window usage
+  // For now, use a proxy based on prompt count (more prompts = more context used)
+  // This is just a visual indicator, not accurate data
+  const context = Math.min(session.promptCount / 30, 0.8); // Cap at 80% to indicate "room left"
+
+  return { goal, context, activity };
+}
+
+/**
+ * Ring tooltip content component
+ */
+function RingTooltip({
+  session,
+  ringData,
+  platformLabel,
+}: {
+  session: Session;
+  ringData: RingData;
+  platformLabel: string;
+}) {
+  // Format percentages for display
+  const goalPercent = Math.round(ringData.goal * 100);
+  const contextPercent = Math.round(ringData.context * 100);
+  const activityPercent = Math.round(ringData.activity * 100);
+
+  return (
+    <div className="vl-ring-tooltip">
+      <div className="vl-ring-tooltip__header">
+        <div className="vl-ring-tooltip__title">{platformLabel} Session</div>
+        <div className="vl-ring-tooltip__subtitle">
+          {session.promptCount} prompts · {session.isActive ? 'Active' : 'Idle'}
+        </div>
+      </div>
+      <div className="vl-ring-tooltip__rings">
+        <div className="vl-ring-tooltip__ring-row">
+          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--goal" />
+          <div className="vl-ring-tooltip__ring-info">
+            <span className="vl-ring-tooltip__ring-name">Goal Progress</span>
+            <span className="vl-ring-tooltip__ring-value">
+              {goalPercent}% — Task completion
+            </span>
+          </div>
+        </div>
+        <div className="vl-ring-tooltip__ring-row">
+          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--context" />
+          <div className="vl-ring-tooltip__ring-info">
+            <span className="vl-ring-tooltip__ring-name">Context</span>
+            <span className="vl-ring-tooltip__ring-value">
+              {contextPercent}% — Token usage estimate
+            </span>
+          </div>
+        </div>
+        <div className="vl-ring-tooltip__ring-row">
+          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--activity" />
+          <div className="vl-ring-tooltip__ring-info">
+            <span className="vl-ring-tooltip__ring-name">Activity</span>
+            <span className="vl-ring-tooltip__ring-value">
+              {activityPercent}% — Session engagement
+            </span>
+          </div>
+        </div>
+      </div>
+      {session.goal && (
+        <div className="vl-ring-tooltip__goal" title={session.goal}>
+          Goal: {session.goal}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * SessionRingCard - Compact session visualization with rings
+ */
+export function SessionRingCard({
+  session,
+  coaching,
+  theme = 'dark',
+  ringSize = 64,
+  onClick,
+  isSelected = false,
+}: SessionRingCardProps) {
+  const ringData = useMemo(
+    () => computeRingData(session, coaching),
+    [session, coaching]
+  );
+
+  const displayName = getSessionDisplayName(session);
+  const duration = formatDuration(session.startTime, session.lastActivityTime);
+  const platformConfig = PLATFORM_CONFIG[session.platform];
+
+  return (
+    <button
+      className={`vl-session-ring-card ${isSelected ? 'selected' : ''} ${session.isActive ? 'active' : ''}`}
+      onClick={onClick}
+      aria-label={`${displayName} - ${duration} - ${session.promptCount} prompts`}
+    >
+      <div className="vl-session-ring-card__rings">
+        <ActivityRings rings={ringData} size={ringSize} theme={theme} />
+        {session.isActive && <span className="vl-session-ring-card__pulse" />}
+      </div>
+
+      <div className="vl-session-ring-card__info">
+        <span className="vl-session-ring-card__name">{displayName}</span>
+        <span className="vl-session-ring-card__duration">
+          {session.isActive ? (
+            <>
+              <span className="vl-session-ring-card__status-dot" />
+              {duration}
+            </>
+          ) : (
+            duration
+          )}
+        </span>
+      </div>
+      <RingTooltip
+        session={session}
+        ringData={ringData}
+        platformLabel={platformConfig.label}
+      />
+    </button>
+  );
+}
+
+export default SessionRingCard;

@@ -27,6 +27,7 @@ import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
 import { PromptLabView } from './components/v2/PromptLabView';
 import { CloudStatusBar, type CloudStatus } from './components/v2/CloudStatusBar';
 import { NotificationToast, useNotifications } from './components/v2/NotificationToast';
+import { RingsHeader } from './components/v2/RingsHeader';
 import type { CoPilotSuggestionData } from './state/types-v2';
 import { shouldDisplayCoaching } from './utils/coaching-validation';
 
@@ -755,6 +756,25 @@ export function AppV2() {
               <Settings size={16} />
             </button>
           </header>
+        )}
+
+        {/* Rings Header - cockpit style session rings (Phase 2) */}
+        {state.currentView === 'main' && (
+          <RingsHeader
+            projects={state.projects}
+            activeSessionId={state.activeSessionId}
+            coaching={state.currentCoaching}
+            theme={state.theme}
+            onSessionSelect={(sessionId) => {
+              dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });
+              postMessage('markSessionAsRead', { sessionId });
+              postMessage('switchSession', { sessionId });
+            }}
+            onNavigateToCopilot={() => {
+              dispatch({ type: 'SET_TAB', payload: 'copilot' });
+              postMessage('tabChanged', { tab: 'copilot' });
+            }}
+          />
         )}
 
         {/* Tabs - only on main view */}
