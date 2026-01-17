@@ -127,6 +127,19 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 - SessionRingCard falls back: coaching progress → session.goalProgress → 0
 - Progress updates are pushed to webview automatically via callback
 
+**Race Condition Fix (Jan 2026):**
+- Fixed bug where early prompts (before LLM provider fully initialized) would mark tracking as "done"
+- Now checks `llmManager.getActiveProvider()` exists before attempting analysis
+- Tracking maps only updated AFTER successful analysis (not before)
+- Failed/skipped analyses will retry on next prompt instead of being blocked
+
+**Cockpit Sessions Analysis on Load (Jan 2026):**
+- Added `analyzeTopSessionsOnLoad()` to GoalService - analyzes top 3 cockpit sessions when extension loads
+- Top 3 selection prioritizes: sessions with ≥2 prompts → active sessions → most recent
+- Extracts `sessionTitle` from LLM and stores as `customName` for session naming
+- Skips Claude Code sessions (their prompts are in JSONL files, not SessionManager)
+- Called once from `CoPilotCoordinator.pushInitialData()` to avoid duplicate calls
+
 **Tooltip Implementation - DONE ✅:**
 - Added rich hover tooltip to SessionRingCard showing:
   - Ring name with color indicator and percentage
@@ -208,16 +221,18 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 
 **Notes:**
 - **Complete redesign**: Replaced tab-based period selector with dashboard-style layout
-- **New Layout**: Daily Standup card at top + Weekly Insights card below + "View full weekly report" expandable
-- **DailyStandupCard**: Shows "Yesterday I:" + "Today I plan to:" with Copy button in header
+- **Three report cards**: Daily Standup + Weekly Insights + Monthly Insights
+- **DailyStandupCard**: Shows "Yesterday I:" + "Today I plan to:" with Copy + Refresh buttons
 - **WeeklyInsightsCard**: Shows date range, stats (time · sessions · features), and AI-generated insights with contextual icons (🔥 success, ⚠️ warning, 💡 tip)
+- **MonthlyInsightsCard**: Shows month/year, stats with active days ratio, and AI insights
 - **ViewFullReport**: Collapsible section with detailed breakdown (daily table, activity distribution, top projects)
-- **Auto-load**: Reports auto-fetch standup + weekly data on mount
+- **Empty state cards**: Dashed border cards with individual "Generate X" buttons for each report type
+- **Refresh buttons** (🔄): Each filled card has a refresh button with spinning animation while loading
 - **Copy button**: Shows "Copied!" confirmation with checkmark icon
 - **CloudCTA**: Promotes email delivery feature at bottom
-- **CSS**: New `.vl-reports-view`, `.vl-report-card`, `.vl-insight-item` classes with theme support
+- **CSS**: New `.vl-reports-view`, `.vl-report-card`, `.vl-insight-item`, `.vl-card-refresh-btn` classes with theme support
 - Removed old period selector (Standup/Today/Week/Month tabs)
-- Removed unused verbose components from previous iteration
+- Removed auto-load in favor of explicit generate buttons
 
 ---
 
@@ -278,6 +293,44 @@ Current tooltip shows "Claude Code Session" as title with ring labels like "Goal
 
 ---
 
+### Phase 9: LLM Provider Indicator in Reports
+**Chat 9 - Show which model analyzes reports**
+
+Users need to know which LLM is generating their report insights. The selected provider is shown in the footer ("LLM: Claude Agent SDK") and can be changed via the provider dropdown.
+
+- [ ] Show "Analyzed by {provider}" label on each generated report card
+- [ ] Display provider name after report generation completes
+- [ ] Link to provider selector (footer) or show inline indicator
+- [ ] Handle case when provider changes between report generations
+- [ ] Consider showing model name too (e.g., "Claude Agent SDK · claude-3-sonnet")
+
+**Current UX:**
+```
+┌─────────────────────────────────────────┐
+│  📅 DAILY STANDUP            🔄  Copy   │
+│  ─────────────────────────────────────  │
+│  Yesterday I: ...                       │
+│  Today I plan to: ...                   │
+│                                         │  ← No indication of which LLM
+└─────────────────────────────────────────┘
+```
+
+**Target UX:**
+```
+┌─────────────────────────────────────────┐
+│  📅 DAILY STANDUP            🔄  Copy   │
+│  ─────────────────────────────────────  │
+│  Yesterday I: ...                       │
+│  Today I plan to: ...                   │
+│  ─────────────────────────────────────  │
+│  Analyzed by Claude Agent SDK           │  ← Provider indicator
+└─────────────────────────────────────────┘
+```
+
+**Deliverable:** Users know which LLM generated each report
+
+---
+
 ## Library Choice
 
 ~~**Package:** `@jonasdoesthings/react-activity-rings`~~ (Replaced in Phase 3.5)
@@ -310,11 +363,11 @@ webview/menu/
 │   │   ├── SessionsSidebar.tsx  # NEW ✅ (Phase 4) - Session list sidebar with ring info
 │   │   ├── SessionCard.tsx      # MODIFY (Phase 5) - expandable cards
 │   │   ├── CoPilotView.tsx      # Keep as-is (used in sessions tab content)
-│   │   ├── SummariesView.tsx    # Keep as-is (REPORTS tab content)
+│   │   ├── SummariesView.tsx    # DONE ✅ (Phase 6) - Dashboard with report cards
 │   │   ├── Sidebar.tsx          # Original sidebar (not used, kept for reference)
 │   │   └── index.ts             # DONE ✅ (Phase 1+2) - exports
 │   └── styles/
-│       └── redesign.css         # DONE ✅ (Phase 1, 2, 3.5, 4) - all UI styles
+│       └── redesign.css         # DONE ✅ (Phase 1, 2, 3.5, 4, 6) - all UI styles
 ```
 
 ---
@@ -335,3 +388,25 @@ webview/menu/
 - Prompt scoring/feedback UI (keep existing, don't redesign)
 - Cloud sync improvements
 - Onboarding flow changes
+
+---
+
+## Known Issues / Tech Debt
+
+### V2MessageHandler "Unknown message type" warnings
+The webview sends messages on init that V2MessageHandler doesn't recognize. These are handled by V1MessageHandler fallback but produce noisy console warnings:
+
+```
+[V2MessageHandler] Unknown message type: getCoachingStatus
+[V2MessageHandler] Unknown message type: getResponseAnalysisStatus
+[V2MessageHandler] Unknown message type: getSavedPrompts
+[V2MessageHandler] Unknown message type: getProviders
+[V2MessageHandler] Unknown message type: getFeatureModels
+[V2MessageHandler] Unknown message type: getAvailableModelsForFeature
+[V2MessageHandler] Unknown message type: getCloudStatus
+```
+
+**Fix options:**
+1. Add these handlers to V2MessageHandler (proper fix)
+2. Suppress the warning for known V1 message types (quick fix)
+3. Route these messages directly to V1MessageHandler without warning
