@@ -8,9 +8,9 @@ describe('appReducer', () => {
     it('should change current tab', () => {
       const result = appReducer(initialState, {
         type: 'SET_TAB',
-        payload: 'summaries',
+        payload: 'reports',
       });
-      expect(result.currentTab).toBe('summaries');
+      expect(result.currentTab).toBe('reports');
     });
 
     it('should preserve other state', () => {
@@ -155,18 +155,18 @@ describe('appReducer', () => {
 
   describe('CANCEL_LOADING_SUMMARY', () => {
     it('should preserve currentTab when cancelling', () => {
-      const stateOnSummaries: AppStateV2 = {
+      const stateOnReports: AppStateV2 = {
         ...initialState,
-        currentTab: 'summaries',
+        currentTab: 'reports',
         isLoadingSummary: true,
         loadingProgress: 50,
       };
 
-      const result = appReducer(stateOnSummaries, {
+      const result = appReducer(stateOnReports, {
         type: 'CANCEL_LOADING_SUMMARY',
       });
 
-      expect(result.currentTab).toBe('summaries');
+      expect(result.currentTab).toBe('reports');
       expect(result.isLoadingSummary).toBe(false);
       expect(result.summaryLoadingCancelled).toBe(true);
       expect(result.loadingProgress).toBe(0);

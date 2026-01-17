@@ -155,17 +155,30 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 
 ---
 
-### Phase 4: Tab Restructure
+### Phase 4: Tab Restructure ✅
 **Chat 4 - Replace current tabs**
 
-- [ ] Rename tabs: CO-PILOT → SESSIONS, SUMMARIES → REPORTS
-- [ ] Remove sidebar from SESSIONS tab (sessions now shown in rings header)
-- [ ] SESSIONS tab: Session list with expandable cards
-- [ ] REPORTS tab: Daily standup + weekly insights (simplify current view)
-- [ ] ACCOUNT tab: Keep mostly as-is, clean up
-- [ ] Update tab navigation state
+- [x] Rename tabs: CO-PILOT → SESSIONS, SUMMARIES → REPORTS
+- [x] Remove sidebar from SESSIONS tab (sessions now shown in rings header)
+- [x] SESSIONS tab: Session list with expandable cards
+- [x] REPORTS tab: Daily standup + weekly insights (simplify current view)
+- [x] ACCOUNT tab: Keep mostly as-is, clean up
+- [x] Update tab navigation state
 
 **Deliverable:** New tab structure working
+
+**Notes:**
+- `MainTab` type changed from `'copilot' | 'summaries' | 'account'` to `'sessions' | 'reports' | 'account'`
+- Tab order changed to: Sessions, Reports, Account
+- Default tab is now 'reports' (was 'summaries')
+- All navigation and state management updated to use new tab names
+- **NEW SessionsSidebar component** added with:
+  - Session title (customName > goal > platform label)
+  - Message count and duration
+  - Ring progress indicators (Goal/Context/Activity percentages)
+  - Active status badge
+  - Grouped by Today/Yesterday/Earlier
+  - Mini activity rings for visual identification
 
 ---
 
@@ -230,17 +243,18 @@ src/copilot/
 ├── goal-progress-analyzer.ts    # DONE ✅ (Phase 3) - LLM-powered progress inference
 
 webview/menu/
-├── AppV2.tsx                    # DONE ✅ (Phase 2) - Added RingsHeader
-├── state/types-v2.ts            # Update tab types, add goalProgress to Session
+├── AppV2.tsx                    # DONE ✅ (Phase 2, 4) - Added RingsHeader, tab restructure
+├── state/types-v2.ts            # DONE ✅ (Phase 3, 4) - Updated tab types to sessions/reports/account
 ├── components/
 │   ├── v2/
 │   │   ├── RingsHeader.tsx      # DONE ✅ (Phase 2) - rings section
 │   │   ├── ActivityRings.tsx    # DONE ✅ (Phase 1) - ring visualization
 │   │   ├── SessionRingCard.tsx  # DONE ✅ (Phase 1) - ring + label
 │   │   ├── SessionCard.tsx      # MODIFY - expandable cards
-│   │   ├── CoPilotView.tsx      # RENAME to SessionsView.tsx
-│   │   ├── SummariesView.tsx    # MODIFY - simplify
-│   │   ├── Sidebar.tsx          # REMOVE or repurpose
+│   │   ├── CoPilotView.tsx      # Keep as-is (renamed in tab labels, not file)
+│   │   ├── SummariesView.tsx    # Keep as-is (renamed to REPORTS in tab labels)
+│   │   ├── SessionsSidebar.tsx  # NEW ✅ (Phase 4) - Session list sidebar with ring info
+│   │   ├── Sidebar.tsx          # Original sidebar (not used in sessions tab)
 │   │   └── index.ts             # DONE ✅ (Phase 1+2) - exports
 │   └── styles/
 │       └── redesign.css         # DONE ✅ (Phase 1+2) - ring + header styles

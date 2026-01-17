@@ -20,8 +20,8 @@ import { ProviderSelectView } from './components/v2/ProviderSelectView';
 import { HookSetupView } from './components/v2/HookSetupView';
 import { LLMDropup } from './components/v2/LLMDropup';
 import { LoadingOverlay } from './components/v2/LoadingOverlay';
-import { Sidebar } from './components/v2/Sidebar';
 import { GoalInferenceModal } from './components/v2/GoalInferenceModal';
+import { SessionsSidebar } from './components/v2/SessionsSidebar';
 import { CoPilotSuggestion } from './components/v2/CoPilotSuggestion';
 import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
 import { PromptLabView } from './components/v2/PromptLabView';
@@ -132,9 +132,9 @@ export function AppV2() {
     }
   }, []);
 
-  // Re-request coaching when switching back to copilot tab
+  // Re-request coaching when switching back to sessions tab
   useEffect(() => {
-    if (state.currentTab === 'copilot' && state.currentAnalysis?.id) {
+    if (state.currentTab === 'sessions' && state.currentAnalysis?.id) {
       dispatch({ type: 'SET_COACHING_PHASE', payload: 'generating_coaching' });
       dispatch({ type: 'SET_COACHING', payload: null });
       postMessage('getCoachingForPrompt', { promptId: state.currentAnalysis.id });
@@ -639,7 +639,7 @@ export function AppV2() {
     postMessage('getCloudStatus');
     postMessage('getConfig');
     postMessage('getEditorInfo'); // Get editor info (Cursor vs VS Code)
-    postMessage('tabChanged', { tab: 'summaries' }); // Notify initial tab (summaries is default)
+    postMessage('tabChanged', { tab: 'reports' }); // Notify initial tab (reports is default)
 
     // Request V2 data (Stream A/B integration)
     postMessage('v2GetActiveSession'); // Get active session info
@@ -659,8 +659,8 @@ export function AppV2() {
 
   // Render current view
   const renderView = () => {
-    // Only show loading overlay when on summaries tab
-    if (state.isLoadingSummary && state.currentTab === 'summaries') {
+    // Only show loading overlay when on reports tab
+    if (state.isLoadingSummary && state.currentTab === 'reports') {
       return (
         <LoadingOverlay
           progress={state.loadingProgress}
@@ -714,10 +714,10 @@ export function AppV2() {
       default:
         // Render tab content based on currentTab
         switch (state.currentTab) {
-          case 'copilot':
+          case 'sessions':
             // Show PromptLabView when sidebar is in prompt-lab mode
             return state.sidebarMode === 'prompt-lab' ? <PromptLabView /> : <CoPilotView />;
-          case 'summaries':
+          case 'reports':
             return <SummariesView />;
           case 'account':
             return <AccountView />;
@@ -771,8 +771,8 @@ export function AppV2() {
               postMessage('switchSession', { sessionId });
             }}
             onNavigateToCopilot={() => {
-              dispatch({ type: 'SET_TAB', payload: 'copilot' });
-              postMessage('tabChanged', { tab: 'copilot' });
+              dispatch({ type: 'SET_TAB', payload: 'sessions' });
+              postMessage('tabChanged', { tab: 'sessions' });
             }}
           />
         )}
@@ -781,22 +781,22 @@ export function AppV2() {
         {state.currentView === 'main' && (
           <nav className="vl-tabs">
             <button
-              className={`vl-tab ${state.currentTab === 'summaries' ? 'active' : ''}`}
+              className={`vl-tab ${state.currentTab === 'sessions' ? 'active' : ''}`}
               onClick={() => {
-                dispatch({ type: 'SET_TAB', payload: 'summaries' });
-                postMessage('tabChanged', { tab: 'summaries' });
+                dispatch({ type: 'SET_TAB', payload: 'sessions' });
+                postMessage('tabChanged', { tab: 'sessions' });
+              }}
+            >
+              Sessions
+            </button>
+            <button
+              className={`vl-tab ${state.currentTab === 'reports' ? 'active' : ''}`}
+              onClick={() => {
+                dispatch({ type: 'SET_TAB', payload: 'reports' });
+                postMessage('tabChanged', { tab: 'reports' });
               }}
             >
               Reports
-            </button>
-            <button
-              className={`vl-tab ${state.currentTab === 'copilot' ? 'active' : ''}`}
-              onClick={() => {
-                dispatch({ type: 'SET_TAB', payload: 'copilot' });
-                postMessage('tabChanged', { tab: 'copilot' });
-              }}
-            >
-              Co-Pilot
             </button>
             <button
               className={`vl-tab ${state.currentTab === 'account' ? 'active' : ''}`}
@@ -818,8 +818,8 @@ export function AppV2() {
                   className="vl-today-summary-link"
                   onClick={() => {
                     dispatch({ type: 'SET_SUMMARY_PERIOD', payload: 'today' });
-                    dispatch({ type: 'SET_TAB', payload: 'summaries' });
-                    postMessage('tabChanged', { tab: 'summaries' });
+                    dispatch({ type: 'SET_TAB', payload: 'reports' });
+                    postMessage('tabChanged', { tab: 'reports' });
                   }}
                 >
                   View
@@ -829,50 +829,23 @@ export function AppV2() {
           </nav>
         )}
 
-        {/* Main Content - with sidebar layout for CO-PILOT tab */}
-        {state.currentView === 'main' && state.currentTab === 'copilot' ? (
-          <div className="vl-sidebar-layout">
-            <Sidebar
-              projects={state.projects}
-              activeSessionId={state.activeSessionId || undefined}
-              onSessionSelect={(sessionId) => {
-                dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });
-                postMessage('markSessionAsRead', { sessionId });
-                postMessage('switchSession', { sessionId });
-              }}
-              onSessionRename={(sessionId, customName) => {
-                postMessage('renameSession', { sessionId, customName });
-              }}
-              onSessionDelete={(sessionId) => {
-                postMessage('deleteSession', { sessionId });
-              }}
-              onProjectToggle={(projectId) => {
-                dispatch({ type: 'TOGGLE_PROJECT', payload: projectId });
-              }}
-              // Prompt Lab props
-              sidebarMode={state.sidebarMode}
-              onSidebarModeChange={(mode) => dispatch({ type: 'SET_SIDEBAR_MODE', payload: mode })}
-              savedPrompts={state.promptLab.savedPrompts}
-              onSavedPromptSelect={(prompt) => {
-                dispatch({ type: 'LOAD_SAVED_PROMPT', payload: prompt });
-                dispatch({ type: 'SET_SIDEBAR_MODE', payload: 'prompt-lab' });
-              }}
-              onSavedPromptDelete={(id) => postMessage('deleteSavedPrompt', { id })}
-              onSavedPromptRename={(id, name) => postMessage('renamePrompt', { promptId: id, name })}
-              // Auto-analyze props
-              autoAnalyzeEnabled={state.autoAnalyzeEnabled}
-              responseAnalysisEnabled={state.responseAnalysisEnabled}
-              analyzedToday={state.analyzedToday}
-              onToggleAutoAnalyze={() => {
-                dispatch({ type: 'TOGGLE_AUTO_ANALYZE' });
-                postMessage('toggleAutoAnalyze', { enabled: !state.autoAnalyzeEnabled });
-              }}
-              onToggleResponseAnalysis={() => {
-                dispatch({ type: 'TOGGLE_RESPONSE_ANALYSIS' });
-                postMessage('toggleResponseAnalysis', { enabled: !state.responseAnalysisEnabled });
-              }}
-            />
-            <div className="vl-main-content">
+        {/* Main Content - with sidebar for sessions tab */}
+        {state.currentView === 'main' && state.currentTab === 'sessions' ? (
+          <div className="vl-sessions-layout">
+            <div className="vl-sessions-layout__sidebar">
+              <SessionsSidebar
+                projects={state.projects}
+                activeSessionId={state.activeSessionId}
+                coaching={state.currentCoaching}
+                theme={state.theme}
+                onSessionSelect={(sessionId) => {
+                  dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });
+                  postMessage('markSessionAsRead', { sessionId });
+                  postMessage('switchSession', { sessionId });
+                }}
+              />
+            </div>
+            <div className="vl-sessions-layout__content">
               <main className="vl-content">{renderView()}</main>
             </div>
           </div>

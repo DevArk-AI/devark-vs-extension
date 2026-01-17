@@ -8510,3 +8510,272 @@
 [data-vscode-theme-kind="vscode-light"] .vl-rings-header {
   background: var(--vscode-sideBar-background, #f3f3f3);
 }
+
+/* ========================================
+   SESSIONS SIDEBAR (Phase 4)
+   ======================================== */
+
+.vl-sessions-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 220px;
+  max-width: 320px;
+  width: 280px;
+  background: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  overflow: hidden;
+}
+
+.vl-sessions-sidebar--empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.vl-sessions-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+}
+
+.vl-sessions-sidebar__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vl-text-secondary);
+}
+
+.vl-sessions-sidebar__count {
+  font-size: 11px;
+  color: var(--vl-text-muted);
+  background: var(--vl-subtle-bg);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.vl-sessions-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+}
+
+.vl-sessions-sidebar__group {
+  margin-bottom: var(--space-md);
+}
+
+.vl-sessions-sidebar__group-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vl-text-muted);
+  padding: var(--space-sm) var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.vl-sessions-sidebar__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.vl-sessions-sidebar__empty-text {
+  font-size: 13px;
+  color: var(--vl-text-secondary);
+}
+
+.vl-sessions-sidebar__empty-hint {
+  font-size: 11px;
+  color: var(--vl-text-muted);
+}
+
+/* Session List Item */
+.vl-session-list-item {
+  display: flex;
+  width: 100%;
+  padding: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.vl-session-list-item:hover {
+  background: var(--vl-hover-bg);
+  border-color: var(--vl-border);
+}
+
+.vl-session-list-item.selected {
+  background: var(--vl-selected-bg);
+  border-color: var(--vl-accent-muted);
+}
+
+.vl-session-list-item.active {
+  border-left: 2px solid var(--score-good);
+}
+
+.vl-session-list-item__main {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.vl-session-list-item__rings {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.vl-session-list-item__pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: var(--score-good);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.vl-session-list-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vl-session-list-item__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vl-session-list-item__title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-editor-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vl-session-list-item__badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--score-good);
+  background: var(--score-good-bg);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.vl-session-list-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--vl-text-muted);
+}
+
+.vl-session-list-item__platform-icon {
+  border-radius: 2px;
+}
+
+.vl-session-list-item__platform-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.vl-session-list-item__separator {
+  color: var(--vl-text-muted);
+  opacity: 0.5;
+}
+
+.vl-session-list-item__messages,
+.vl-session-list-item__duration,
+.vl-session-list-item__time {
+  white-space: nowrap;
+}
+
+.vl-session-list-item__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: 2px;
+}
+
+.vl-session-list-item__progress-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--vl-text-muted);
+}
+
+.vl-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.vl-progress-dot--goal {
+  background: #ef4444; /* Red - goal ring */
+}
+
+.vl-progress-dot--context {
+  background: #22c55e; /* Green - context ring */
+}
+
+.vl-progress-dot--activity {
+  background: #3b82f6; /* Blue - activity ring */
+}
+
+/* Sessions Sidebar Layout */
+.vl-sessions-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vl-sessions-layout__sidebar {
+  flex-shrink: 0;
+}
+
+.vl-sessions-layout__content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Light theme */
+[data-vscode-theme-kind="vscode-light"] .vl-session-list-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-session-list-item.selected {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* High contrast */
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-sessions-sidebar {
+  border-right-color: var(--vscode-contrastBorder);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-session-list-item.selected {
+  border-color: var(--vscode-focusBorder);
+}
