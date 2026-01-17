@@ -300,41 +300,25 @@ Current tooltip shows "Claude Code Session" as title with ring labels like "Goal
 
 ---
 
-### Phase 9: LLM Provider Indicator in Reports
+### Phase 9: LLM Provider Indicator in Reports ✅
 **Chat 9 - Show which model analyzes reports**
 
 Users need to know which LLM is generating their report insights. The selected provider is shown in the footer ("LLM: Claude Agent SDK") and can be changed via the provider dropdown.
 
-- [ ] Show "Analyzed by {provider}" label on each generated report card
-- [ ] Display provider name after report generation completes
-- [ ] Link to provider selector (footer) or show inline indicator
-- [ ] Handle case when provider changes between report generations
-- [ ] Consider showing model name too (e.g., "Claude Agent SDK · claude-3-sonnet")
-
-**Current UX:**
-```
-┌─────────────────────────────────────────┐
-│  📅 DAILY STANDUP            🔄  Copy   │
-│  ─────────────────────────────────────  │
-│  Yesterday I: ...                       │
-│  Today I plan to: ...                   │
-│                                         │  ← No indication of which LLM
-└─────────────────────────────────────────┘
-```
-
-**Target UX:**
-```
-┌─────────────────────────────────────────┐
-│  📅 DAILY STANDUP            🔄  Copy   │
-│  ─────────────────────────────────────  │
-│  Yesterday I: ...                       │
-│  Today I plan to: ...                   │
-│  ─────────────────────────────────────  │
-│  Analyzed by Claude Agent SDK           │  ← Provider indicator
-└─────────────────────────────────────────┘
-```
+- [x] Show "Analyzed by {provider}" label on each generated report card
+- [x] Display provider name after report generation completes
+- [x] Show model name when available (e.g., "Claude Agent SDK · claude-3-sonnet")
+- [x] Created reusable `ReportCard` wrapper component with built-in footer
 
 **Deliverable:** Users know which LLM generated each report
+
+**Notes (Jan 2026):**
+- Created `ReportCard` wrapper component that handles common card structure (header, content, footer)
+- Footer shows "Analyzed by {provider} · {model}" when `providerInfo` is available
+- All three card components (DailyStandupCard, WeeklyInsightsCard, MonthlyInsightsCard) now use ReportCard
+- Provider info comes from `providerInfo?: { model: string; provider: string }` on summary data
+- Footer only renders when providerInfo exists (graceful fallback for legacy data)
+- Added CSS for `.vl-report-card-footer` and `.vl-provider-label`
 
 ---
 
@@ -370,11 +354,11 @@ webview/menu/
 │   │   ├── SessionsSidebar.tsx  # NEW ✅ (Phase 4) - Session list sidebar with ring info
 │   │   ├── SessionCard.tsx      # MODIFY (Phase 5) - expandable cards
 │   │   ├── CoPilotView.tsx      # Keep as-is (used in sessions tab content)
-│   │   ├── SummariesView.tsx    # DONE ✅ (Phase 6) - Dashboard with report cards
+│   │   ├── SummariesView.tsx    # DONE ✅ (Phase 6, 9) - Dashboard with report cards + ReportCard wrapper
 │   │   ├── Sidebar.tsx          # Original sidebar (not used, kept for reference)
 │   │   └── index.ts             # DONE ✅ (Phase 1+2) - exports
 │   └── styles/
-│       └── redesign.css         # DONE ✅ (Phase 1, 2, 3.5, 4, 6) - all UI styles
+│       └── redesign.css         # DONE ✅ (Phase 1, 2, 3.5, 4, 6, 9) - all UI styles
 ```
 
 ---

@@ -51,6 +51,45 @@ function RefreshButton({ onClick, isLoading }: { onClick: () => void; isLoading?
   );
 }
 
+// Report Card Wrapper - common structure for all report cards
+function ReportCard({
+  title,
+  subtitle,
+  actions,
+  providerInfo,
+  className,
+  children
+}: {
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  actions?: React.ReactNode;
+  providerInfo?: { model: string; provider: string };
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const providerLabel = providerInfo
+    ? (providerInfo.model ? `${providerInfo.provider} · ${providerInfo.model}` : providerInfo.provider)
+    : null;
+
+  return (
+    <div className={`vl-report-card ${className || ''}`}>
+      <div className="vl-report-card-header">
+        {title && <div className="vl-report-card-title">{title}</div>}
+        {subtitle && <div className="vl-report-card-subtitle">{subtitle}</div>}
+        {actions}
+      </div>
+      <div className="vl-report-card-content">
+        {children}
+      </div>
+      {providerLabel && (
+        <div className="vl-report-card-footer">
+          <span className="vl-provider-label">Analyzed by {providerLabel}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Daily Standup Card
 function DailyStandupCard({
   summary,
@@ -75,40 +114,37 @@ function DailyStandupCard({
   const todayItems = summary.suggestedFocusForToday || [];
 
   return (
-    <div className="vl-report-card">
-      <div className="vl-report-card-header">
-        <div className="vl-report-card-title">
-          <Calendar size={16} />
-          DAILY STANDUP
-        </div>
+    <ReportCard
+      title={<><Calendar size={16} /> DAILY STANDUP</>}
+      actions={
         <div className="vl-report-card-actions">
           <RefreshButton onClick={onRefresh} isLoading={isLoading} />
           <CopyButton onClick={onCopy} />
         </div>
-      </div>
-      <div className="vl-report-card-content">
-        {yesterdayItems.length > 0 && (
-          <div className="vl-standup-section">
-            <div className="vl-standup-section-label">Yesterday I:</div>
-            <ul className="vl-standup-list">
-              {yesterdayItems.slice(0, 4).map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {todayItems.length > 0 && (
-          <div className="vl-standup-section">
-            <div className="vl-standup-section-label">Today I plan to:</div>
-            <ul className="vl-standup-list">
-              {todayItems.slice(0, 3).map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
+      }
+      providerInfo={summary.providerInfo}
+    >
+      {yesterdayItems.length > 0 && (
+        <div className="vl-standup-section">
+          <div className="vl-standup-section-label">Yesterday I:</div>
+          <ul className="vl-standup-list">
+            {yesterdayItems.slice(0, 4).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {todayItems.length > 0 && (
+        <div className="vl-standup-section">
+          <div className="vl-standup-section-label">Today I plan to:</div>
+          <ul className="vl-standup-list">
+            {todayItems.slice(0, 3).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </ReportCard>
   );
 }
 
@@ -139,26 +175,25 @@ function WeeklyInsightsCard({
   const insights = summary.executiveSummary?.slice(0, 3) || [];
 
   return (
-    <div className="vl-report-card vl-report-card--insights">
-      <div className="vl-report-card-header">
-        <div className="vl-report-card-subtitle">THIS WEEK · {dateRange}</div>
-        <RefreshButton onClick={onRefresh} isLoading={isLoading} />
-      </div>
-      <div className="vl-report-card-content">
-        <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
+    <ReportCard
+      subtitle={`THIS WEEK · ${dateRange}`}
+      actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
+      providerInfo={summary.providerInfo}
+      className="vl-report-card--insights"
+    >
+      <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
 
-        {insights.length > 0 && (
-          <div className="vl-weekly-insights">
-            {insights.map((insight, i) => (
-              <div key={i} className="vl-insight-item">
-                {getInsightIcon(insight)}
-                <span>{insight}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      {insights.length > 0 && (
+        <div className="vl-weekly-insights">
+          {insights.map((insight, i) => (
+            <div key={i} className="vl-insight-item">
+              {getInsightIcon(insight)}
+              <span>{insight}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </ReportCard>
   );
 }
 
@@ -189,26 +224,25 @@ function MonthlyInsightsCard({
   const insights = summary.executiveSummary?.slice(0, 3) || [];
 
   return (
-    <div className="vl-report-card vl-report-card--insights">
-      <div className="vl-report-card-header">
-        <div className="vl-report-card-subtitle">THIS MONTH · {summary.month} {summary.year}</div>
-        <RefreshButton onClick={onRefresh} isLoading={isLoading} />
-      </div>
-      <div className="vl-report-card-content">
-        <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
+    <ReportCard
+      subtitle={`THIS MONTH · ${summary.month} ${summary.year}`}
+      actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
+      providerInfo={summary.providerInfo}
+      className="vl-report-card--insights"
+    >
+      <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
 
-        {insights.length > 0 && (
-          <div className="vl-weekly-insights">
-            {insights.map((insight, i) => (
-              <div key={i} className="vl-insight-item">
-                {getInsightIcon(insight)}
-                <span>{insight}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      {insights.length > 0 && (
+        <div className="vl-weekly-insights">
+          {insights.map((insight, i) => (
+            <div key={i} className="vl-insight-item">
+              {getInsightIcon(insight)}
+              <span>{insight}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </ReportCard>
   );
 }
 

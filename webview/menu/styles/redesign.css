@@ -9009,6 +9009,18 @@
   padding: var(--space-lg);
 }
 
+/* Provider Footer */
+.vl-report-card-footer {
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border-default);
+  font-size: 11px;
+  color: var(--foreground-muted);
+}
+
+.vl-provider-label {
+  opacity: 0.7;
+}
+
 /* Card Copy Button */
 .vl-card-copy-btn {
   display: inline-flex;
