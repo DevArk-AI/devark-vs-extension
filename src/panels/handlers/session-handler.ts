@@ -429,6 +429,7 @@ export class SessionHandler extends BaseMessageHandler {
     }
   }
 
+
   /**
    * Convert UnifiedSession to the Session type used by the webview
    */

@@ -32,6 +32,8 @@ export interface GoalProgressOutput {
   reasoning: string;
   /** Inferred goal if none was set */
   inferredGoal?: string;
+  /** Short descriptive title for the session (3-6 words) */
+  sessionTitle?: string;
   /** Key accomplishments detected */
   accomplishments?: string[];
   /** Remaining work detected */
@@ -124,10 +126,13 @@ Analyze the session and estimate goal completion progress. Consider:
 3. What remains to be done?
 4. Is the task complete, partially complete, or just started?
 
+Also generate a short, descriptive title for this session (3-6 words) that captures what the developer is working on. Examples: "Auth Login Flow", "Fix API Timeout Bug", "Refactor User Service", "Add Dark Mode".
+
 Respond with JSON:
 {
   "progress": <number 0-100>,
   "reasoning": "<brief 1-2 sentence explanation>",
+  "sessionTitle": "<short 3-6 word title for the session>",
   "inferredGoal": "<goal if none was set, null otherwise>",
   "accomplishments": ["<key accomplishment 1>", ...],
   "remaining": ["<remaining task 1>", ...]
@@ -153,6 +158,7 @@ JSON response:`;
       return {
         progress,
         reasoning: parsed.reasoning || 'Unable to determine progress.',
+        sessionTitle: parsed.sessionTitle || undefined,
         inferredGoal: parsed.inferredGoal || undefined,
         accomplishments: parsed.accomplishments || [],
         remaining: parsed.remaining || [],

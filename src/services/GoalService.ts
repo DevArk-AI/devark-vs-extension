@@ -196,6 +196,8 @@ export class GoalService {
    * @returns The goal progress analysis result, or null if analysis failed
    */
   public async analyzeGoalProgress(sessionId?: string): Promise<GoalProgressOutput | null> {
+    console.log(`[GoalService] ▶ analyzeGoalProgress called`, { sessionId: sessionId || 'active session' });
+
     const sessionManager = getSessionManager();
 
     // Find the session to analyze
@@ -208,13 +210,20 @@ export class GoalService {
     }
 
     if (!session) {
-      console.warn('[GoalService] No session found for goal progress analysis');
+      console.warn('[GoalService] ✗ No session found for goal progress analysis');
       return null;
     }
 
+    console.log(`[GoalService] Found session:`, {
+      id: session.id,
+      promptCount: session.promptCount,
+      goal: session.goal,
+      platform: session.platform,
+    });
+
     // Skip if session has no prompts
     if (session.promptCount === 0 || session.prompts.length === 0) {
-      console.log('[GoalService] Session has no prompts, skipping goal progress analysis');
+      console.log('[GoalService] ✗ Session has no prompts, skipping goal progress analysis');
       return {
         progress: 0,
         reasoning: 'Session has no prompts yet.',
@@ -224,29 +233,37 @@ export class GoalService {
     // Get LLM provider
     const llmManager = ExtensionState.getLLMManager();
     if (!llmManager) {
-      console.warn('[GoalService] No LLM provider available for goal progress analysis');
+      console.warn('[GoalService] ✗ No LLM provider available for goal progress analysis');
       return null;
     }
 
     try {
+      console.log(`[GoalService] 🔄 Creating GoalProgressAnalyzer and running analysis...`);
       // Create the analyzer and run analysis
       const analyzer = new GoalProgressAnalyzer(llmManager);
       const result = await analyzer.analyzeProgress(session, session.goal);
 
-      // Update the session with the progress
-      await sessionManager.updateSession(session.id, {
-        goalProgress: result.progress,
-      });
+      console.log(`[GoalService] ✓ LLM analysis complete:`, result);
 
-      console.log('[GoalService] Goal progress analyzed:', {
-        sessionId: session.id,
-        progress: result.progress,
-        reasoning: result.reasoning,
-      });
+      // Build update payload - always include progress
+      const updatePayload: { goalProgress: number; customName?: string } = {
+        goalProgress: result.progress,
+      };
+
+      // Also set customName from sessionTitle if session doesn't already have one
+      if (result.sessionTitle && !session.customName) {
+        updatePayload.customName = result.sessionTitle;
+        console.log(`[GoalService] ✓ Setting session title: "${result.sessionTitle}"`);
+      }
+
+      // Update the session
+      await sessionManager.updateSession(session.id, updatePayload);
+
+      console.log('[GoalService] ✓ Session updated with goalProgress:', result.progress);
 
       return result;
     } catch (error) {
-      console.error('[GoalService] Goal progress analysis failed:', error);
+      console.error('[GoalService] ✗ Goal progress analysis failed:', error);
       return null;
     }
   }
@@ -269,11 +286,14 @@ export class GoalService {
    * - AND debounce time has passed
    */
   public onPromptAdded(sessionId: string): void {
+    console.log(`[GoalService] ▶ onPromptAdded called for session: ${sessionId}`);
+
     const sessionManager = getSessionManager();
     const sessions = sessionManager.getSessions();
     const session = sessions.find(s => s.id === sessionId);
 
     if (!session) {
+      console.log(`[GoalService] ✗ Session not found: ${sessionId}`);
       return;
     }
 
@@ -282,6 +302,16 @@ export class GoalService {
     const lastAnalysisCount = this.lastAnalysisPromptCount.get(sessionId) || 0;
     const lastAnalysisAt = this.lastAnalysisTime.get(sessionId) || 0;
     const now = Date.now();
+
+    console.log(`[GoalService] State check:`, {
+      promptCount,
+      hasGoalProgress,
+      goalProgress: session.goalProgress,
+      lastAnalysisCount,
+      lastAnalysisAt: lastAnalysisAt ? new Date(lastAnalysisAt).toISOString() : 'never',
+      minPromptsRequired: this.config.minPromptsForProgressAnalysis,
+      analysisInterval: this.config.progressAnalysisInterval,
+    });
 
     // Determine if we should analyze
     let shouldAnalyze = false;
@@ -299,8 +329,11 @@ export class GoalService {
     }
 
     if (!shouldAnalyze) {
+      console.log(`[GoalService] ✗ Skipping analysis - conditions not met (promptCount=${promptCount}, hasGoalProgress=${hasGoalProgress})`);
       return;
     }
+
+    console.log(`[GoalService] ✓ Should analyze: ${reason}`);
 
     // Check debounce
     const timeSinceLastAnalysis = now - lastAnalysisAt;
@@ -328,40 +361,165 @@ export class GoalService {
   }
 
   /**
-   * Internal method to trigger goal progress analysis
+   * Analyze goal progress for top sessions on load (cockpit header rings)
+   * Only analyzes sessions that need it (have prompts but no goalProgress)
+   *
+   * @param sessions - All sessions to consider
    */
-  private async triggerProgressAnalysis(sessionId: string, reason: string): Promise<void> {
-    // Check if LLM manager is available before attempting analysis
-    try {
-      const llmManager = ExtensionState.getLLMManager();
-      if (!llmManager) {
-        console.log('[GoalService] No LLM provider available, skipping auto goal progress analysis');
-        return;
+  public async analyzeTopSessionsOnLoad(sessions: Session[]): Promise<void> {
+    console.log(`[GoalService] ▶ analyzeTopSessionsOnLoad called with ${sessions.length} sessions`);
+
+    const minPrompts = this.config.minPromptsForProgressAnalysis;
+
+    // Enhanced sorting logic:
+    // 1. Sessions with enough prompts for analysis come first
+    // 2. Then active sessions
+    // 3. Then by lastActivityTime descending
+    const sorted = [...sessions].sort((a, b) => {
+      const aHasEnoughPrompts = a.promptCount >= minPrompts;
+      const bHasEnoughPrompts = b.promptCount >= minPrompts;
+
+      // Sessions with enough prompts come first
+      if (aHasEnoughPrompts && !bHasEnoughPrompts) return -1;
+      if (!aHasEnoughPrompts && bHasEnoughPrompts) return 1;
+
+      // Then active sessions
+      if (a.isActive && !b.isActive) return -1;
+      if (!a.isActive && b.isActive) return 1;
+
+      // Then by lastActivityTime (most recent first)
+      return b.lastActivityTime.getTime() - a.lastActivityTime.getTime();
+    });
+    const topSessions = sorted.slice(0, 3);
+
+    console.log(`[GoalService] Top 3 sessions:`, topSessions.map(s => ({
+      id: s.id,
+      promptCount: s.promptCount,
+      goalProgress: s.goalProgress,
+      isActive: s.isActive,
+    })));
+
+    // Filter to sessions that need analysis:
+    // - Not a Claude Code session (their prompts aren't in SessionManagerService)
+    // - Has prompts >= minPromptsForProgressAnalysis (2)
+    // - No goalProgress set yet (undefined or 0)
+    const sessionsNeedingAnalysis = topSessions.filter(s => {
+      // Skip Claude Code sessions - their prompts are read from files, not stored in SessionManager
+      if (s.platform === 'claude_code') {
+        console.log(`[GoalService] ⏭ Skipping Claude Code session ${s.id} - prompts not in SessionManager`);
+        return false;
       }
-    } catch {
-      // LLM manager not initialized - skip analysis silently
-      console.log('[GoalService] LLM manager not initialized, skipping auto goal progress analysis');
+      const hasEnoughPrompts = s.promptCount >= this.config.minPromptsForProgressAnalysis;
+      const needsProgress = s.goalProgress === undefined || s.goalProgress === 0;
+      return hasEnoughPrompts && needsProgress;
+    });
+
+    if (sessionsNeedingAnalysis.length === 0) {
+      console.log(`[GoalService] ✓ No sessions need analysis (all have goalProgress or insufficient prompts)`);
       return;
     }
 
-    console.log(`[GoalService] Auto-triggering goal progress analysis for ${sessionId}: ${reason}`);
+    console.log(`[GoalService] 🔄 ${sessionsNeedingAnalysis.length} sessions need goal progress analysis`);
 
-    // Update tracking
-    this.lastAnalysisTime.set(sessionId, Date.now());
-
-    const sessionManager = getSessionManager();
-    const sessions = sessionManager.getSessions();
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      this.lastAnalysisPromptCount.set(sessionId, session.promptCount);
+    // Check if LLM manager is available
+    try {
+      const llmManager = ExtensionState.getLLMManager();
+      if (!llmManager) {
+        console.log('[GoalService] ✗ No LLM manager available, skipping top sessions analysis');
+        return;
+      }
+      const activeProvider = llmManager.getActiveProvider();
+      if (!activeProvider) {
+        console.log('[GoalService] ✗ No active LLM provider yet, skipping top sessions analysis');
+        return;
+      }
+      console.log(`[GoalService] ✓ LLM provider ready: ${activeProvider.type}`);
+    } catch (error) {
+      console.log('[GoalService] ✗ LLM manager not initialized, skipping top sessions analysis:', error);
+      return;
     }
 
-    // Run analysis
+    // For each session needing analysis:
+    for (const session of sessionsNeedingAnalysis) {
+      // Skip if already analyzed recently
+      const lastAnalysisAt = this.lastAnalysisTime.get(session.id) || 0;
+      const now = Date.now();
+      if (lastAnalysisAt > 0 && now - lastAnalysisAt < this.config.progressAnalysisDebounceMs) {
+        console.log(`[GoalService] ⏭ Skipping ${session.id} - analyzed recently`);
+        continue;
+      }
+
+      console.log(`[GoalService] 🔄 Analyzing goal progress for session ${session.id}...`);
+      const result = await this.analyzeGoalProgress(session.id);
+
+      if (result && result.progress !== undefined) {
+        console.log(`[GoalService] ✓ Session ${session.id}: ${result.progress}%`);
+        this.lastAnalysisTime.set(session.id, Date.now());
+        this.lastAnalysisPromptCount.set(session.id, session.promptCount);
+
+        // Notify via callback if registered
+        if (this.progressUpdateCallback) {
+          console.log(`[GoalService] 📤 Sending progress update to webview for ${session.id}`);
+          this.progressUpdateCallback(session.id, result);
+        }
+      } else {
+        console.log(`[GoalService] ✗ Analysis failed for session ${session.id}`);
+      }
+    }
+
+    console.log(`[GoalService] ✓ analyzeTopSessionsOnLoad complete`);
+  }
+
+  /**
+   * Internal method to trigger goal progress analysis
+   */
+  private async triggerProgressAnalysis(sessionId: string, reason: string): Promise<void> {
+    console.log(`[GoalService] ▶ triggerProgressAnalysis called for ${sessionId}: ${reason}`);
+
+    // Check if LLM manager is available AND has an active provider
+    try {
+      const llmManager = ExtensionState.getLLMManager();
+      if (!llmManager) {
+        console.log('[GoalService] ✗ No LLM manager available, skipping auto goal progress analysis');
+        return;
+      }
+      // Check if provider is actually ready (fixes race condition on startup)
+      const activeProvider = llmManager.getActiveProvider();
+      if (!activeProvider) {
+        console.log('[GoalService] ✗ No active LLM provider yet, skipping auto goal progress analysis (will retry on next prompt)');
+        return;
+      }
+      console.log(`[GoalService] ✓ LLM provider ready: ${activeProvider.type}`);
+    } catch (error) {
+      // LLM manager not initialized - skip analysis silently
+      console.log('[GoalService] ✗ LLM manager not initialized, skipping auto goal progress analysis:', error);
+      return;
+    }
+
+    console.log(`[GoalService] 🔄 Running goal progress analysis for ${sessionId}...`);
+
+    // Run analysis FIRST
     const result = await this.analyzeGoalProgress(sessionId);
 
-    // Notify via callback if registered
-    if (result && this.progressUpdateCallback) {
-      this.progressUpdateCallback(sessionId, result);
+    // Only update tracking if analysis succeeded (prevents failed attempts from blocking retries)
+    if (result && result.progress !== undefined) {
+      console.log(`[GoalService] ✓ Analysis succeeded! Progress: ${result.progress}%, Reasoning: ${result.reasoning}`);
+      this.lastAnalysisTime.set(sessionId, Date.now());
+
+      const sessionManager = getSessionManager();
+      const sessions = sessionManager.getSessions();
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        this.lastAnalysisPromptCount.set(sessionId, session.promptCount);
+      }
+
+      // Notify via callback if registered
+      if (this.progressUpdateCallback) {
+        console.log(`[GoalService] 📤 Sending progress update to webview for ${sessionId}`);
+        this.progressUpdateCallback(sessionId, result);
+      }
+    } else {
+      console.log(`[GoalService] ✗ Goal progress analysis failed for ${sessionId}, will retry on next prompt`);
     }
   }
 

@@ -236,8 +236,29 @@ export class CoPilotCoordinator {
       this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetSessionList', { limit: 20 });
       this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetDailyStats', {});
       this.sendGoalStatusToWebview();
+
+      // Trigger goal progress analysis for top cockpit sessions (non-blocking, runs once on init)
+      this.triggerCockpitSessionsAnalysis();
     } catch (error) {
       console.error('[CoPilotCoordinator] Failed to push initial data:', error);
+    }
+  }
+
+  /**
+   * Trigger goal progress analysis for top 3 cockpit sessions
+   * Called once during initialization
+   */
+  private triggerCockpitSessionsAnalysis(): void {
+    try {
+      const sessions = this.sessionManagerService.getSessions();
+      if (sessions.length > 0 && this.goalService) {
+        // Fire and forget - don't await
+        this.goalService.analyzeTopSessionsOnLoad(sessions).catch((error) => {
+          console.warn('[CoPilotCoordinator] Cockpit sessions analysis failed:', error);
+        });
+      }
+    } catch (error) {
+      console.warn('[CoPilotCoordinator] Cockpit sessions analysis setup failed:', error);
     }
   }
 
