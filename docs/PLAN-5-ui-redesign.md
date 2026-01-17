@@ -236,15 +236,15 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 
 ---
 
-### Phase 7: Tooltip UI Polish
+### Phase 7: Tooltip UI Polish ✅
 **Chat 7 - Improve ring tooltip clarity**
 
 Current tooltip shows "Claude Code Session" as title with ring labels like "Goal Progress". Based on user feedback:
 
-- [ ] Change tooltip title to show the session's goal (not "Claude Code Session")
-- [ ] Remove redundant "Goal" label from progress ring - the percentage and description are enough
-- [ ] Move platform identifier ("Claude Code") to bottom of tooltip
-- [ ] Improve visual hierarchy for better scannability
+- [x] Change tooltip title to show the session's goal (not "Claude Code Session")
+- [x] Remove redundant "Goal" label from progress ring - the percentage and description are enough
+- [x] Move platform identifier ("Claude Code") to bottom of tooltip
+- [x] Improve visual hierarchy for better scannability
 
 **Current:**
 ```
@@ -278,6 +278,13 @@ Current tooltip shows "Claude Code Session" as title with ring labels like "Goal
 ```
 
 **Deliverable:** Cleaner, more informative tooltip
+
+**Notes (Jan 2026):**
+- Tooltip title now shows: customName > goal > platform + "Session"
+- Removed ring labels ("Goal Progress", "Context", "Activity") - color dots + values are sufficient
+- Platform footer only appears when session has a goal/customName (avoids redundancy)
+- Title has text overflow handling for long goals
+- Simplified CSS by removing unused `.vl-ring-tooltip__ring-name` and `.vl-ring-tooltip__ring-info`
 
 ---
 

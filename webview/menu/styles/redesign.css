@@ -8325,6 +8325,9 @@
   font-weight: 600;
   color: var(--vscode-foreground);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .vl-ring-tooltip__subtitle {
@@ -8365,38 +8368,20 @@
   background: #61afef;
 }
 
-.vl-ring-tooltip__ring-info {
-  display: flex;
-  flex-direction: column;
+.vl-ring-tooltip__ring-value {
+  font-size: 11px;
+  color: var(--vscode-foreground);
   flex: 1;
   min-width: 0;
 }
 
-.vl-ring-tooltip__ring-name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--vscode-foreground);
-}
-
-.vl-ring-tooltip__ring-value {
-  font-size: 10px;
-  color: var(--vl-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Goal context at bottom of tooltip */
-.vl-ring-tooltip__goal {
+/* Platform identifier at bottom of tooltip */
+.vl-ring-tooltip__platform {
   margin-top: var(--space-xs);
   padding-top: var(--space-xs);
   border-top: 1px solid var(--vl-border);
   font-size: 10px;
   color: var(--vl-text-secondary);
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Light theme tooltip */

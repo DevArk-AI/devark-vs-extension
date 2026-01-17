@@ -97,7 +97,33 @@ function computeRingData(
 }
 
 /**
+ * Get tooltip title from session
+ * Priority: customName > goal > platform label + "Session"
+ */
+function getTooltipTitle(session: Session, platformLabel: string): string {
+  if (session.customName) {
+    return session.customName;
+  }
+  if (session.goal) {
+    return session.goal;
+  }
+  return `${platformLabel} Session`;
+}
+
+/**
  * Ring tooltip content component
+ *
+ * Layout:
+ * ┌─────────────────────────────┐
+ * │ Implement Reports tab...    │  ← Goal as title
+ * │ 3 prompts · Active          │
+ * ├─────────────────────────────┤
+ * │ 🔴 0% — Task completion     │  ← No redundant labels
+ * │ 🟢 10% — Context used       │
+ * │ 🔵 45% — Session activity   │
+ * ├─────────────────────────────┤
+ * │ Claude Code                 │  ← Platform at bottom
+ * └─────────────────────────────┘
  */
 function RingTooltip({
   session,
@@ -113,10 +139,16 @@ function RingTooltip({
   const contextPercent = Math.round(ringData.context * 100);
   const activityPercent = Math.round(ringData.activity * 100);
 
+  const title = getTooltipTitle(session, platformLabel);
+  // Show platform at bottom only if we have a goal/customName (otherwise it's already in title)
+  const showPlatformFooter = session.customName || session.goal;
+
   return (
     <div className="vl-ring-tooltip">
       <div className="vl-ring-tooltip__header">
-        <div className="vl-ring-tooltip__title">{platformLabel} Session</div>
+        <div className="vl-ring-tooltip__title" title={title}>
+          {title}
+        </div>
         <div className="vl-ring-tooltip__subtitle">
           {session.promptCount} prompts · {session.isActive ? 'Active' : 'Idle'}
         </div>
@@ -124,35 +156,26 @@ function RingTooltip({
       <div className="vl-ring-tooltip__rings">
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--goal" />
-          <div className="vl-ring-tooltip__ring-info">
-            <span className="vl-ring-tooltip__ring-name">Goal Progress</span>
-            <span className="vl-ring-tooltip__ring-value">
-              {goalPercent}% — Task completion
-            </span>
-          </div>
+          <span className="vl-ring-tooltip__ring-value">
+            {goalPercent}% — Task completion
+          </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--context" />
-          <div className="vl-ring-tooltip__ring-info">
-            <span className="vl-ring-tooltip__ring-name">Context</span>
-            <span className="vl-ring-tooltip__ring-value">
-              {contextPercent}% — Token usage estimate
-            </span>
-          </div>
+          <span className="vl-ring-tooltip__ring-value">
+            {contextPercent}% — Context used
+          </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--activity" />
-          <div className="vl-ring-tooltip__ring-info">
-            <span className="vl-ring-tooltip__ring-name">Activity</span>
-            <span className="vl-ring-tooltip__ring-value">
-              {activityPercent}% — Session engagement
-            </span>
-          </div>
+          <span className="vl-ring-tooltip__ring-value">
+            {activityPercent}% — Session activity
+          </span>
         </div>
       </div>
-      {session.goal && (
-        <div className="vl-ring-tooltip__goal" title={session.goal}>
-          Goal: {session.goal}
+      {showPlatformFooter && (
+        <div className="vl-ring-tooltip__platform">
+          {platformLabel}
         </div>
       )}
     </div>
