@@ -159,10 +159,10 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 **Chat 4 - Replace current tabs**
 
 - [x] Rename tabs: CO-PILOT → SESSIONS, SUMMARIES → REPORTS
-- [x] Remove sidebar from SESSIONS tab (sessions now shown in rings header)
-- [x] SESSIONS tab: Session list with expandable cards
-- [x] REPORTS tab: Daily standup + weekly insights (simplify current view)
-- [x] ACCOUNT tab: Keep mostly as-is, clean up
+- [x] Create new SessionsSidebar for SESSIONS tab
+- [x] SESSIONS tab: Two-column layout (sidebar + content)
+- [x] REPORTS tab: Keep as-is (simplification in Phase 6)
+- [x] ACCOUNT tab: Keep as-is
 - [x] Update tab navigation state
 
 **Deliverable:** New tab structure working
@@ -172,42 +172,101 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 - Tab order changed to: Sessions, Reports, Account
 - Default tab is now 'reports' (was 'summaries')
 - All navigation and state management updated to use new tab names
-- **NEW SessionsSidebar component** added with:
+- Removed old Sidebar component from sessions tab, replaced with SessionsSidebar
+- **NEW SessionsSidebar component** (`webview/menu/components/v2/SessionsSidebar.tsx`):
   - Session title (customName > goal > platform label)
   - Message count and duration
+  - Mini activity rings (40px) with ring data
   - Ring progress indicators (Goal/Context/Activity percentages)
-  - Active status badge
+  - Active status badge ("ACTIVE")
   - Grouped by Today/Yesterday/Earlier
-  - Mini activity rings for visual identification
+  - Platform icon (Cursor/Claude Code)
+  - Time ago display
+- **NEW CSS styles** for `.vl-sessions-sidebar`, `.vl-session-list-item`, `.vl-sessions-layout`
+- Sessions tab layout: `SessionsSidebar` (left) + `CoPilotView` (right)
 
 ---
 
 ### Phase 5: Session Cards Redesign
 **Chat 5 - SESSIONS tab content**
 
-- [ ] Create new `SessionCard` component (expandable)
-- [ ] Collapsed: ring mini-view + name + duration + goal preview
-- [ ] Expanded: full stats, goal editor, activity log
-- [ ] Group by: Today, Yesterday, Earlier
-- [ ] "Mark Complete" and "New Session" actions
+- [x] Group by: Today, Yesterday, Earlier (done in Phase 4 SessionsSidebar)
+- [x] Ring mini-view + name + duration (done in Phase 4 SessionsSidebar)
 
-**Deliverable:** Complete SESSIONS tab
 
 ---
 
-### Phase 6: Reports Simplification
+### Phase 6: Reports Simplification ✅
 **Chat 6 - REPORTS tab content**
 
-- [ ] Daily Standup card with copy button
-- [ ] Weekly Insights card (patterns, not raw data)
-- [ ] Remove or collapse detailed breakdowns
-- [ ] Focus on actionable insights, not data dumps
+- [x] Daily Standup card with copy button
+- [x] Weekly Insights card (patterns, not raw data)
+- [x] Remove or collapse detailed breakdowns
+- [x] Focus on actionable insights, not data dumps
 
 **Deliverable:** Streamlined REPORTS tab
 
+**Notes:**
+- **Complete redesign**: Replaced tab-based period selector with dashboard-style layout
+- **New Layout**: Daily Standup card at top + Weekly Insights card below + "View full weekly report" expandable
+- **DailyStandupCard**: Shows "Yesterday I:" + "Today I plan to:" with Copy button in header
+- **WeeklyInsightsCard**: Shows date range, stats (time · sessions · features), and AI-generated insights with contextual icons (🔥 success, ⚠️ warning, 💡 tip)
+- **ViewFullReport**: Collapsible section with detailed breakdown (daily table, activity distribution, top projects)
+- **Auto-load**: Reports auto-fetch standup + weekly data on mount
+- **Copy button**: Shows "Copied!" confirmation with checkmark icon
+- **CloudCTA**: Promotes email delivery feature at bottom
+- **CSS**: New `.vl-reports-view`, `.vl-report-card`, `.vl-insight-item` classes with theme support
+- Removed old period selector (Standup/Today/Week/Month tabs)
+- Removed unused verbose components from previous iteration
+
 ---
 
-### Phase 7: Context Window Tracking (Optional/Future)
+### Phase 7: Tooltip UI Polish
+**Chat 7 - Improve ring tooltip clarity**
+
+Current tooltip shows "Claude Code Session" as title with ring labels like "Goal Progress". Based on user feedback:
+
+- [ ] Change tooltip title to show the session's goal (not "Claude Code Session")
+- [ ] Remove redundant "Goal" label from progress ring - the percentage and description are enough
+- [ ] Move platform identifier ("Claude Code") to bottom of tooltip
+- [ ] Improve visual hierarchy for better scannability
+
+**Current:**
+```
+┌─────────────────────────────┐
+│ Claude Code Session         │
+│ 3 prompts · Active          │
+├─────────────────────────────┤
+│ 🔴 Goal Progress            │
+│    0% — Task completion     │
+│ 🟢 Context                  │
+│    10% — Token usage...     │
+│ 🔵 Activity                 │
+│    45% — Session engagement │
+├─────────────────────────────┤
+│ Goal: Implement Reports...  │
+└─────────────────────────────┘
+```
+
+**Target:**
+```
+┌─────────────────────────────┐
+│ Implement Reports tab...    │  ← Goal as title
+│ 3 prompts · Active          │
+├─────────────────────────────┤
+│ 🔴 0% — Task completion     │  ← No "Goal Progress" label
+│ 🟢 10% — Context used       │
+│ 🔵 45% — Session activity   │
+├─────────────────────────────┤
+│ Claude Code                 │  ← Platform at bottom
+└─────────────────────────────┘
+```
+
+**Deliverable:** Cleaner, more informative tooltip
+
+---
+
+### Phase 8: Context Window Tracking (Optional/Future)
 **Separate effort**
 
 - [ ] Research token counting for Claude Code / Cursor sessions
@@ -221,18 +280,13 @@ The outer ring (goal progress) is the hero metric. Use local LLM to infer progre
 
 ## Library Choice
 
-**Package:** `@jonasdoesthings/react-activity-rings`
+~~**Package:** `@jonasdoesthings/react-activity-rings`~~ (Replaced in Phase 3.5)
 
-```bash
-npm install @jonasdoesthings/react-activity-rings
-```
-
-- Apple-style Activity Rings for React
-- 1.2 KiB minzipped (tiny)
-- MIT license
-- v1.2.0
-
-This gives us the exact Apple Health ring look without custom SVG work.
+**Current Implementation:** Custom SVG (`ActivityRings.tsx`)
+- Library's CSS injection failed in VS Code webview CSP environment
+- Replaced with custom strokeDasharray/strokeDashoffset SVG implementation
+- Concentric rings: Outer=Goal (red), Middle=Context (green), Inner=Activity (blue)
+- Full theme support (light/dark/high-contrast)
 
 ---
 
@@ -243,21 +297,24 @@ src/copilot/
 ├── goal-progress-analyzer.ts    # DONE ✅ (Phase 3) - LLM-powered progress inference
 
 webview/menu/
-├── AppV2.tsx                    # DONE ✅ (Phase 2, 4) - Added RingsHeader, tab restructure
-├── state/types-v2.ts            # DONE ✅ (Phase 3, 4) - Updated tab types to sessions/reports/account
+├── AppV2.tsx                    # DONE ✅ (Phase 2, 4) - Added RingsHeader, tab restructure, SessionsSidebar
+├── state/
+│   ├── types-v2.ts              # DONE ✅ (Phase 3, 4) - Updated tab types to sessions/reports/account
+│   ├── initial-state.ts         # DONE ✅ (Phase 4) - Default tab changed to 'reports'
+│   └── app-reducer.test.tsx     # DONE ✅ (Phase 4) - Updated tests for new tab names
 ├── components/
 │   ├── v2/
 │   │   ├── RingsHeader.tsx      # DONE ✅ (Phase 2) - rings section
-│   │   ├── ActivityRings.tsx    # DONE ✅ (Phase 1) - ring visualization
-│   │   ├── SessionRingCard.tsx  # DONE ✅ (Phase 1) - ring + label
-│   │   ├── SessionCard.tsx      # MODIFY - expandable cards
-│   │   ├── CoPilotView.tsx      # Keep as-is (renamed in tab labels, not file)
-│   │   ├── SummariesView.tsx    # Keep as-is (renamed to REPORTS in tab labels)
+│   │   ├── ActivityRings.tsx    # DONE ✅ (Phase 1, 3.5) - custom SVG ring visualization
+│   │   ├── SessionRingCard.tsx  # DONE ✅ (Phase 1) - ring + label for header
 │   │   ├── SessionsSidebar.tsx  # NEW ✅ (Phase 4) - Session list sidebar with ring info
-│   │   ├── Sidebar.tsx          # Original sidebar (not used in sessions tab)
+│   │   ├── SessionCard.tsx      # MODIFY (Phase 5) - expandable cards
+│   │   ├── CoPilotView.tsx      # Keep as-is (used in sessions tab content)
+│   │   ├── SummariesView.tsx    # Keep as-is (REPORTS tab content)
+│   │   ├── Sidebar.tsx          # Original sidebar (not used, kept for reference)
 │   │   └── index.ts             # DONE ✅ (Phase 1+2) - exports
 │   └── styles/
-│       └── redesign.css         # DONE ✅ (Phase 1+2) - ring + header styles
+│       └── redesign.css         # DONE ✅ (Phase 1, 2, 3.5, 4) - all UI styles
 ```
 
 ---

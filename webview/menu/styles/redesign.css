@@ -8779,3 +8779,638 @@
 [data-vscode-theme-kind="vscode-high-contrast"] .vl-session-list-item.selected {
   border-color: var(--vscode-focusBorder);
 }
+
+/* ========================================
+   REPORTS TAB REDESIGN (Phase 6)
+   Simplified insights-focused layout
+   ======================================== */
+
+/* Summary Date Sub-header */
+.vl-summary-date-sub {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: -8px;
+  margin-bottom: var(--space-lg);
+}
+
+/* Collapsible Section */
+.vl-collapsible-section {
+  margin: var(--space-lg) 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.vl-collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--background-secondary);
+  border: none;
+  color: var(--foreground-default);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background var(--transition-fast);
+}
+
+.vl-collapsible-header:hover {
+  background: var(--vl-subtle-bg);
+}
+
+.vl-collapsible-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.vl-collapsible-content {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-default);
+}
+
+/* Quick Projects Section */
+.vl-quick-projects {
+  margin-bottom: var(--space-xl);
+}
+
+.vl-project-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.vl-project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--foreground-default);
+}
+
+.vl-project-chip-meta {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--foreground-muted);
+  opacity: 0.7;
+}
+
+/* Activity Distribution Compact */
+.vl-activity-compact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-activity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-size: 11px;
+}
+
+.vl-activity-row > span:first-child {
+  min-width: 90px;
+  color: var(--foreground-default);
+}
+
+.vl-activity-bar-compact {
+  flex: 1;
+  height: 6px;
+  background: var(--background-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.vl-activity-fill {
+  height: 100%;
+  background: var(--vl-accent);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.vl-activity-pct {
+  min-width: 35px;
+  text-align: right;
+  font-family: var(--font-mono);
+  color: var(--foreground-muted);
+}
+
+/* Copy Button States */
+.vl-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--foreground-default);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: var(--space-lg);
+}
+
+.vl-copy-btn:hover {
+  background: var(--vl-subtle-bg);
+  border-color: var(--vl-accent);
+}
+
+.vl-copy-btn.copied {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--accent-success);
+  color: var(--accent-success);
+}
+
+/* Insights Card - already styled inline but adding base class */
+.vl-insights-card {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Theme variations */
+[data-vscode-theme-kind="vscode-light"] .vl-collapsible-header {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-collapsible-header:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-project-chip {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-activity-bar-compact {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-collapsible-section {
+  border-color: var(--vscode-contrastBorder);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-collapsible-header:hover {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-project-chip {
+  border-color: var(--vscode-contrastBorder);
+}
+
+/* ========================================
+   REPORTS DASHBOARD (Phase 6 - Redesign)
+   Combined card-based dashboard view
+   ======================================== */
+
+.vl-reports-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+}
+
+/* Report Cards */
+.vl-report-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.vl-report-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.vl-report-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--foreground-muted);
+}
+
+.vl-report-card-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground-muted);
+}
+
+.vl-report-card-content {
+  padding: var(--space-lg);
+}
+
+/* Card Copy Button */
+.vl-card-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--foreground-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-card-copy-btn:hover {
+  background: var(--vl-subtle-bg);
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-card-copy-btn.copied {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--accent-success);
+  color: var(--accent-success);
+}
+
+/* Standup Sections */
+.vl-standup-section {
+  margin-bottom: var(--space-lg);
+}
+
+.vl-standup-section:last-child {
+  margin-bottom: 0;
+}
+
+.vl-standup-section-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--foreground-default);
+  margin-bottom: var(--space-sm);
+}
+
+.vl-standup-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vl-standup-list li {
+  font-size: 12px;
+  color: var(--foreground-default);
+  padding: 3px 0;
+  padding-left: var(--space-md);
+  position: relative;
+}
+
+.vl-standup-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--foreground-muted);
+}
+
+/* Weekly Stats */
+.vl-weekly-stats {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground-default);
+  margin-bottom: var(--space-md);
+}
+
+/* Weekly Insights */
+.vl-weekly-insights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vl-insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 12px;
+  color: var(--foreground-default);
+  line-height: 1.4;
+}
+
+.vl-insight-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vl-insight-icon--success {
+  color: #f97316;
+}
+
+.vl-insight-icon--warning {
+  color: #eab308;
+}
+
+.vl-insight-icon--tip {
+  color: #8b5cf6;
+}
+
+/* View Full Report */
+.vl-view-full-report {
+  margin-top: var(--space-sm);
+}
+
+.vl-view-full-report-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-sm) 0;
+  background: transparent;
+  border: none;
+  color: var(--foreground-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.vl-view-full-report-trigger:hover {
+  color: var(--vl-accent);
+}
+
+.vl-full-report-content {
+  padding: var(--space-lg);
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-sm);
+}
+
+.vl-full-report-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--foreground-muted);
+  margin-bottom: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.vl-full-report-section-title:first-child {
+  margin-top: 0;
+}
+
+/* Top Projects */
+.vl-top-projects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.vl-project-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+  font-size: 12px;
+}
+
+.vl-project-name {
+  color: var(--foreground-default);
+  font-weight: 500;
+}
+
+.vl-project-stats {
+  color: var(--foreground-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Cloud CTA Banner */
+.vl-cloud-cta-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-md);
+}
+
+.vl-cloud-cta-text {
+  flex: 1;
+}
+
+.vl-cloud-cta-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--foreground-default);
+  margin-bottom: 2px;
+}
+
+.vl-cloud-cta-subtitle {
+  font-size: 11px;
+  color: var(--foreground-muted);
+}
+
+.vl-cloud-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vl-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.vl-cloud-cta-btn:hover {
+  background: var(--vl-accent-hover);
+}
+
+/* Reports Empty State */
+.vl-reports-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-3xl) var(--space-xl);
+  min-height: 300px;
+}
+
+.vl-reports-empty-icon {
+  color: var(--foreground-muted);
+  opacity: 0.5;
+  margin-bottom: var(--space-lg);
+}
+
+.vl-reports-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground-default);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.vl-reports-empty-description {
+  font-size: 13px;
+  color: var(--foreground-muted);
+  margin: 0 0 var(--space-xl) 0;
+  max-width: 280px;
+}
+
+.vl-reports-analyze-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl);
+  background: var(--vl-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.vl-reports-analyze-btn:hover {
+  background: var(--vl-accent-hover);
+}
+
+/* Theme variations */
+[data-vscode-theme-kind="vscode-light"] .vl-report-card {
+  background: white;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-vscode-theme-kind="vscode-light"] .vl-full-report-content {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-report-card {
+  border-color: var(--vscode-contrastBorder);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-view-full-report-trigger:hover {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+/* Empty Report Card */
+.vl-report-card--empty {
+  border-style: dashed;
+  border-color: var(--border-default);
+}
+
+.vl-report-card-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+}
+
+.vl-report-empty-text {
+  font-size: 12px;
+  color: var(--foreground-muted);
+  margin: 0 0 var(--space-lg) 0;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.vl-report-generate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--vl-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.vl-report-generate-btn:hover:not(:disabled) {
+  background: var(--vl-accent-hover);
+}
+
+.vl-report-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Theme variations for empty card */
+[data-vscode-theme-kind="vscode-light"] .vl-report-card--empty {
+  background: rgba(0, 0, 0, 0.01);
+}
+
+[data-vscode-theme-kind="vscode-high-contrast"] .vl-report-card--empty {
+  border-style: solid;
+}
+
+/* Card Actions Row */
+.vl-report-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Refresh Button */
+.vl-card-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--foreground-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-card-refresh-btn:hover:not(:disabled) {
+  background: var(--vl-subtle-bg);
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-card-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vl-card-refresh-btn .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
