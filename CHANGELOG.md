@@ -2,6 +2,11 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.10] - 2026-01-17
+
+### Improved
+- Analytics: Track all report types (Today, Standup, Week, Month, Custom) with period property
+
 ## [0.1.9] - 2026-01-17
 
 ### Added
