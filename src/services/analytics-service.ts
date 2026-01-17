@@ -5,6 +5,7 @@
  * Follows the same patterns as devark-react-router/app/services/mixpanel.server.ts
  */
 
+import * as vscode from 'vscode';
 import type { AnalyticsEvent } from './analytics-events';
 import { MIXPANEL_TOKEN } from '../config/analytics.config';
 
@@ -73,7 +74,9 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   isEnabled(): boolean {
-    return true;
+    const telemetryConfig = vscode.workspace.getConfiguration('telemetry');
+    const level = telemetryConfig.get<string>('telemetryLevel', 'all');
+    return level !== 'off';
   }
 
   track(event: AnalyticsEvent, properties: Record<string, unknown> = {}): void {
