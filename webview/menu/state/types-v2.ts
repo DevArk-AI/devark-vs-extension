@@ -696,6 +696,7 @@ export type ActionV2 =
   | { type: 'SET_EDITOR_INFO'; payload: EditorInfo }
   // Projects & Sessions (sidebar)
   | { type: 'SET_PROJECTS'; payload: Project[] }
+  | { type: 'UPDATE_SESSION_GOAL_PROGRESS'; payload: { sessionId: string; progress: number; customName?: string } }
   | { type: 'TOGGLE_PROJECT'; payload: string }
   | { type: 'SET_ACTIVE_SESSION'; payload: string | null }
   | { type: 'SET_ACTIVE_SESSION_DETAILS'; payload: { session: Session | null; project: Project | null } }

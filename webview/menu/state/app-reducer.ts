@@ -262,6 +262,21 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
     case 'SET_PROJECTS':
       return { ...state, projects: action.payload };
 
+    case 'UPDATE_SESSION_GOAL_PROGRESS': {
+      const { sessionId, progress, customName } = action.payload;
+      return {
+        ...state,
+        projects: state.projects.map(project => ({
+          ...project,
+          sessions: project.sessions.map(session =>
+            session.id === sessionId
+              ? { ...session, goalProgress: progress, ...(customName && { customName }) }
+              : session
+          )
+        }))
+      };
+    }
+
     case 'TOGGLE_PROJECT':
       return {
         ...state,

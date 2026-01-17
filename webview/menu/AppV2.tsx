@@ -356,6 +356,19 @@ export function AppV2() {
           }
           break;
 
+        case 'v2GoalProgressAnalysis':
+          if (message.data.success && message.data.sessionId) {
+            dispatch({
+              type: 'UPDATE_SESSION_GOAL_PROGRESS',
+              payload: {
+                sessionId: message.data.sessionId,
+                progress: message.data.progress ?? 0,
+                customName: message.data.sessionTitle
+              }
+            });
+          }
+          break;
+
         case 'v2DailyStats':
           // Daily stats update from DailyStatsService
           if (message.data) {
