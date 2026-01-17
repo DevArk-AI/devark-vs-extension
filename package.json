@@ -2,7 +2,7 @@
   "name": "devark-extension",
   "displayName": "DevArk - Developer Analytics",
   "description": "Your AI coding sessions, analyzed and improved",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "publisher": "devark",
   "icon": "resources/icon.png",
   "repository": {
