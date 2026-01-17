@@ -288,6 +288,19 @@ Current tooltip shows "Claude Code Session" as title with ring labels like "Goal
 
 ---
 
+### Phase 10: Tab Layout Polish
+**Chat 10 - Center tabs and fix content width**
+
+The tabs (SESSIONS, REPORTS, ACCOUNT) should be centered, and tab content cards should span 100% width.
+
+- [ ] Center the tab navigation (SESSIONS | REPORTS | ACCOUNT)
+- [ ] Make report cards and content items 100% width
+- [ ] Ensure consistent spacing/padding
+
+**Deliverable:** Polished tab layout with centered navigation
+
+---
+
 ### Phase 8: Context Window Tracking (Optional/Future)
 **Separate effort**
 

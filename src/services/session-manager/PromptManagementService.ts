@@ -146,6 +146,7 @@ export class PromptManagementService {
 
     // Trigger goal progress analysis check (non-blocking)
     try {
+      console.log(`[PromptManagementService] 📝 Prompt added to session ${session.id}, triggering goal progress check...`);
       getGoalService().onPromptAdded(session.id);
     } catch (error) {
       // Don't fail prompt add if goal service has issues

@@ -368,4 +368,243 @@ describe('SessionHandler', () => {
       });
     });
   });
+
+  describe('goal progress cache', () => {
+    it('should preserve goalProgress from hook-captured sessions', async () => {
+      const mockProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'sess-1',
+              promptCount: 5,
+              platform: 'claude_code',
+              goalProgress: 65,
+              goal: 'Implement feature X',
+              customName: 'Feature X Session',
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjects);
+
+      await handler.handleMessage('v2GetSessionList', {});
+
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'sess-1',
+            goalProgress: 65,
+            goal: 'Implement feature X',
+            customName: 'Feature X Session',
+          }),
+        ]),
+        projects: expect.arrayContaining([
+          expect.objectContaining({
+            sessions: expect.arrayContaining([
+              expect.objectContaining({
+                goalProgress: 65,
+                goal: 'Implement feature X',
+                customName: 'Feature X Session',
+              }),
+            ]),
+          }),
+        ]),
+      });
+    });
+
+    it('should cache goalProgress and apply on subsequent calls', async () => {
+      // First call: session has goalProgress
+      const mockProjectsWithProgress = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'sess-1',
+              promptCount: 5,
+              platform: 'claude_code',
+              goalProgress: 70,
+              goal: 'Fix bug Y',
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjectsWithProgress);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // Second call: same session but goalProgress is undefined (simulating refresh)
+      const mockProjectsWithoutProgress = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'sess-1',
+              promptCount: 6,
+              platform: 'claude_code',
+              goalProgress: undefined, // Simulating data loss
+              goal: undefined,
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjectsWithoutProgress);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // goalProgress should be preserved from cache
+      expect(mockSender.sendMessage).toHaveBeenLastCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'sess-1',
+            goalProgress: 70,
+            goal: 'Fix bug Y',
+          }),
+        ]),
+        projects: expect.any(Array),
+      });
+    });
+
+    it('should match sessions by sourceSessionId for cross-source caching', async () => {
+      // First call: hook-captured session with sourceSessionId
+      const mockHookProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'hook-sess-123',
+              promptCount: 5,
+              platform: 'claude_code',
+              goalProgress: 80,
+              goal: 'Refactor module Z',
+              customName: 'Refactor Session',
+              metadata: {
+                sourceSessionId: 'original-claude-session-id',
+              },
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockHookProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // Second call: UnifiedSessionService session with matching ID
+      // (ID format: claude-<originalId>)
+      const mockUnifiedProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'claude-original-claude-session-id', // Matches sourceSessionId
+              promptCount: 5,
+              platform: 'claude_code',
+              goalProgress: undefined, // No goalProgress from JSONL
+              goal: undefined,
+              customName: undefined,
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockUnifiedProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // goalProgress should be applied via sourceSessionId matching
+      expect(mockSender.sendMessage).toHaveBeenLastCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'claude-original-claude-session-id',
+            goalProgress: 80,
+            goal: 'Refactor module Z',
+            customName: 'Refactor Session',
+          }),
+        ]),
+        projects: expect.any(Array),
+      });
+    });
+
+    it('should update goal progress cache via updateGoalProgressCache method', async () => {
+      // Update cache directly
+      handler.updateGoalProgressCache('sess-direct', 55, 'Direct goal', 'Direct session');
+
+      // Now get session list with a session that matches
+      const mockProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'sess-direct',
+              promptCount: 3,
+              platform: 'claude_code',
+              goalProgress: undefined,
+              goal: undefined,
+              customName: undefined,
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'sess-direct',
+            goalProgress: 55,
+            goal: 'Direct goal',
+            customName: 'Direct session',
+          }),
+        ]),
+        projects: expect.any(Array),
+      });
+    });
+
+    it('should not overwrite existing goal/customName with undefined from cache', async () => {
+      // Cache has partial data (only progress)
+      handler.updateGoalProgressCache('sess-partial', 40);
+
+      // Session already has goal and customName
+      const mockProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'sess-partial',
+              promptCount: 3,
+              platform: 'claude_code',
+              goalProgress: undefined,
+              goal: 'Existing goal',
+              customName: 'Existing name',
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // goalProgress should be applied but existing goal/customName preserved
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'sess-partial',
+            goalProgress: 40,
+            goal: 'Existing goal',
+            customName: 'Existing name',
+          }),
+        ]),
+        projects: expect.any(Array),
+      });
+    });
+  });
 });

@@ -74,6 +74,20 @@ function getSessionDisplayName(session: Session): string {
 }
 
 /**
+ * Check if goal progress is in a "pending" state (not yet analyzed)
+ * Pending means: no coaching progress AND no session progress (undefined, not 0)
+ */
+function isGoalProgressPending(
+  session: Session,
+  coaching?: CoachingData | null
+): boolean {
+  const coachingProgress = coaching?.analysis?.goalProgress?.after;
+  const sessionProgress = session.goalProgress;
+  // Pending if both are undefined (not 0, which is a valid analyzed value)
+  return coachingProgress === undefined && sessionProgress === undefined;
+}
+
+/**
  * Map session data to ring fill values (0-1)
  */
 function computeRingData(session: Session, coaching?: CoachingData | null): RingData {
@@ -116,6 +130,9 @@ function SessionListItem({
   const duration = formatDuration(session.startTime, session.lastActivityTime);
   const timeAgo = formatTimeAgo(session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
+
+  // Check if goal progress is pending (not yet analyzed)
+  const isPending = isGoalProgressPending(session, coaching);
 
   // Format percentages
   const goalPercent = Math.round(ringData.goal * 100);
@@ -162,9 +179,9 @@ function SessionListItem({
             <span className="vl-session-list-item__time">{timeAgo}</span>
           </div>
           <div className="vl-session-list-item__progress">
-            <span className="vl-session-list-item__progress-item" title="Goal Progress">
+            <span className="vl-session-list-item__progress-item" title={isPending ? "Goal progress pending" : "Goal Progress"}>
               <span className="vl-progress-dot vl-progress-dot--goal" />
-              {goalPercent}%
+              {isPending ? '—' : `${goalPercent}%`}
             </span>
             <span className="vl-session-list-item__progress-item" title="Context Usage">
               <span className="vl-progress-dot vl-progress-dot--context" />

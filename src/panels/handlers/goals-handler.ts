@@ -48,9 +48,10 @@ export class GoalsHandler extends BaseMessageHandler {
             remaining: progress.remaining,
             autoTriggered: true, // Flag to indicate this was auto-triggered
           });
-
-          // Also refresh session list to update rings
-          this.refreshSessionList();
+          // Note: Don't call refreshSessionList() here - the v2GoalProgressAnalysis message
+          // already updates the specific session via UPDATE_SESSION_GOAL_PROGRESS.
+          // Calling refreshSessionList() would overwrite the merged session list with only
+          // SessionManagerService sessions, losing UnifiedSessionService sessions.
         });
       }
     } catch (error) {
@@ -248,15 +249,15 @@ export class GoalsHandler extends BaseMessageHandler {
       if (result) {
         this.send('v2GoalProgressAnalysis', {
           success: true,
+          sessionId, // Include sessionId so webview can dispatch UPDATE_SESSION_GOAL_PROGRESS
           progress: result.progress,
           reasoning: result.reasoning,
           inferredGoal: result.inferredGoal,
           accomplishments: result.accomplishments,
           remaining: result.remaining,
         });
-
-        // Refresh session list to update UI with new progress
-        await this.refreshSessionList();
+        // Note: Don't call refreshSessionList() here - the v2GoalProgressAnalysis message
+        // already updates the specific session via UPDATE_SESSION_GOAL_PROGRESS.
       } else {
         this.send('v2GoalProgressAnalysis', { success: false, error: 'Analysis failed' });
       }

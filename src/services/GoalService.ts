@@ -9,9 +9,11 @@
  */
 
 import { getSessionManager } from './SessionManagerService';
-import { PromptRecord, Session } from './types/session-types';
+import { PromptRecord, Session, generateId, truncateText } from './types/session-types';
 import { ExtensionState } from '../extension-state';
 import { GoalProgressAnalyzer, GoalProgressOutput } from '../copilot/goal-progress-analyzer';
+import { ClaudeSessionReader } from '../adapters/readers/claude-session-reader';
+import { NodeFileSystem } from '../adapters/readers/node-filesystem';
 
 /**
  * Goal inference result
@@ -107,8 +109,86 @@ export class GoalService {
   private pendingAnalysis: Map<string, NodeJS.Timeout> = new Map();
   // Callback for notifying webview of progress updates
   private progressUpdateCallback: ((sessionId: string, progress: GoalProgressOutput) => void) | null = null;
+  // Claude session reader for loading prompts on-demand
+  private claudeReader: ClaudeSessionReader | null = null;
 
   private constructor() {}
+
+  /**
+   * Get or create Claude session reader
+   */
+  private getClaudeReader(): ClaudeSessionReader {
+    if (!this.claudeReader) {
+      this.claudeReader = new ClaudeSessionReader(new NodeFileSystem());
+    }
+    return this.claudeReader;
+  }
+
+  /**
+   * Load prompts for a Claude Code session on-demand.
+   * Claude Code sessions store prompts in JSONL files, not in SessionManager memory.
+   * This method reads the file and converts messages to PromptRecords.
+   */
+  private async loadClaudeCodePrompts(session: Session): Promise<PromptRecord[]> {
+    try {
+      // Get the source session ID which contains the file path info
+      const sourceSessionId = session.metadata?.sourceSessionId;
+      if (!sourceSessionId) {
+        console.log(`[GoalService] No sourceSessionId for Claude Code session ${session.id}`);
+        return [];
+      }
+
+      console.log(`[GoalService] Loading prompts for Claude Code session from: ${sourceSessionId}`);
+
+      const reader = this.getClaudeReader();
+      const details = await reader.getSessionDetails(sourceSessionId);
+
+      if (!details || !details.messages || details.messages.length === 0) {
+        console.log(`[GoalService] No messages found for Claude Code session ${session.id}`);
+        return [];
+      }
+
+      // Convert messages to PromptRecords (only user messages that are actual prompts)
+      const prompts: PromptRecord[] = [];
+      for (const msg of details.messages) {
+        if (msg.role === 'user' && this.isActualUserPrompt(msg.content)) {
+          prompts.push({
+            id: generateId(),
+            sessionId: session.id,
+            text: msg.content,
+            truncatedText: truncateText(msg.content, 100),
+            timestamp: msg.timestamp,
+            score: 0, // Not scored for goal progress analysis
+          });
+        }
+      }
+
+      console.log(`[GoalService] Loaded ${prompts.length} prompts for Claude Code session ${session.id}`);
+      return prompts;
+    } catch (error) {
+      console.error(`[GoalService] Failed to load Claude Code prompts:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Check if message content is an actual user prompt (not tool result)
+   */
+  private isActualUserPrompt(content: string): boolean {
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+    // Skip tool results (these are machine-generated, not user prompts)
+    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
+      return false;
+    }
+    // Skip if content is only tool markers
+    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
+    if (toolMarkerPattern.test(content)) {
+      return false;
+    }
+    return true;
+  }
 
   /**
    * Get singleton instance
@@ -217,12 +297,36 @@ export class GoalService {
     console.log(`[GoalService] Found session:`, {
       id: session.id,
       promptCount: session.promptCount,
+      promptsArrayLength: session.prompts.length,
       goal: session.goal,
       platform: session.platform,
     });
 
+    // For Claude Code sessions, prompts are stored in JSONL files, not in memory.
+    // Load them on-demand if the prompts array is empty but promptCount > 0.
+    let sessionToAnalyze = session;
+    if (session.platform === 'claude_code' && session.prompts.length === 0 && session.promptCount > 0) {
+      console.log(`[GoalService] 🔄 Loading prompts on-demand for Claude Code session...`);
+      const loadedPrompts = await this.loadClaudeCodePrompts(session);
+
+      if (loadedPrompts.length > 0) {
+        // Create a working copy with loaded prompts for analysis
+        sessionToAnalyze = {
+          ...session,
+          prompts: loadedPrompts,
+        };
+        console.log(`[GoalService] ✓ Loaded ${loadedPrompts.length} prompts for analysis`);
+      } else {
+        console.log('[GoalService] ✗ Failed to load Claude Code prompts, skipping analysis');
+        return {
+          progress: 0,
+          reasoning: 'Could not load session prompts.',
+        };
+      }
+    }
+
     // Skip if session has no prompts
-    if (session.promptCount === 0 || session.prompts.length === 0) {
+    if (sessionToAnalyze.promptCount === 0 || sessionToAnalyze.prompts.length === 0) {
       console.log('[GoalService] ✗ Session has no prompts, skipping goal progress analysis');
       return {
         progress: 0,
@@ -241,7 +345,7 @@ export class GoalService {
       console.log(`[GoalService] 🔄 Creating GoalProgressAnalyzer and running analysis...`);
       // Create the analyzer and run analysis
       const analyzer = new GoalProgressAnalyzer(llmManager);
-      const result = await analyzer.analyzeProgress(session, session.goal);
+      const result = await analyzer.analyzeProgress(sessionToAnalyze, sessionToAnalyze.goal);
 
       console.log(`[GoalService] ✓ LLM analysis complete:`, result);
 
@@ -400,15 +504,10 @@ export class GoalService {
     })));
 
     // Filter to sessions that need analysis:
-    // - Not a Claude Code session (their prompts aren't in SessionManagerService)
     // - Has prompts >= minPromptsForProgressAnalysis (2)
     // - No goalProgress set yet (undefined or 0)
+    // Note: Claude Code sessions now supported - prompts are loaded on-demand in analyzeGoalProgress
     const sessionsNeedingAnalysis = topSessions.filter(s => {
-      // Skip Claude Code sessions - their prompts are read from files, not stored in SessionManager
-      if (s.platform === 'claude_code') {
-        console.log(`[GoalService] ⏭ Skipping Claude Code session ${s.id} - prompts not in SessionManager`);
-        return false;
-      }
       const hasEnoughPrompts = s.promptCount >= this.config.minPromptsForProgressAnalysis;
       const needsProgress = s.goalProgress === undefined || s.goalProgress === 0;
       return hasEnoughPrompts && needsProgress;
