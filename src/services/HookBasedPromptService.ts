@@ -57,13 +57,12 @@ export interface HookPromptServiceConfig {
 
 const DEFAULT_CONFIG: HookPromptServiceConfig = {
   enabled: true,
-  watchInterval: 500, // Check every 500ms for near-instant detection
+  watchInterval: 5000, // Fallback polling every 5s (hooks notify via command for instant detection)
   autoAnalyze: true,
 };
 
 // Enable debug logging (set to true for verbose logs)
-// VIB-35: Temporarily enabled for debugging session linking issue
-const DEBUG_HOOK_SERVICE = true;
+const DEBUG_HOOK_SERVICE = false;
 
 /**
  * Event types emitted by HookBasedPromptService
@@ -1129,6 +1128,18 @@ export class HookBasedPromptService {
       console.error('[HookBasedPromptService] Failed to save prompt to SessionManager:', error);
       // Don't throw - allow analysis to continue even if session save fails
     }
+  }
+
+  /**
+   * Process hook files immediately (called via command from hook scripts)
+   * This allows hooks to notify the extension directly instead of waiting for polling
+   */
+  processHookFiles(): void {
+    if (DEBUG_HOOK_SERVICE) {
+      console.log('[HookBasedPromptService] Processing hook files via command notification');
+    }
+    this.checkForNewPrompts();
+    this.checkForNewResponses();
   }
 
   /**

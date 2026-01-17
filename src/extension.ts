@@ -16,6 +16,7 @@ import { UnifiedSettingsService } from './services/UnifiedSettingsService';
 import { WorkspaceContextService } from './services/WorkspaceContextService';
 import { AnalyticsEvents } from './services/analytics-events';
 import { getNotificationService } from './services/NotificationService';
+import { getHookBasedPromptService } from './services/HookBasedPromptService';
 
 // Import provider modules to trigger registration
 import './llm/providers/ollama-provider';
@@ -604,6 +605,15 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: devark.processHookFiles
+  // Called by hook scripts to trigger immediate file processing (instead of waiting for polling)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('devark.processHookFiles', () => {
+      const hookService = getHookBasedPromptService();
+      hookService.processHookFiles();
+    })
+  );
+
   // Log successful activation
   console.log('DevArk extension activated successfully');
   console.log('- Sidebar webview registered: devark-sidebar-webview');
@@ -617,6 +627,7 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log('  - devark.copilot.selectProvider');
   console.log('  - devark.copilot.selectModel');
   console.log('  - devark.installCursorHooks');
+  console.log('  - devark.processHookFiles');
   console.log(`- Debug mode: ${debugMode ? 'ON' : 'OFF'}`);
 }
 

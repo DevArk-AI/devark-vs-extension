@@ -34,6 +34,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { exec } = require('child_process');
 
 // Debug logging to persistent file
 const vibeLogDir = path.join(os.tmpdir(), 'devark-hooks');
@@ -228,6 +229,16 @@ process.stdin.on('end', () => {
     const latestFile = path.join(vibeLogDir, 'latest-claude-response.json');
     fs.writeFileSync(latestFile, JSON.stringify(responseData, null, 2));
     debugLog(`Wrote latest file: ${latestFile}`);
+
+    // Notify VS Code extension to process files immediately (instead of waiting for polling)
+    // This is fire-and-forget - we don't wait for it and don't care if it fails
+    exec('code --command devark.processHookFiles', (error) => {
+      if (error) {
+        debugLog(`Note: Could not notify VS Code (this is ok): ${error.message}`);
+      } else {
+        debugLog('Notified VS Code to process hook files');
+      }
+    });
 
     // Log for debugging
     debugLog(`SUCCESS: Captured Claude Code response (${responseData.reason}): ${responseData.response.substring(0, 50)}...`);

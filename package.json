@@ -104,6 +104,10 @@
         "command": "devark.installCursorHooks",
         "title": "DevArk: Install Cursor Hooks",
         "icon": "$(plug)"
+      },
+      {
+        "command": "devark.processHookFiles",
+        "title": "DevArk: Process Hook Files"
       }
     ],
     "icons": {
