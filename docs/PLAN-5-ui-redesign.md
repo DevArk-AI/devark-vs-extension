@@ -384,20 +384,18 @@ webview/menu/
 
 ## Known Issues / Tech Debt
 
-### V2MessageHandler "Unknown message type" warnings
-The webview sends messages on init that V2MessageHandler doesn't recognize. These are handled by V1MessageHandler fallback but produce noisy console warnings:
+### V2MessageHandler "Unknown message type" warnings ✅ FIXED
 
-```
-[V2MessageHandler] Unknown message type: getCoachingStatus
-[V2MessageHandler] Unknown message type: getResponseAnalysisStatus
-[V2MessageHandler] Unknown message type: getSavedPrompts
-[V2MessageHandler] Unknown message type: getProviders
-[V2MessageHandler] Unknown message type: getFeatureModels
-[V2MessageHandler] Unknown message type: getAvailableModelsForFeature
-[V2MessageHandler] Unknown message type: getCloudStatus
-```
+**Issue:** The webview sends messages on init that V2MessageHandler doesn't recognize. These were handled by V1MessageHandler fallback but produced noisy console warnings.
 
-**Fix options:**
-1. Add these handlers to V2MessageHandler (proper fix)
-2. Suppress the warning for known V1 message types (quick fix)
-3. Route these messages directly to V1MessageHandler without warning
+**Solution (Jan 2026):** Extended `handlerDependentMessages` array in V2MessageHandler to include ALL handler message types. Messages arriving before handlers are initialized are now queued and processed after initialization completes.
+
+**Changes:**
+- `src/panels/V2MessageHandler.ts`: Expanded `handlerDependentMessages` from 7 to 90+ message types covering all handlers
+- `src/panels/__tests__/V2MessageHandler-queueing.test.ts`: Added unit tests to verify coverage
+
+**How it works:**
+1. When a message arrives and `!this.initialized`, check if it's a handler-dependent message
+2. If so, queue it in `pendingMessages` array
+3. After `initialize()` completes, process all queued messages
+4. No more "Unknown message type" warnings during race conditions

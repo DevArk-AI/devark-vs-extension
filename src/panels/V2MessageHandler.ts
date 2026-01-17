@@ -340,16 +340,106 @@ export class V2MessageHandler {
 
     // Queue messages that depend on handlers being initialized (race condition fix)
     // These messages require handlers to be set up before they can be processed
+    // Note: This list includes ALL messages handled by modular handlers to prevent
+    // "Unknown message type" warnings during initialization race conditions.
     const handlerDependentMessages = [
-      // Session-related messages depend on SessionManagerService
+      // Session-related messages - SessionHandler
       'v2GetActiveSession',
       'v2GetSessionList',
       'v2GetDailyStats',
-      'v2GetGoalStatus',
       'v2GetPrompts',
-      // Config messages depend on ConfigHandler
+      'switchSession',
+      'markSessionAsRead',
+      'loadMorePrompts',
+      'renameSession',
+      'deleteSession',
+      // Goals - GoalsHandler
+      'v2GetGoalStatus',
+      'v2SetGoal',
+      'v2CompleteGoal',
+      'v2ClearGoal',
+      'v2InferGoal',
+      'v2MaybeLaterGoal',
+      'v2DontAskGoal',
+      'v2AnalyzeGoalProgress',
+      'editGoal',
+      'completeGoal',
+      // Config - ConfigHandler
       'getConfig',
       'completeOnboarding',
+      'getFeatureModels',
+      'setFeatureModel',
+      'setFeatureModelsEnabled',
+      'resetFeatureModels',
+      'getAvailableModelsForFeature',
+      'clearLocalData',
+      'clearPromptHistory',
+      'getPromptHistory',
+      // Providers - ProviderHandler
+      'getProviders',
+      'detectProviders',
+      'detectProvider',
+      'switchProvider',
+      'verifyApiKey',
+      'setOllamaModel',
+      'setOpenRouterModel',
+      'testProviders',
+      'trackLlmSelectorOpenedFooter',
+      // Cloud & Auth - CloudAuthHandler
+      'getCloudStatus',
+      'loginWithGithub',
+      'authenticate',
+      'logout',
+      'requestLogoutConfirmation',
+      'syncNow',
+      'previewSync',
+      'syncWithFilters',
+      'getSyncStatus',
+      // Coaching - CoachingHandler
+      'getCoachingStatus',
+      'getCoachingForPrompt',
+      'useCoachingSuggestion',
+      'dismissCoachingSuggestion',
+      // Prompt Analysis - PromptAnalysisHandler
+      'analyzePrompt',
+      'useImprovedPrompt',
+      'trackImprovedPromptCopied',
+      'toggleAutoAnalyze',
+      'getAutoAnalyzeStatus',
+      'toggleResponseAnalysis',
+      'getResponseAnalysisStatus',
+      // Prompt Lab - PromptLabHandler
+      'getSavedPrompts',
+      'analyzePromptLabPrompt',
+      'savePromptToLibrary',
+      'deleteSavedPrompt',
+      'renamePrompt',
+      // Reports - ReportHandler
+      'generateReport',
+      'resetReport',
+      'copyReport',
+      'downloadReport',
+      'shareReport',
+      // Stats - StatsHandler
+      'v2AnalyzePromptV2',
+      'v2GetWeeklyTrend',
+      'v2GetStreak',
+      'v2GetPersonalComparison',
+      // Suggestions - SuggestionHandler
+      'v2DismissSuggestion',
+      'v2NotNowSuggestion',
+      'v2ApplySuggestion',
+      'v2CheckSuggestions',
+      // Hooks - HooksHandler
+      'getDetectedTools',
+      'getRecentProjects',
+      'selectProjectFolder',
+      'installHooks',
+      'uninstallHooks',
+      'installCursorHooks',
+      'getHooksStatus',
+      // Summary - SummaryHandler
+      'getSummary',
     ];
     if (!this.initialized && handlerDependentMessages.includes(type)) {
       console.log(`[V2MessageHandler] Queueing ${type} until initialization completes`);
