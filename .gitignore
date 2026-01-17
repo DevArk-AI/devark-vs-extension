@@ -26,12 +26,13 @@ nul
 # Test coverage
 coverage/
 
-# Documentation (internal/sensitive)
-docs/
+# Documentation - allow specific docs
 *.md
 !README.md
 !LICENSE
 !CHANGELOG.md
+!CLAUDE.md
+!docs/*.md
 
 # Claude/Cursor local settings
 .claude/
