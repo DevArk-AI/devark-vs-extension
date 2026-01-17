@@ -2,15 +2,13 @@
  * ActivityRings Component
  *
  * Apple Health-style activity rings for session visualization.
- * Uses @jonasdoesthings/react-activity-rings library.
+ * Custom SVG implementation for reliable rendering in VS Code webview.
  *
  * Ring meanings:
  * - Outer (red): Goal progress - how close to completing the task
  * - Middle (green): Context remaining - token/context usage (placeholder for now)
  * - Inner (blue): Session activity - based on promptCount and isActive
  */
-
-import { ActivityRings as ActivityRingsLib } from '@jonasdoesthings/react-activity-rings';
 
 export interface RingData {
   /** Goal progress (0-1), maps to outer red ring */
@@ -31,8 +29,7 @@ export interface ActivityRingsProps {
 }
 
 /**
- * Activity ring colors using CSS variables from redesign.css
- * These are muted professional tones that work well in VS Code
+ * Activity ring colors - muted professional tones that work well in VS Code
  */
 const RING_COLORS = {
   // Goal ring - using a warm coral/red
@@ -52,39 +49,102 @@ const RING_COLORS = {
   },
 } as const;
 
+interface RingConfig {
+  percentage: number;
+  color: string;
+  backgroundColor: string;
+  radius: number;
+  strokeWidth: number;
+}
+
+/**
+ * Single ring SVG element
+ */
+function Ring({ percentage, color, backgroundColor, radius, strokeWidth }: RingConfig) {
+  const circumference = 2 * Math.PI * radius;
+  const clampedPercentage = Math.max(0, Math.min(1, percentage));
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference * (1 - clampedPercentage);
+
+  return (
+    <g>
+      {/* Background ring */}
+      <circle
+        cx="50%"
+        cy="50%"
+        r={radius}
+        fill="none"
+        stroke={backgroundColor}
+        strokeWidth={strokeWidth}
+      />
+      {/* Progress ring */}
+      <circle
+        cx="50%"
+        cy="50%"
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={strokeDasharray}
+        strokeDashoffset={strokeDashoffset}
+        style={{
+          transform: 'rotate(-90deg)',
+          transformOrigin: '50% 50%',
+          transition: 'stroke-dashoffset 0.5s ease-out',
+        }}
+      />
+    </g>
+  );
+}
+
 /**
  * ActivityRings - Apple Health style concentric rings
  *
  * Visualizes 3 metrics as concentric animated rings:
- * - Outer: Goal progress
- * - Middle: Context usage
- * - Inner: Activity level
+ * - Outer: Goal progress (red)
+ * - Middle: Context usage (green)
+ * - Inner: Activity level (blue)
  */
 export function ActivityRings({
   rings,
   size = 80,
   theme = 'dark',
 }: ActivityRingsProps) {
-  // Clamp values to 0-1 range
-  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  // Ring dimensions - build from inside out
+  const strokeWidth = 8;
+  const padding = 2;
+  const innerRadius = size * 0.18; // Activity (innermost)
+  const middleRadius = innerRadius + strokeWidth + padding; // Context
+  const outerRadius = middleRadius + strokeWidth + padding; // Goal (outermost)
 
-  // Build ring configuration for the library
-  // Library expects rings array from outer to inner
-  const ringConfig = [
+  // ViewBox needs to accommodate all rings
+  const viewBoxSize = (outerRadius + strokeWidth / 2) * 2;
+
+  const ringConfigs: RingConfig[] = [
+    // Inner ring - Activity (blue)
     {
-      filledPercentage: clamp(rings.goal),
-      color: RING_COLORS.goal.color,
-      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.goal.background,
-    },
-    {
-      filledPercentage: clamp(rings.context),
-      color: RING_COLORS.context.color,
-      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.context.background,
-    },
-    {
-      filledPercentage: clamp(rings.activity),
+      percentage: rings.activity,
       color: RING_COLORS.activity.color,
       backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.activity.background,
+      radius: innerRadius,
+      strokeWidth,
+    },
+    // Middle ring - Context (green)
+    {
+      percentage: rings.context,
+      color: RING_COLORS.context.color,
+      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.context.background,
+      radius: middleRadius,
+      strokeWidth,
+    },
+    // Outer ring - Goal (red)
+    {
+      percentage: rings.goal,
+      color: RING_COLORS.goal.color,
+      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.goal.background,
+      radius: outerRadius,
+      strokeWidth,
     },
   ];
 
@@ -93,14 +153,15 @@ export function ActivityRings({
       className="vl-activity-rings"
       style={{ width: size, height: size }}
     >
-      <ActivityRingsLib
-        rings={ringConfig}
-        options={{
-          initialRadius: size * 0.3,
-          animationDurationMillis: 800,
-          containerHeight: `${size}px`,
-        }}
-      />
+      <svg
+        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+        width={size}
+        height={size}
+      >
+        {ringConfigs.map((config, index) => (
+          <Ring key={index} {...config} />
+        ))}
+      </svg>
     </div>
   );
 }
