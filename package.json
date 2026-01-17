@@ -399,7 +399,7 @@
     "@vitest/coverage-v8": "^4.0.15",
     "@vscode/vsce": "^2.22.0",
     "autoprefixer": "^10.4.22",
-    "esbuild": "^0.19.0",
+    "esbuild": "^0.25.0",
     "eslint": "^9.39.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-react": "^7.37.5",

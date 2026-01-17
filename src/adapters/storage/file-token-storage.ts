@@ -104,6 +104,8 @@ export class FileTokenStorage implements ITokenStorage {
 
   private async writeConfig(config: ConfigFile): Promise<void> {
     await this.fs.writeFile(this.configPath, JSON.stringify(config, null, 2));
+    // Set restrictive permissions (owner read/write only) for security
+    await this.fs.chmod(this.configPath, 0o600);
   }
 
   private async getOrCreateKey(): Promise<Buffer> {
@@ -121,6 +123,8 @@ export class FileTokenStorage implements ITokenStorage {
       const key = crypto.randomBytes(KEY_LENGTH);
       await this.ensureConfigDir();
       await this.fs.writeFile(this.keyPath, key.toString('hex'));
+      // Set restrictive permissions (owner read/write only) for security
+      await this.fs.chmod(this.keyPath, 0o600);
       this.cachedKey = key;
       return key;
     }

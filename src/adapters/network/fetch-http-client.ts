@@ -87,13 +87,6 @@ export class FetchHttpClient implements IHttpClient {
     // Build full URL
     const fullUrl = this.buildUrl(config.url, config.baseUrl);
 
-    // Debug logging for auth issues
-    console.log('[FetchHttpClient] Request:', config.method, fullUrl);
-    console.log('[FetchHttpClient] Has authToken:', !!this.authToken);
-    if (this.authToken) {
-      console.log('[FetchHttpClient] Token prefix:', this.authToken.substring(0, 10) + '...');
-    }
-
     // Build fetch options
     const fetchOptions: RequestInit = {
       method: config.method,
@@ -217,7 +210,6 @@ export class FetchHttpClient implements IHttpClient {
   }
 
   setAuthToken(token: string | null): void {
-    console.log('[FetchHttpClient] setAuthToken called:', token ? token.substring(0, 10) + '...' : 'null');
     this.authToken = token;
   }
 

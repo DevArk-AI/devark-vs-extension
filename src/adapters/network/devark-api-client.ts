@@ -223,7 +223,6 @@ export class DevArkApiClient implements IApiClient {
   }
 
   setToken(token: string | null): void {
-    console.log('[DevArkApiClient] setToken called:', token ? token.substring(0, 10) + '...' : 'null');
     this.httpClient.setAuthToken(token);
   }
 

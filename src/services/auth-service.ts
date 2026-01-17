@@ -31,16 +31,12 @@ export class AuthService {
    * Returns true only if token exists AND is valid on server.
    */
   async isAuthenticated(): Promise<boolean> {
-    console.log('[AuthService] isAuthenticated called');
     const hasToken = await this.tokenStorage.hasToken();
-    console.log('[AuthService] hasToken:', hasToken);
     if (!hasToken) {
       return false;
     }
 
-    const result = await this.verifyToken();
-    console.log('[AuthService] verifyToken result:', result);
-    return result;
+    return this.verifyToken();
   }
 
   /**
@@ -80,7 +76,6 @@ export class AuthService {
       this.apiClient.setToken(apiToken);
       this.pendingAuthToken = null;
 
-      console.log('[AuthService] SSE auth completed, token stored');
       return true;
     } catch (error) {
       console.error('[AuthService] SSE auth failed:', error);
@@ -143,7 +138,6 @@ export class AuthService {
                 // Parse data messages
                 if (trimmed.startsWith('data: ')) {
                   const data = trimmed.substring(6);
-                  console.log('[AuthService] SSE data:', data.substring(0, 100));
 
                   try {
                     const parsed = JSON.parse(data);
@@ -229,24 +223,19 @@ export class AuthService {
    * Returns false if no token or token invalid.
    */
   async verifyToken(): Promise<boolean> {
-    console.log('[AuthService] verifyToken called');
     const hasToken = await this.tokenStorage.hasToken();
-    console.log('[AuthService] verifyToken hasToken:', hasToken);
     if (!hasToken) {
       return false;
     }
 
     try {
       const token = await this.tokenStorage.getToken();
-      console.log('[AuthService] token exists:', !!token);
       if (token) {
         this.apiClient.setToken(token);
       }
       const result = await this.apiClient.verifyToken();
-      console.log('[AuthService] API verifyToken result:', result);
       return result.valid;
-    } catch (error) {
-      console.error('[AuthService] verifyToken error:', error);
+    } catch {
       return false;
     }
   }
