@@ -4,9 +4,14 @@ All notable changes to the DevArk VS Code Extension will be documented in this f
 
 ## [0.1.9] - 2026-01-17
 
+### Added
+- Analytics: Track user interactions with prompt feedback buttons (Use this prompt, Copy, Try another)
+- Analytics: Track goal modal interactions (Set Goal, Maybe Later, Don't ask again)
+- Analytics: Track LLM selector menu opens from footer and settings
+
 ### Improved
-- README: Clearer "How It Works" and "Getting Started" sections explaining the daily/weekly reports workflow
-- README: Added tip for checking daily reports each morning
+- Analytics: Respect VS Code's global telemetry setting (telemetry.telemetryLevel)
+- README: Clearer "How It Works" and "Getting Started" sections
 
 ## [0.1.8] - 2026-01-17
 
