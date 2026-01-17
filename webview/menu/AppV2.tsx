@@ -866,7 +866,12 @@ export function AppV2() {
             <div className="vl-llm-selector">
               <button
                 className="vl-llm-trigger"
-                onClick={() => setLlmDropupOpen(!llmDropupOpen)}
+                onClick={() => {
+                  if (!llmDropupOpen) {
+                    postMessage('trackLlmSelectorOpenedFooter');
+                  }
+                  setLlmDropupOpen(!llmDropupOpen);
+                }}
               >
                 <span
                   className={`vl-llm-status ${activeProvider?.status === 'connected' ? '' : 'disconnected'}`}

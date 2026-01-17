@@ -25,6 +25,8 @@ export const AnalyticsEvents = {
   GOAL_INFERENCE_DONT_ASK: 'vs-extension-goal-inference-dont-ask',
 
   // Configuration
+  LLM_SELECTOR_OPENED_FOOTER: 'vs-extension-llm-selector-opened-footer',
+  LLM_SELECTOR_OPENED_SETTINGS: 'vs-extension-llm-selector-opened-settings',
   PROVIDER_SELECTED: 'vs-extension-provider-selected',
   MODEL_SELECTED: 'vs-extension-model-selected',
   AUTO_ANALYZE_PROMPT_TOGGLED: 'vs-extension-auto-analyze-prompt-toggled',

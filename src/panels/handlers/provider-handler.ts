@@ -49,6 +49,8 @@ export class ProviderHandler extends BaseMessageHandler {
       'setOllamaModel',
       'setOpenRouterModel',
       'testProviders',
+      'trackLlmSelectorOpenedFooter',
+      'trackLlmSelectorOpenedSettings',
     ];
   }
 
@@ -87,6 +89,12 @@ export class ProviderHandler extends BaseMessageHandler {
       }
       case 'testProviders':
         await this.handleTestProviders();
+        return true;
+      case 'trackLlmSelectorOpenedFooter':
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.LLM_SELECTOR_OPENED_FOOTER);
+        return true;
+      case 'trackLlmSelectorOpenedSettings':
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.LLM_SELECTOR_OPENED_SETTINGS);
         return true;
       default:
         return false;

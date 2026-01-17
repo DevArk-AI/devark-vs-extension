@@ -185,6 +185,8 @@ export type WebviewMessage =
   | { type: 'getResponseAnalysisStatus' }
   | { type: 'copyPromptToClipboard'; data: { prompt: string } }
   | { type: 'trackImprovedPromptCopied' }
+  | { type: 'trackLlmSelectorOpenedFooter' }
+  | { type: 'trackLlmSelectorOpenedSettings' }
   | { type: 'v2AnalyzePromptV2'; data: { prompt: string } }
   | { type: 'getPromptHistory' }
   | { type: 'showAllPrompts' }

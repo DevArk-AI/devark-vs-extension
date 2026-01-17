@@ -155,7 +155,10 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               </button>
               <button
                 className="vl-action-btn"
-                onClick={() => dispatch({ type: 'SET_VIEW', payload: 'provider-select' })}
+                onClick={() => {
+                  send('trackLlmSelectorOpenedSettings');
+                  dispatch({ type: 'SET_VIEW', payload: 'provider-select' });
+                }}
               >
                 Change Provider
               </button>
