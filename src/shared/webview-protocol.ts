@@ -184,6 +184,7 @@ export type WebviewMessage =
   | { type: 'toggleResponseAnalysis'; data: { enabled: boolean } }
   | { type: 'getResponseAnalysisStatus' }
   | { type: 'copyPromptToClipboard'; data: { prompt: string } }
+  | { type: 'trackImprovedPromptCopied' }
   | { type: 'v2AnalyzePromptV2'; data: { prompt: string } }
   | { type: 'getPromptHistory' }
   | { type: 'showAllPrompts' }

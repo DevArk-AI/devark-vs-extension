@@ -40,6 +40,7 @@ export function CoPilotView() {
     const promptToCopy = editedImprovedPrompt || state.currentAnalysis?.improvedVersion;
     if (promptToCopy) {
       navigator.clipboard.writeText(promptToCopy);
+      send('trackImprovedPromptCopied');
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

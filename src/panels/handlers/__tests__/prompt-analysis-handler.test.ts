@@ -121,11 +121,12 @@ describe('PromptAnalysisHandler', () => {
       const types = handler.getHandledMessageTypes();
       expect(types).toContain('analyzePrompt');
       expect(types).toContain('useImprovedPrompt');
+      expect(types).toContain('trackImprovedPromptCopied');
       expect(types).toContain('toggleAutoAnalyze');
       expect(types).toContain('getAutoAnalyzeStatus');
       expect(types).toContain('toggleResponseAnalysis');
       expect(types).toContain('getResponseAnalysisStatus');
-      expect(types).toHaveLength(6);
+      expect(types).toHaveLength(7);
     });
   });
 

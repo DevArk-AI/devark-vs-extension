@@ -45,6 +45,7 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
     return [
       'analyzePrompt',
       'useImprovedPrompt',
+      'trackImprovedPromptCopied',
       'toggleAutoAnalyze',
       'getAutoAnalyzeStatus',
       'toggleResponseAnalysis',
@@ -62,6 +63,10 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       case 'useImprovedPrompt': {
         const d = data as WebviewMessageData<'useImprovedPrompt'>;
         await this.handleUseImprovedPrompt(d.prompt, d.source, d.sessionId);
+        return true;
+      }
+      case 'trackImprovedPromptCopied': {
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.IMPROVED_PROMPT_COPIED);
         return true;
       }
       case 'toggleAutoAnalyze': {
@@ -89,7 +94,12 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
    * Analyze a prompt with parallel LLM calls
    * Fires score, enhance, and goal inference in parallel, streaming results as they arrive
    */
-  private async handleAnalyzePrompt(prompt: string, _regenerate: boolean = false): Promise<void> {
+  private async handleAnalyzePrompt(prompt: string, regenerate: boolean = false): Promise<void> {
+    // Track "Try another" button click
+    if (regenerate) {
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.PROMPT_REGENERATED);
+    }
+
     const llmManager = ExtensionState.getLLMManager();
     if (!llmManager) {
       getNotificationService().error('No LLM provider configured');
@@ -258,6 +268,11 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
       console.warn('[PromptAnalysisHandler] Cannot inject empty prompt');
       return;
     }
+
+    // Track "Use this prompt" button click
+    ExtensionState.getAnalyticsService().track(AnalyticsEvents.IMPROVED_PROMPT_USED, {
+      source: source || 'unknown',
+    });
 
     console.log(`[PromptAnalysisHandler] Use improved prompt - source: ${source}, sessionId: ${sessionId}`);
     const chatInjector = this.sharedContext.chatInjector;

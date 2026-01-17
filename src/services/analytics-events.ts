@@ -13,8 +13,16 @@ export const AnalyticsEvents = {
   // Core Features
   PROMPT_SCORED: 'vs-extension-prompt-scored',
   PROMPT_ENHANCED: 'vs-extension-prompt-enhanced',
+  IMPROVED_PROMPT_USED: 'vs-extension-improved-prompt-used',
+  IMPROVED_PROMPT_COPIED: 'vs-extension-improved-prompt-copied',
+  PROMPT_REGENERATED: 'vs-extension-prompt-regenerated',
   SESSION_SUMMARIZED: 'vs-extension-session-summarized',
   LLM_CONNECTION_TESTED: 'vs-extension-llm-connection-tested',
+
+  // Goals
+  GOAL_SET: 'vs-extension-goal-set',
+  GOAL_INFERENCE_MAYBE_LATER: 'vs-extension-goal-inference-maybe-later',
+  GOAL_INFERENCE_DONT_ASK: 'vs-extension-goal-inference-dont-ask',
 
   // Configuration
   PROVIDER_SELECTED: 'vs-extension-provider-selected',

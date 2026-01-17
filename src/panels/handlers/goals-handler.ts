@@ -11,6 +11,8 @@
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
+import { ExtensionState } from '../../extension-state';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 export class GoalsHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
@@ -106,6 +108,9 @@ export class GoalsHandler extends BaseMessageHandler {
       const status = goalService.getGoalStatus();
       this.send('v2GoalSet', { success: true, status });
 
+      // Track goal set
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.GOAL_SET);
+
       // Refresh session list so sidebar shows goal as session name (VIB-45)
       await this.refreshSessionList();
     } catch (error) {
@@ -198,6 +203,9 @@ export class GoalsHandler extends BaseMessageHandler {
         goalService.setConfig({ noGoalSuggestionDelayMinutes: 30 });
       }
       this.send('v2GoalInferenceDismissed', { reason: 'maybe_later' });
+
+      // Track "Maybe Later" click
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.GOAL_INFERENCE_MAYBE_LATER);
     } catch (error) {
       console.error('[GoalsHandler] Failed to handle maybe later:', error);
     }
@@ -215,6 +223,9 @@ export class GoalsHandler extends BaseMessageHandler {
         goalService.setConfig({ noGoalSuggestionDelayMinutes: 999999 });
       }
       this.send('v2GoalInferenceDismissed', { reason: 'dont_ask' });
+
+      // Track "Don't ask again" click
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.GOAL_INFERENCE_DONT_ASK);
     } catch (error) {
       console.error('[GoalsHandler] Failed to handle dont ask:', error);
     }
