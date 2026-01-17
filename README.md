@@ -26,12 +26,12 @@ After you're done coding, DevArk shows you what happened:
 
 ## How It Works
 
-1. Install the extension
-2. Code like you normally do
-3. Watch the Co-Pilot panel as you write prompts
-4. Check session insights after you're done
+1. **Install** the extension and connect to your LLM provider
+2. **Code** like you normally do - the Co-Pilot monitors your prompts in real-time
+3. **Check daily reports** to see what you accomplished today
+4. **Review weekly reports** to spot patterns and improve over time
 
-Want deeper analysis? Sign up at [devark.ai](https://devark.ai) to sync your sessions and unlock team insights, historical trends, and advanced reports.
+Sync to DevArk Cloud for long term and historical trends and reports delivered to your email daily and weekly.
 
 ## Works With
 
@@ -46,7 +46,7 @@ DevArk processes everything locally by default. Your code stays on your machine.
 |----------|-------|------|
 | **Ollama** | Local, runs on your machine | Free |
 | **Cursor CLI** | Uses your existing subscription | Included |
-| **Claude Code CLI** | Uses your existing setup | Included |
+| **Claude Code CLI** | Uses your existing subscription | Included |
 | **OpenRouter** | Bring your own key | Pay per use |
 
 ## Installation
@@ -61,20 +61,10 @@ Ctrl+Shift+X → Search "DevArk" → Install
 code --install-extension devark.devark
 ```
 
-## Getting Started
-
-1. Click the DevArk icon in your activity bar
-2. The setup wizard connects you to a provider (Ollama recommended for local-only)
-3. Start coding - the Co-Pilot activates automatically
-
-## Settings
-
-Search "DevArk" in settings to customize:
-- Which provider to use
-- Automatic vs. on-demand analysis
-- Report frequency
-
 ## Tips
+
+**Check your daily report each morning**
+See exactly what you shipped yesterday. No more fumbling to remember what you worked on.
 
 **Check your weekly reports**
 The patterns you'll notice after a few weeks are genuinely useful. Most developers are surprised by where their time actually goes.
@@ -87,7 +77,7 @@ These often reveal patterns. Maybe certain types of tasks need a different appro
 
 ## Open Source
 
-MIT licensed. Read exactly what it does: [github.com/devark/devark-vs-extension](https://github.com/devark/devark-vs-extension)
+MIT licensed. Read exactly what it does: [github.com/devark-ai/devark-vs-extension](https://github.com/devark-ai/devark-vs-extension)
 
 Questions or ideas? Open an issue.
 

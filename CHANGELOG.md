@@ -2,6 +2,12 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.9] - 2026-01-17
+
+### Improved
+- README: Clearer "How It Works" and "Getting Started" sections explaining the daily/weekly reports workflow
+- README: Added tip for checking daily reports each morning
+
 ## [0.1.8] - 2026-01-17
 
 ### Fixed
