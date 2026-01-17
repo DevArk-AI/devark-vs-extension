@@ -1,12 +1,12 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code when working with this repository.
-
 ## Project Overview
 
 DevArk VS Code Extension - Developer analytics for AI coding sessions. Tracks and analyzes Claude/Cursor sessions to help developers improve their AI-assisted coding workflows.
 
 **Key Stack**: TypeScript, VS Code Extension API, React (webview), Tailwind CSS, esbuild, Vitest
+
+The extension can analyze coding sessions locally. They can do that with local models 
+
+Or it can connect to the devark cloud and sync manually or automatically using coding agents hooks and upload sessions to devark cloud where they are analyzed in the cloud.
 
 ## Common Commands
 
