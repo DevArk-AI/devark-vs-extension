@@ -24,10 +24,12 @@ import type {
   SourceFileInfo,
   SessionIndex,
   SessionDetails,
+  TokenUsageData,
 } from '../../types';
 import { calculateDuration } from '../../core/session/duration-calculator';
 import { extractLanguagesFromPaths } from '../../core/session/language-extractor';
 import { extractHighlights } from '../../core/session/highlights-extractor';
+import { calculateTokenUsage } from '../../core/session/token-counter';
 
 /**
  * Claude-specific patterns to skip when extracting highlights
@@ -693,6 +695,15 @@ export class ClaudeSessionReader implements ISessionReader {
     // Extract conversation highlights for summarization
     const highlights = extractHighlights(messages, {}, CLAUDE_SKIP_PATTERNS);
 
+    // Calculate token usage for context window tracking
+    const tokenUsageResult = calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined);
+    const tokenUsage: TokenUsageData = {
+      inputTokens: tokenUsageResult.inputTokens,
+      outputTokens: tokenUsageResult.outputTokens,
+      totalTokens: tokenUsageResult.totalTokens,
+      contextUtilization: tokenUsageResult.contextUtilization,
+    };
+
     return {
       ...metadata,
       messages,
@@ -704,6 +715,7 @@ export class ClaudeSessionReader implements ISessionReader {
       gitBranch,
       sourceFile,
       highlights,
+      tokenUsage,
     };
   }
 

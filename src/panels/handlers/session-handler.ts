@@ -21,6 +21,15 @@ import * as crypto from 'crypto';
 export class SessionHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
 
+  /**
+   * Cache for goal progress and title data that can be applied to sessions from any source.
+   * Key: session ID (or sourceSessionId for cross-source matching)
+   * Value: { progress: number, goal?: string, customName?: string }
+   * This allows goal data to persist across session list refreshes and be applied
+   * to sessions from UnifiedSessionService (which don't store goal data).
+   */
+  private goalProgressCache: Map<string, { progress: number; goal?: string; customName?: string }> = new Map();
+
   constructor(
     messageSender: MessageSender,
     handlerContext: HandlerContext,
@@ -28,6 +37,32 @@ export class SessionHandler extends BaseMessageHandler {
   ) {
     super(messageSender, handlerContext);
     this.sharedContext = sharedContext;
+  }
+
+  /**
+   * Update the goal progress cache for a session.
+   * Called when goal progress is analyzed.
+   */
+  public updateGoalProgressCache(sessionId: string, progress: number, goal?: string, customName?: string): void {
+    this.goalProgressCache.set(sessionId, { progress, goal, customName });
+  }
+
+  /**
+   * Extract the base session ID for cross-source matching.
+   * UnifiedSessionService IDs: "claude-<originalId>"
+   * SessionManagerService IDs: "<timestamp>-<random>" with metadata.sourceSessionId
+   */
+  private getSourceSessionId(session: Session): string | undefined {
+    // For hook-captured sessions, check metadata.sourceSessionId
+    if (session.metadata?.sourceSessionId) {
+      return session.metadata.sourceSessionId;
+    }
+    // For UnifiedSessionService sessions, the ID is "claude-<originalId>"
+    // Extract the originalId part
+    if (session.id.startsWith('claude-')) {
+      return session.id.substring(7); // Remove "claude-" prefix
+    }
+    return undefined;
   }
 
   getHandledMessageTypes(): string[] {
@@ -398,6 +433,36 @@ export class SessionHandler extends BaseMessageHandler {
           ...p,
           sessions: p.sessions.filter(s => s.promptCount > 0)
         }));
+
+        // Populate goalProgressCache from hook-captured sessions
+        // This ensures goal data persists and can be applied to sessions from any source
+        // Note: We merge with existing cache entries to preserve previously set values
+        for (const project of hookProjects) {
+          for (const session of project.sessions) {
+            // Cache by session ID - merge with existing entry
+            if (session.goalProgress !== undefined || session.goal || session.customName) {
+              const existingEntry = this.goalProgressCache.get(session.id);
+              this.goalProgressCache.set(session.id, {
+                // Prefer existing progress if session has undefined, else use session's value
+                progress: session.goalProgress ?? existingEntry?.progress ?? 0,
+                // Prefer session's goal if defined, else keep existing
+                goal: session.goal ?? existingEntry?.goal,
+                // Prefer session's customName if defined, else keep existing
+                customName: session.customName ?? existingEntry?.customName,
+              });
+            }
+            // Also cache by sourceSessionId for cross-source matching
+            const sourceId = this.getSourceSessionId(session);
+            if (sourceId && (session.goalProgress !== undefined || session.goal || session.customName)) {
+              const existingEntry = this.goalProgressCache.get(sourceId);
+              this.goalProgressCache.set(sourceId, {
+                progress: session.goalProgress ?? existingEntry?.progress ?? 0,
+                goal: session.goal ?? existingEntry?.goal,
+                customName: session.customName ?? existingEntry?.customName,
+              });
+            }
+          }
+        }
       }
 
       // Get Claude Code sessions from UnifiedSessionService
@@ -418,6 +483,36 @@ export class SessionHandler extends BaseMessageHandler {
 
       // Merge projects from both sources
       const mergedProjects = this.mergeProjects(hookProjects, claudeProjects);
+
+      // Apply goal data cache to all sessions
+      // This ensures sessions from UnifiedSessionService get goal data if available
+      for (const project of mergedProjects) {
+        for (const session of project.sessions) {
+          // Try to find cached data by session ID first
+          let cached = this.goalProgressCache.get(session.id);
+
+          // If not found, try by sourceSessionId for cross-source matching
+          if (!cached) {
+            const sourceId = this.getSourceSessionId(session);
+            if (sourceId) {
+              cached = this.goalProgressCache.get(sourceId);
+            }
+          }
+
+          // Apply cached data if found
+          if (cached) {
+            if (cached.progress !== undefined && cached.progress > 0) {
+              session.goalProgress = cached.progress;
+            }
+            if (cached.goal && !session.goal) {
+              session.goal = cached.goal;
+            }
+            if (cached.customName && !session.customName) {
+              session.customName = cached.customName;
+            }
+          }
+        }
+      }
 
       // Flatten sessions for the sessions list
       const allMergedSessions = mergedProjects.flatMap(p => p.sessions);
@@ -445,6 +540,16 @@ export class SessionHandler extends BaseMessageHandler {
       responses: [],
       isActive: unified.status === 'active',
       totalDuration: unified.duration,
+      // Goal-related fields: Claude Code sessions don't have goal tracking
+      // Explicitly set to undefined to distinguish from "0% progress"
+      goal: undefined,
+      goalProgress: undefined,
+      customName: undefined,
+      // Token usage for context window tracking
+      tokenUsage: unified.tokenUsage ? {
+        totalTokens: unified.tokenUsage.totalTokens,
+        contextUtilization: unified.tokenUsage.contextUtilization,
+      } : undefined,
       metadata: {
         files: unified.fileContext,
       },

@@ -66,6 +66,14 @@ export interface Project {
   isExpanded: boolean;
 }
 
+/**
+ * Token usage data for context window tracking
+ */
+export interface TokenUsageData {
+  totalTokens: number;
+  contextUtilization: number; // 0-1 scale
+}
+
 export interface Session {
   id: string;
   projectId: string;
@@ -78,6 +86,7 @@ export interface Session {
   goal?: string;
   goalProgress?: number; // 0-100 percentage, LLM-inferred progress toward goal
   customName?: string; // User-defined name for the session
+  tokenUsage?: TokenUsageData; // Token usage for context window tracking
 }
 
 // Sidebar mode for toggling between Projects view and Prompt Lab view

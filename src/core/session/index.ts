@@ -42,3 +42,13 @@ export {
   MIN_MEANINGFUL_LENGTH,
   type HighlightsOptions,
 } from './highlights-extractor';
+
+// Token counter
+export {
+  countTokens,
+  countMessageTokens,
+  estimateContextUtilization,
+  calculateTokenUsage,
+  CLAUDE_CONTEXT_WINDOWS,
+  type TokenUsage,
+} from './token-counter';

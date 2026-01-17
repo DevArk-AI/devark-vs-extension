@@ -66,6 +66,20 @@ function getSessionDisplayName(session: Session): string {
 }
 
 /**
+ * Check if goal progress is in a "pending" state (not yet analyzed)
+ * Pending means: no coaching progress AND no session progress (undefined, not 0)
+ */
+function isGoalProgressPending(
+  session: Session,
+  coaching?: CoachingData | null
+): boolean {
+  const coachingProgress = coaching?.analysis?.goalProgress?.after;
+  const sessionProgress = session.goalProgress;
+  // Pending if both are undefined (not 0, which is a valid analyzed value)
+  return coachingProgress === undefined && sessionProgress === undefined;
+}
+
+/**
  * Map session data to ring fill values (0-1)
  */
 function computeRingData(
@@ -87,11 +101,9 @@ function computeRingData(
   const activityBoost = session.isActive ? 0.3 : 0;
   const activity = Math.min(promptFactor + activityBoost, 1);
 
-  // Context ring: Placeholder for now
-  // In the future this will track token/context window usage
-  // For now, use a proxy based on prompt count (more prompts = more context used)
-  // This is just a visual indicator, not accurate data
-  const context = Math.min(session.promptCount / 30, 0.8); // Cap at 80% to indicate "room left"
+  // Context ring: Uses real token usage if available, shows 0 if not calculated
+  // contextUtilization is 0-1 scale representing how much of the context window is used
+  const context = session.tokenUsage?.contextUtilization ?? 0;
 
   return { goal, context, activity };
 }
@@ -129,15 +141,18 @@ function RingTooltip({
   session,
   ringData,
   platformLabel,
+  coaching,
 }: {
   session: Session;
   ringData: RingData;
   platformLabel: string;
+  coaching?: CoachingData | null;
 }) {
   // Format percentages for display
   const goalPercent = Math.round(ringData.goal * 100);
   const contextPercent = Math.round(ringData.context * 100);
   const activityPercent = Math.round(ringData.activity * 100);
+  const isPending = isGoalProgressPending(session, coaching);
 
   const title = getTooltipTitle(session, platformLabel);
   // Show platform at bottom only if we have a goal/customName (otherwise it's already in title)
@@ -157,7 +172,7 @@ function RingTooltip({
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--goal" />
           <span className="vl-ring-tooltip__ring-value">
-            {goalPercent}% — Task completion
+            {isPending ? '—' : `${goalPercent}%`} — Goal completion
           </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">
@@ -230,6 +245,7 @@ export function SessionRingCard({
         session={session}
         ringData={ringData}
         platformLabel={platformConfig.label}
+        coaching={coaching}
       />
     </button>
   );

@@ -124,6 +124,14 @@ export interface SerializedResponseRecord extends Omit<ResponseRecord, 'timestam
  * - Different tool/platform
  * - >2 hour gap in activity
  */
+/**
+ * Token usage data for context window tracking
+ */
+export interface TokenUsageData {
+  totalTokens: number;
+  contextUtilization: number; // 0-1 scale
+}
+
 export interface Session {
   id: string;
   projectId: string;
@@ -145,6 +153,8 @@ export interface Session {
   // Session metadata
   averageScore?: number;
   totalDuration?: number; // In minutes
+  // Token usage for context window tracking
+  tokenUsage?: TokenUsageData;
   // Context extracted from prompts
   extractedContext?: SessionContext;
   // Cursor-specific metadata

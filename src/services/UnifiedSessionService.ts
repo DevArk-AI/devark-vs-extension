@@ -11,7 +11,7 @@
  */
 
 import { CursorSession } from '../cursor-integration/types';
-import type { ConversationHighlights, SessionIndex, SessionDetails } from '../types';
+import type { ConversationHighlights, SessionIndex, SessionDetails, TokenUsageData } from '../types';
 import { SessionData } from '../types/session.types';
 import type { CursorSessionReader } from '../cursor-integration/session-reader';
 import { ClaudeSessionReader } from '../adapters/readers/claude-session-reader';
@@ -78,6 +78,8 @@ export interface UnifiedSession {
   businessContext?: BusinessContext;
   /** Extracted conversation highlights for summarization */
   highlights?: ConversationHighlights;
+  /** Token usage data for context window tracking */
+  tokenUsage?: TokenUsageData;
   /** Original session data (for debugging) */
   rawData?: CursorSession | SessionData;
 }
@@ -695,6 +697,7 @@ export class UnifiedSessionService {
       fileContext,
       status: 'historical',
       highlights: claude.highlights,  // Pass through conversation highlights
+      tokenUsage: claude.tokenUsage,  // Pass through token usage for context tracking
       rawData: claude
     };
   }

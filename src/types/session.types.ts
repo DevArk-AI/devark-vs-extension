@@ -55,6 +55,16 @@ export interface SourceFileInfo {
 /**
  * Raw session data from session readers
  */
+/**
+ * Token usage data for context window tracking
+ */
+export interface TokenUsageData {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  contextUtilization: number; // 0-1 scale
+}
+
 export interface SessionData {
   id: string;
   projectPath: string;
@@ -69,6 +79,7 @@ export interface SessionData {
   gitBranch?: string;
   sourceFile?: SourceFileInfo;
   highlights?: ConversationHighlights;  // Conversation highlights for summarization
+  tokenUsage?: TokenUsageData;  // Token usage for context window tracking
 }
 
 /**
@@ -129,6 +140,7 @@ export interface SessionIndex {
   projectPath: string;
   workspaceName: string;
   promptCount: number;
+  tokenUsage?: TokenUsageData;  // Token usage for context window tracking
 }
 
 /**
