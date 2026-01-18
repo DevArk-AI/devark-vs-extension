@@ -752,6 +752,7 @@ export function AppV2() {
             projects={state.projects}
             activeSessionId={state.activeSessionId}
             coaching={state.currentCoaching}
+            coachingBySession={state.coachingBySession}
             theme={state.theme}
             onSessionSelect={(sessionId) => {
               dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });

@@ -24,6 +24,8 @@ export interface RingsHeaderProps {
   activeSessionId?: string | null;
   /** Current coaching data (for goal progress on active session) */
   coaching?: CoachingData | null;
+  /** Cached coaching data by session ID */
+  coachingBySession?: Record<string, CoachingData>;
   /** Theme for styling */
   theme?: 'light' | 'dark' | 'high-contrast';
   /** Callback when a session ring is clicked */
@@ -74,6 +76,7 @@ export function RingsHeader({
   projects,
   activeSessionId,
   coaching,
+  coachingBySession = {},
   theme = 'dark',
   onSessionSelect,
   onNavigateToCopilot,
@@ -113,7 +116,7 @@ export function RingsHeader({
           <SessionRingCard
             key={session.id}
             session={session}
-            coaching={session.id === activeSessionId ? coaching : undefined}
+            coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
             theme={theme}
             ringSize={64}
             onClick={() => handleSessionClick(session.id)}
