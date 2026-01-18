@@ -34,20 +34,16 @@ export interface RingsHeaderProps {
 
 /**
  * Get the top 3 most recent sessions across all projects
- * Priority: active sessions first, then by lastActivityTime
+ * Sorted by lastActivityTime (most recent first) - same logic as SessionsSidebar
  */
 function getTopSessions(projects: Project[], limit = 3): Session[] {
   // Flatten all sessions from all projects
   const allSessions = projects.flatMap((p) => p.sessions);
 
-  // Sort: active first, then by lastActivityTime descending
-  const sorted = [...allSessions].sort((a, b) => {
-    // Active sessions come first
-    if (a.isActive && !b.isActive) return -1;
-    if (!a.isActive && b.isActive) return 1;
-    // Then sort by lastActivityTime (most recent first)
-    return b.lastActivityTime.getTime() - a.lastActivityTime.getTime();
-  });
+  // Sort by lastActivityTime descending (most recent first)
+  const sorted = [...allSessions].sort(
+    (a, b) => b.lastActivityTime.getTime() - a.lastActivityTime.getTime()
+  );
 
   return sorted.slice(0, limit);
 }
