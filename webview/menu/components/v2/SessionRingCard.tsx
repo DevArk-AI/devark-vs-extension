@@ -49,9 +49,12 @@ function formatDuration(startTime: Date, lastActivityTime: Date): string {
 
 /**
  * Get display name for session
- * Priority: customName > goal (truncated) > platform label
+ * Priority: customName > goal (truncated) > "Analyzing..." (if pending) > platform label
  */
-function getSessionDisplayName(session: Session): string {
+function getSessionDisplayName(
+  session: Session,
+  coaching?: CoachingData | null
+): string {
   if (session.customName) {
     return session.customName.length > 12
       ? session.customName.slice(0, 12) + '…'
@@ -61,6 +64,10 @@ function getSessionDisplayName(session: Session): string {
     return session.goal.length > 12
       ? session.goal.slice(0, 12) + '…'
       : session.goal;
+  }
+  // Show "Analyzing..." if session has prompts but no title yet
+  if (session.promptCount >= 1 && isGoalProgressPending(session, coaching)) {
+    return 'Analyzing…';
   }
   return PLATFORM_CONFIG[session.platform].label;
 }
@@ -267,7 +274,7 @@ export function SessionRingCard({
     [session, coaching]
   );
 
-  const displayName = getSessionDisplayName(session);
+  const displayName = getSessionDisplayName(session, coaching);
   const duration = formatDuration(session.startTime, session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
   const analyzing = isSessionAnalyzing(session, coaching);
