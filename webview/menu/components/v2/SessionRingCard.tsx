@@ -80,6 +80,26 @@ function isGoalProgressPending(
 }
 
 /**
+ * Check if session is currently being analyzed (has prompts but no title/goal yet)
+ * Returns true if the session appears to be waiting for analysis results
+ */
+function isSessionAnalyzing(
+  session: Session,
+  coaching?: CoachingData | null
+): boolean {
+  // Session needs prompts to be worth analyzing
+  if (session.promptCount < 1) return false;
+
+  // If we have a custom name or goal, analysis is complete
+  if (session.customName || session.goal) return false;
+
+  // If we have goal progress data, analysis is complete (even if 0)
+  if (!isGoalProgressPending(session, coaching)) return false;
+
+  return true;
+}
+
+/**
  * Map session data to ring fill values (0-1)
  */
 function computeRingData(
@@ -153,6 +173,7 @@ function RingTooltip({
   const contextPercent = Math.round(ringData.context * 100);
   const activityPercent = Math.round(ringData.activity * 100);
   const isPending = isGoalProgressPending(session, coaching);
+  const isAnalyzing = isSessionAnalyzing(session, coaching);
 
   const title = getTooltipTitle(session, platformLabel);
   // Show platform at bottom only if we have a goal/customName (otherwise it's already in title)
@@ -172,7 +193,7 @@ function RingTooltip({
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--goal" />
           <span className="vl-ring-tooltip__ring-value">
-            {isPending ? '—' : `${goalPercent}%`} — Goal completion
+            {isAnalyzing ? 'Analyzing...' : isPending ? '—' : `${goalPercent}%`} — Goal completion
           </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">
@@ -200,6 +221,39 @@ function RingTooltip({
 /**
  * SessionRingCard - Compact session visualization with rings
  */
+/**
+ * Small inline spinner for analyzing state
+ */
+function AnalyzingSpinner() {
+  return (
+    <svg
+      className="vl-session-ring-card__spinner"
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="5"
+        cy="5"
+        r="4"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth="1.5"
+        fill="none"
+      />
+      <path
+        d="M5 1a4 4 0 0 1 4 4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 export function SessionRingCard({
   session,
   coaching,
@@ -216,6 +270,7 @@ export function SessionRingCard({
   const displayName = getSessionDisplayName(session);
   const duration = formatDuration(session.startTime, session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
+  const analyzing = isSessionAnalyzing(session, coaching);
 
   return (
     <button
@@ -229,7 +284,10 @@ export function SessionRingCard({
       </div>
 
       <div className="vl-session-ring-card__info">
-        <span className="vl-session-ring-card__name">{displayName}</span>
+        <span className="vl-session-ring-card__name">
+          {analyzing && <AnalyzingSpinner />}
+          {displayName}
+        </span>
         <span className="vl-session-ring-card__duration">
           {session.isActive ? (
             <>

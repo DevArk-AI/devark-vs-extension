@@ -128,6 +128,10 @@ export class CoPilotCoordinator {
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetActiveSession', {});
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetSessionList', {});
             break;
+          case 'session_updated':
+            // Refresh session list when sessions are updated (goalProgress, customName, etc.)
+            this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetSessionList', {});
+            break;
           case 'prompt_added':
             // Refresh prompts and daily stats via SessionHandler
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetActiveSession', {});

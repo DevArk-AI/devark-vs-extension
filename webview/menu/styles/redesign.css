@@ -157,8 +157,10 @@
    ======================================== */
 
 .vl-tabs {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   justify-content: center;
+  flex-wrap: nowrap !important;
   gap: var(--space-xs);
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--vscode-panel-border);
@@ -180,6 +182,9 @@
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   position: relative;
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .vl-tab:hover {
@@ -2109,15 +2114,15 @@
 
 /* Extra narrow sidebar (< 350px) */
 @media (max-width: 350px) {
-  /* Stack tabs vertically */
+  /* Keep tabs horizontal but compact */
   .vl-tabs {
-    flex-direction: column;
-    width: 100%;
+    flex-wrap: nowrap;
+    padding: var(--space-xs) var(--space-sm);
   }
 
   .vl-tab {
-    width: 100%;
-    text-align: center;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 10px;
   }
 
   /* Further reduce padding */
@@ -8197,6 +8202,9 @@
 }
 
 .vl-session-ring-card__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   font-weight: 500;
   color: var(--vscode-foreground);
@@ -8226,6 +8234,17 @@
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+.vl-session-ring-card__spinner {
+  flex-shrink: 0;
+  animation: spin 1s linear infinite;
+  color: var(--vscode-descriptionForeground);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Ring color legend (for tooltips/help) */
