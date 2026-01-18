@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Platform, Project, Session } from '../../state/types-v2';
-import { formatTimeAgo, PLATFORM_CONFIG } from '../../state/types-v2';
+import { PLATFORM_CONFIG } from '../../state/types-v2';
 
 const MAX_SESSIONS = 10;
 
@@ -203,7 +203,6 @@ export function ActiveSessionSwitcher({
                   {group.sessions.map((session) => {
                     const isSelected = session.id === activeSessionId;
                     const displayName = getSessionDisplayName(session);
-                    const lastActivityTime = new Date(session.lastActivityTime);
                     const duration = formatDuration(session.startTime, session.lastActivityTime);
 
                     return (
@@ -220,8 +219,6 @@ export function ActiveSessionSwitcher({
                         <div className="vl-active-session-info">
                           <span className="vl-active-session-name">{displayName}</span>
                           <div className="vl-active-session-details">
-                            <span className="vl-active-session-time">{formatTimeAgo(lastActivityTime)}</span>
-                            <span className="vl-active-session-separator">•</span>
                             <span className="vl-active-session-duration">{duration} dur</span>
                             <span className="vl-active-session-separator">•</span>
                             <span className="vl-active-session-messages">{session.promptCount} msgs</span>

@@ -18,26 +18,6 @@ interface SessionCardProps {
   compact?: boolean;
 }
 
-// Format time ago for display
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return 'yday';
-  if (diffDays < 7) return `${diffDays}d`;
-
-  const diffWeeks = Math.floor(diffDays / 7);
-  return `${diffWeeks}w`;
-}
-
 // Format duration
 function formatDuration(startTime: Date, endTime: Date): string {
   const diffMs = endTime.getTime() - startTime.getTime();
@@ -59,7 +39,6 @@ export function SessionCard({
   compact = false,
 }: SessionCardProps) {
   const platformConfig = PLATFORM_CONFIG[session.platform];
-  const timeAgo = formatTimeAgo(session.lastActivityTime);
   const duration = formatDuration(session.startTime, session.lastActivityTime);
 
   if (compact) {
@@ -87,7 +66,6 @@ export function SessionCard({
         <span className="vl-session-platform-icon" style={{ display: platformConfig.faviconUrl ? 'none' : 'inline' }}>
           {platformConfig.icon}
         </span>
-        <span className="vl-session-time">{timeAgo}</span>
         <span className="vl-session-count">{session.promptCount}</span>
         {session.isActive && <span className="vl-session-active-indicator" />}
       </button>
@@ -98,7 +76,7 @@ export function SessionCard({
     <button
       className={`vl-session-card ${isActive ? 'selected' : ''} ${session.isActive ? 'active' : ''}`}
       onClick={onSelect}
-      aria-label={`${platformConfig.label} session from ${timeAgo} with ${session.promptCount} prompts`}
+      aria-label={`${platformConfig.label} session with ${session.promptCount} prompts`}
     >
       <div className="vl-session-card-header">
         {platformConfig.faviconUrl ? (
@@ -119,7 +97,6 @@ export function SessionCard({
         <span className="vl-session-platform-icon" title={platformConfig.label} style={{ display: platformConfig.faviconUrl ? 'none' : 'inline' }}>
           {platformConfig.icon}
         </span>
-        <span className="vl-session-time-ago">{timeAgo}</span>
         <span className="vl-session-prompt-count">
           {session.promptCount}
         </span>

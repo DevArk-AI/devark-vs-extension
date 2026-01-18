@@ -31,23 +31,6 @@ export interface SessionRingCardProps {
 }
 
 /**
- * Format session duration for display
- */
-function formatDuration(startTime: Date, lastActivityTime: Date): string {
-  const diffMs = lastActivityTime.getTime() - startTime.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return '<1m';
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-}
-
-/**
  * Get display name for session
  * Priority: customName > goal (truncated) > "Analyzing..." (if pending) > platform label
  */
@@ -275,7 +258,6 @@ export function SessionRingCard({
   );
 
   const displayName = getSessionDisplayName(session, coaching);
-  const duration = formatDuration(session.startTime, session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
   const analyzing = isSessionAnalyzing(session, coaching);
 
@@ -283,7 +265,7 @@ export function SessionRingCard({
     <button
       className={`vl-session-ring-card ${isSelected ? 'selected' : ''} ${session.isActive ? 'active' : ''}`}
       onClick={onClick}
-      aria-label={`${displayName} - ${duration} - ${session.promptCount} prompts`}
+      aria-label={`${displayName} - ${session.promptCount} prompts`}
     >
       <div className="vl-session-ring-card__rings">
         <ActivityRings rings={ringData} size={ringSize} theme={theme} />
@@ -295,16 +277,11 @@ export function SessionRingCard({
           {analyzing && <AnalyzingSpinner />}
           {displayName}
         </span>
-        <span className="vl-session-ring-card__duration">
-          {session.isActive ? (
-            <>
-              <span className="vl-session-ring-card__status-dot" />
-              {duration}
-            </>
-          ) : (
-            duration
-          )}
-        </span>
+        {session.isActive && (
+          <span className="vl-session-ring-card__status">
+            <span className="vl-session-ring-card__status-dot" />
+          </span>
+        )}
       </div>
       <RingTooltip
         session={session}

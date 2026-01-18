@@ -41,27 +41,6 @@ function formatDuration(startTime: Date, lastActivityTime: Date): string {
 }
 
 /**
- * Format time ago for display
- */
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return 'yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return date.toLocaleDateString();
-}
-
-/**
  * Get display name for session (longer version for sidebar)
  */
 function getSessionDisplayName(session: Session, coaching?: CoachingData | null): string {
@@ -133,7 +112,6 @@ function SessionListItem({
 
   const displayName = getSessionDisplayName(session, coaching);
   const duration = formatDuration(session.startTime, session.lastActivityTime);
-  const timeAgo = formatTimeAgo(session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
 
   // Check if goal progress is pending (not yet analyzed)
@@ -180,8 +158,6 @@ function SessionListItem({
             <span className="vl-session-list-item__messages">{session.promptCount} messages</span>
             <span className="vl-session-list-item__separator">·</span>
             <span className="vl-session-list-item__duration">{duration}</span>
-            <span className="vl-session-list-item__separator">·</span>
-            <span className="vl-session-list-item__time">{timeAgo}</span>
           </div>
           <div className="vl-session-list-item__progress">
             <span className="vl-session-list-item__progress-item" title={isPending ? "Goal progress pending" : "Goal Progress"}>
