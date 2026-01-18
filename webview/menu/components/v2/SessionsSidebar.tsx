@@ -64,12 +64,16 @@ function formatTimeAgo(date: Date): string {
 /**
  * Get display name for session (longer version for sidebar)
  */
-function getSessionDisplayName(session: Session): string {
+function getSessionDisplayName(session: Session, coaching?: CoachingData | null): string {
   if (session.customName) {
     return session.customName;
   }
   if (session.goal) {
     return session.goal;
+  }
+  // Show "Analyzing…" if session has prompts but no title yet
+  if (session.promptCount >= 1 && isGoalProgressPending(session, coaching)) {
+    return 'Analyzing…';
   }
   return PLATFORM_CONFIG[session.platform].label;
 }
@@ -127,7 +131,7 @@ function SessionListItem({
     [session, coaching]
   );
 
-  const displayName = getSessionDisplayName(session);
+  const displayName = getSessionDisplayName(session, coaching);
   const duration = formatDuration(session.startTime, session.lastActivityTime);
   const timeAgo = formatTimeAgo(session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];

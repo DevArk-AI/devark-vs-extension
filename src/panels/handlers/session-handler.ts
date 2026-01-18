@@ -220,6 +220,9 @@ export class SessionHandler extends BaseMessageHandler {
           coachingService.setCurrentPromptId(null);
           this.send('coachingUpdated', { coaching: null });
         }
+
+        // Trigger goal analysis if session needs it
+        this.triggerGoalAnalysisIfNeeded(session);
       } else {
         console.warn('[SessionHandler] Session not found:', sessionId);
         this.send('error', { operation: 'switchSession', message: 'Session not found' });
@@ -235,6 +238,29 @@ export class SessionHandler extends BaseMessageHandler {
    */
   private isClaudeSession(sessionId: string): boolean {
     return sessionId.startsWith('claude-');
+  }
+
+  /**
+   * Trigger goal analysis for a session if needed.
+   * Conditions: has prompts, no goal, no goalProgress yet
+   */
+  private async triggerGoalAnalysisIfNeeded(session: Session): Promise<void> {
+    // Don't analyze if no prompts
+    if (session.promptCount < 1) return;
+
+    // Don't analyze if already has goal or goalProgress
+    if (session.goal || session.goalProgress !== undefined) return;
+
+    const goalService = this.sharedContext.goalService;
+    if (!goalService) {
+      return;
+    }
+
+    console.log(`[SessionHandler] Triggering goal analysis for session ${session.id}`);
+    // Fire and forget - analysis will push updates via callback
+    goalService.analyzeGoalProgress(session.id).catch(error => {
+      console.error('[SessionHandler] Goal analysis failed:', error);
+    });
   }
 
   /**
@@ -340,6 +366,9 @@ export class SessionHandler extends BaseMessageHandler {
       const coachingService = getCoachingService();
       coachingService.setCurrentPromptId(null);
       this.send('coachingUpdated', { coaching: null });
+
+      // Trigger goal analysis if session needs it
+      this.triggerGoalAnalysisIfNeeded(session);
 
     } catch (error) {
       console.error('[SessionHandler] Failed to switch to Claude session:', error);
