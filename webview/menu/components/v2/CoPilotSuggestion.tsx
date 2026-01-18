@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { X, Lightbulb, Plus, Clock, AlertCircle, Target, MessageSquare } from 'lucide-react';
+import { X, Lightbulb, Plus, Clock, AlertCircle, MessageSquare } from 'lucide-react';
 import type { SuggestionType, CoPilotSuggestionData } from '../../state/types-v2';
 
 interface CoPilotSuggestionProps {
@@ -27,7 +27,6 @@ const SUGGESTION_ICONS: Record<SuggestionType, React.ReactNode> = {
   progress_check: <Clock size={16} />,
   resume_session: <Clock size={16} />,
   be_specific: <AlertCircle size={16} />,
-  set_goal: <Target size={16} />,
 };
 
 // Color/style mapping for suggestion types
@@ -37,7 +36,6 @@ const SUGGESTION_STYLES: Record<SuggestionType, string> = {
   progress_check: 'progress',
   resume_session: 'resume',
   be_specific: 'specific',
-  set_goal: 'goal',
 };
 
 export function CoPilotSuggestion({

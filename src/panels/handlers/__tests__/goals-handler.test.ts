@@ -24,11 +24,12 @@ describe('GoalsHandler', () => {
       setGoal: vi.fn().mockResolvedValue(undefined),
       completeGoal: vi.fn().mockResolvedValue(undefined),
       clearGoal: vi.fn().mockResolvedValue(undefined),
-      inferGoalWithLLM: vi.fn().mockResolvedValue({
-        suggestedGoal: 'Implement user authentication',
-        confidence: 0.85,
-        detectedTheme: 'authentication',
+      analyzeGoalProgress: vi.fn().mockResolvedValue({
+        progress: 50,
+        reasoning: 'Test reasoning',
+        inferredGoal: 'Implement user authentication',
       }),
+      setProgressUpdateCallback: vi.fn(),
     } as unknown as SharedContext['goalService'];
 
     sharedContext.sessionManagerService = {
@@ -37,6 +38,8 @@ describe('GoalsHandler', () => {
         projectId: 'proj-1',
         prompts: [{ id: 'prompt-1', text: 'test' }],
       }),
+      getSessions: vi.fn().mockReturnValue([]),
+      getAllProjects: vi.fn().mockReturnValue([]),
     } as unknown as SharedContext['sessionManagerService'];
 
     handler = new GoalsHandler(
@@ -52,14 +55,15 @@ describe('GoalsHandler', () => {
       expect(types).toContain('v2GetGoalStatus');
       expect(types).toContain('v2SetGoal');
       expect(types).toContain('v2CompleteGoal');
-      expect(types).toContain('v2InferGoal');
-      expect(types).toContain('v2MaybeLaterGoal');
-      expect(types).toContain('v2DontAskGoal');
-      expect(types).toContain('v2AnalyzeGoalProgress');
-      expect(types).toContain('editGoal');
-      expect(types).toContain('completeGoal');
       expect(types).toContain('v2ClearGoal');
-      expect(types).toHaveLength(10);
+      expect(types).toContain('v2AnalyzeGoalProgress');
+      expect(types).toContain('completeGoal');
+      // Removed message types (goals are now auto-set via progress analysis):
+      expect(types).not.toContain('v2InferGoal');
+      expect(types).not.toContain('v2MaybeLaterGoal');
+      expect(types).not.toContain('v2DontAskGoal');
+      expect(types).not.toContain('editGoal');
+      expect(types).toHaveLength(6);
     });
   });
 
@@ -109,110 +113,27 @@ describe('GoalsHandler', () => {
       expect(sharedContext.goalService!.completeGoal).toHaveBeenCalled();
     });
 
-    it('should handle v2MaybeLaterGoal', async () => {
-      sharedContext.goalService!.setConfig = vi.fn();
-      const result = await handler.handleMessage('v2MaybeLaterGoal', {});
+    it('should handle v2ClearGoal', async () => {
+      const result = await handler.handleMessage('v2ClearGoal', {});
       expect(result).toBe(true);
-      expect(sharedContext.goalService!.setConfig).toHaveBeenCalledWith({ noGoalSuggestionDelayMinutes: 30 });
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalInferenceDismissed', { reason: 'maybe_later' });
+      expect(sharedContext.goalService!.clearGoal).toHaveBeenCalled();
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalCleared', {});
     });
 
-    it('should handle v2DontAskGoal', async () => {
-      sharedContext.goalService!.setConfig = vi.fn();
-      const result = await handler.handleMessage('v2DontAskGoal', {});
+    it('should handle v2AnalyzeGoalProgress', async () => {
+      const result = await handler.handleMessage('v2AnalyzeGoalProgress', { sessionId: 'session-1' });
       expect(result).toBe(true);
-      expect(sharedContext.goalService!.setConfig).toHaveBeenCalledWith({ noGoalSuggestionDelayMinutes: 999999 });
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalInferenceDismissed', { reason: 'dont_ask' });
-    });
-
-    it('should handle v2InferGoal', async () => {
-      const result = await handler.handleMessage('v2InferGoal', {});
-      expect(result).toBe(true);
-      expect(sharedContext.goalService!.inferGoalWithLLM).toHaveBeenCalled();
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalInference', expect.objectContaining({
-        inference: expect.objectContaining({
-          suggestedGoal: 'Implement user authentication',
-          confidence: 0.85,
-        }),
+      expect(sharedContext.goalService!.analyzeGoalProgress).toHaveBeenCalledWith('session-1');
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalProgressAnalysis', expect.objectContaining({
+        success: true,
+        progress: 50,
+        inferredGoal: 'Implement user authentication',
       }));
-    });
-
-    it('should handle editGoal', async () => {
-      const result = await handler.handleMessage('editGoal', {});
-      expect(result).toBe(true);
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('openGoalEditor', {
-        currentGoal: 'Test goal',
-      });
     });
 
     it('should return false for unhandled message types', async () => {
       const result = await handler.handleMessage('unknownType', {});
       expect(result).toBe(false);
-    });
-  });
-
-  describe('triggerGoalInferenceIfNeeded', () => {
-    it('should trigger inference on first prompt when no goal set', async () => {
-      // Configure no goal set
-      sharedContext.goalService!.getGoalStatus = vi.fn().mockReturnValue({
-        hasGoal: false,
-        goalText: null,
-      });
-
-      // Only one prompt in session (first prompt)
-      sharedContext.sessionManagerService!.getActiveSession = vi.fn().mockReturnValue({
-        id: 'session-1',
-        prompts: [{ id: 'prompt-1', text: 'test' }],
-      });
-
-      handler.triggerGoalInferenceIfNeeded();
-
-      // Wait for async call
-      await vi.waitFor(() => {
-        expect(sharedContext.goalService!.inferGoalWithLLM).toHaveBeenCalled();
-      });
-    });
-
-    it('should not trigger inference when goal already set', () => {
-      // Goal is already set
-      sharedContext.goalService!.getGoalStatus = vi.fn().mockReturnValue({
-        hasGoal: true,
-        goalText: 'Existing goal',
-      });
-
-      handler.triggerGoalInferenceIfNeeded();
-
-      expect(sharedContext.goalService!.inferGoalWithLLM).not.toHaveBeenCalled();
-    });
-
-    it('should not trigger inference when not first prompt', () => {
-      sharedContext.goalService!.getGoalStatus = vi.fn().mockReturnValue({
-        hasGoal: false,
-        goalText: null,
-      });
-
-      // Multiple prompts in session
-      sharedContext.sessionManagerService!.getActiveSession = vi.fn().mockReturnValue({
-        id: 'session-1',
-        prompts: [{ id: 'prompt-1' }, { id: 'prompt-2' }],
-      });
-
-      handler.triggerGoalInferenceIfNeeded();
-
-      expect(sharedContext.goalService!.inferGoalWithLLM).not.toHaveBeenCalled();
-    });
-
-    it('should not trigger inference when no active session', () => {
-      sharedContext.goalService!.getGoalStatus = vi.fn().mockReturnValue({
-        hasGoal: false,
-        goalText: null,
-      });
-
-      sharedContext.sessionManagerService!.getActiveSession = vi.fn().mockReturnValue(null);
-
-      handler.triggerGoalInferenceIfNeeded();
-
-      expect(sharedContext.goalService!.inferGoalWithLLM).not.toHaveBeenCalled();
     });
   });
 
@@ -241,13 +162,14 @@ describe('GoalsHandler', () => {
       });
     });
 
-    it('should handle errors in v2InferGoal gracefully', async () => {
-      sharedContext.goalService!.inferGoalWithLLM = vi.fn().mockRejectedValue(new Error('Test error'));
+    it('should handle errors in v2AnalyzeGoalProgress gracefully', async () => {
+      sharedContext.goalService!.analyzeGoalProgress = vi.fn().mockRejectedValue(new Error('Test error'));
 
-      const result = await handler.handleMessage('v2InferGoal', {});
+      const result = await handler.handleMessage('v2AnalyzeGoalProgress', { sessionId: 'session-1' });
       expect(result).toBe(true);
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalInference', {
-        inference: null,
+      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalProgressAnalysis', {
+        success: false,
+        error: 'Analysis failed',
       });
     });
   });

@@ -381,11 +381,9 @@ export class UnifiedPromptDetectionService {
       // Import and use the scorer
       const { PromptScorer } = await import('../copilot/prompt-scorer');
       const { PromptEnhancer } = await import('../copilot/prompt-enhancer');
-      const { GoalService } = await import('./GoalService');
 
       const scorer = new PromptScorer(llmManager);
       const enhancer = new PromptEnhancer(llmManager);
-      const goalService = GoalService.getInstance();
       const sessionManager = getSessionManager();
 
       // Gather context for more targeted scoring (includes session correspondence)
@@ -437,27 +435,13 @@ export class UnifiedPromptDetectionService {
         return { enhanced: result, enhancedScore: enhScore };
       });
 
-      // 3. FIRE: Infer goal (stream result when ready)
-      const goalPromise = goalService.inferGoalWithLLM().then((inference) => {
-        if (inference && inference.suggestedGoal) {
-          console.log(`[UnifiedDetection] Goal inference ready: ${inference.suggestedGoal} - streaming to UI`);
-          this.notifyWebview('v2GoalInference', {
-            suggestedGoal: inference.suggestedGoal,
-            confidence: inference.confidence,
-            detectedTheme: inference.detectedTheme,
-          });
-        }
-        return inference;
-      }).catch((error) => {
-        console.warn('[UnifiedDetection] Goal inference failed (non-blocking):', error);
-        return null;
-      });
+      // Note: Goal inference is now handled automatically by GoalService
+      // when goal progress is analyzed (triggered by prompt count thresholds)
 
       // Wait for all to complete and get results
       const [scoreResult, enhanceResult] = await Promise.all([
         scorePromise.catch(() => null),
         enhancePromise.catch(() => null),
-        goalPromise, // Already catches internally
       ]);
 
       // Guard: If scoring failed, we can't proceed

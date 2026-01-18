@@ -122,7 +122,6 @@ export {
 } from './GoalService';
 
 export type {
-  GoalInference,
   GoalStatus,
   GoalServiceConfig,
 } from './GoalService';

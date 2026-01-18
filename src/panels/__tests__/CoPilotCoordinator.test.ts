@@ -301,12 +301,8 @@ describe('CoPilotCoordinator', () => {
       expect(sessionHandler?.handleMessage).toHaveBeenCalledWith('v2GetDailyStats', {});
     });
 
-    it('should trigger goal inference on prompt_added event', () => {
-      sessionEventCallback?.({ type: 'prompt_added' });
-
-      const goalsHandler = mockHandlerFinder.getGoalsHandler();
-      expect(goalsHandler?.triggerGoalInferenceIfNeeded).toHaveBeenCalled();
-    });
+    // Note: Goal inference on prompt_added was removed - goals are now auto-set
+    // via GoalService.analyzeGoalProgress() when progress analysis is triggered
 
     it('should send goal status on goal_set event', () => {
       sessionEventCallback?.({ type: 'goal_set' });

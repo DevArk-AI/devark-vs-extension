@@ -174,28 +174,13 @@ export class PromptAnalysisHandler extends BaseMessageHandler {
         return { enhanced: result, enhancedScore: enhScore };
       });
 
-      // 3. FIRE: Infer goal (stream result when ready)
-      const goalService = this.sharedContext.goalService;
-      const goalPromise = goalService?.inferGoalWithLLM().then((inference) => {
-        if (inference && inference.suggestedGoal) {
-          console.log(`[PromptAnalysisHandler] Goal inference ready: ${inference.suggestedGoal}`);
-          this.send('v2GoalInference', {
-            suggestedGoal: inference.suggestedGoal,
-            confidence: inference.confidence,
-            detectedTheme: inference.detectedTheme,
-          });
-        }
-        return inference;
-      }).catch((error) => {
-        console.warn('[PromptAnalysisHandler] Goal inference failed (non-blocking):', error);
-        return null;
-      }) ?? Promise.resolve(null);
+      // Note: Goal inference is now handled automatically by GoalService
+      // when goal progress is analyzed (triggered by prompt count thresholds)
 
       // Wait for all to complete
       const [scoreResult, enhanceResult] = await Promise.all([
         scorePromise.catch(() => null),
         enhancePromise.catch(() => null),
-        goalPromise,
       ]);
 
       if (!scoreResult) {

@@ -137,8 +137,7 @@ export class CoPilotCoordinator {
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetActiveSession', {});
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetSessionList', {});
             this.handlerFinder?.getSessionHandler()?.handleMessage('v2GetDailyStats', {});
-            // Trigger goal inference on first prompt if no goal set
-            this.handlerFinder?.getGoalsHandler()?.triggerGoalInferenceIfNeeded();
+            // Goal is now auto-set by GoalService when goal progress is analyzed
             break;
           case 'goal_set':
           case 'goal_completed':

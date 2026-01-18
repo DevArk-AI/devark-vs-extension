@@ -35,7 +35,6 @@ export { PersonalProgress } from './PersonalProgress';
 
 // Goals & Suggestions components (A5)
 export { SessionGoal } from './SessionGoal';
-export { GoalInferenceModal } from './GoalInferenceModal';
 export { CoPilotSuggestion } from './CoPilotSuggestion';
 
 // Activity Rings components (Phase 1 - UI Redesign)

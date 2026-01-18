@@ -22,10 +22,6 @@ describe('SuggestionHandler', () => {
     } as unknown as SharedContext['suggestionEngine'];
 
     sharedContext.goalService = {
-      inferGoal: vi.fn().mockReturnValue({
-        suggestedGoal: 'Fix the login bug',
-        confidence: 0.8,
-      }),
       getGoalStatus: vi.fn().mockReturnValue({
         hasGoal: true,
         goalText: 'Fix the login bug',
@@ -69,10 +65,10 @@ describe('SuggestionHandler', () => {
 
     describe('v2NotNowSuggestion', () => {
       it('should handle not now action', async () => {
-        const result = await handler.handleMessage('v2NotNowSuggestion', { type: 'set_goal' });
+        const result = await handler.handleMessage('v2NotNowSuggestion', { type: 'add_context' });
         expect(result).toBe(true);
-        expect(sharedContext.suggestionEngine!.handleNotNow).toHaveBeenCalledWith('set_goal');
-        expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SuggestionNotNow', { type: 'set_goal' });
+        expect(sharedContext.suggestionEngine!.handleNotNow).toHaveBeenCalledWith('add_context');
+        expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SuggestionNotNow', { type: 'add_context' });
       });
 
       it('should do nothing if type is missing', async () => {
@@ -83,15 +79,6 @@ describe('SuggestionHandler', () => {
     });
 
     describe('v2ApplySuggestion', () => {
-      it('should apply set_goal suggestion', async () => {
-        const result = await handler.handleMessage('v2ApplySuggestion', { id: 'set_goal-1234567890' });
-        expect(result).toBe(true);
-        expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SuggestionApplied', { id: 'set_goal-1234567890', success: true });
-        expect(mockSender.sendMessage).toHaveBeenCalledWith('v2GoalInference', {
-          inference: expect.objectContaining({ suggestedGoal: 'Fix the login bug' }),
-        });
-      });
-
       it('should apply progress_check suggestion and complete goal', async () => {
         const result = await handler.handleMessage('v2ApplySuggestion', { id: 'progress_check-1234567890' });
         expect(result).toBe(true);
@@ -135,10 +122,10 @@ describe('SuggestionHandler', () => {
     describe('v2CheckSuggestions', () => {
       it('should check for suggestions and send if found', async () => {
         const mockSuggestion = {
-          id: 'set_goal-123',
-          type: 'set_goal',
-          title: 'Set a goal',
-          content: 'Would you like to set a goal?',
+          id: 'add_context-123',
+          type: 'add_context',
+          title: 'Add more context',
+          content: 'Your prompt could use more context.',
         };
         (sharedContext.suggestionEngine!.checkSessionSuggestions as ReturnType<typeof vi.fn>).mockReturnValue(mockSuggestion);
 
@@ -184,17 +171,6 @@ describe('SuggestionHandler', () => {
       const result = await handler.handleMessage('v2CheckSuggestions', {});
       expect(result).toBe(true);
       expect(mockSender.sendMessage).not.toHaveBeenCalled();
-    });
-
-    it('should handle missing goalService in v2ApplySuggestion for set_goal', async () => {
-      sharedContext.goalService = undefined;
-      const result = await handler.handleMessage('v2ApplySuggestion', { id: 'set_goal-1234567890' });
-      expect(result).toBe(true);
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('v2SuggestionApplied', {
-        id: 'set_goal-1234567890',
-        success: false,
-        error: 'Goal service not available',
-      });
     });
   });
 });

@@ -102,20 +102,6 @@ export class SuggestionHandler extends BaseMessageHandler {
 
     // Handle different suggestion types
     switch (suggestionType) {
-      case 'set_goal': {
-        // Trigger goal inference modal in UI
-        const goalService = this.sharedContext.goalService;
-        if (goalService) {
-          const inference = goalService.inferGoal();
-          this.send('v2SuggestionApplied', { id: suggestionId, success: true });
-          // Also send goal inference to trigger the modal
-          this.send('v2GoalInference', { inference });
-        } else {
-          this.send('v2SuggestionApplied', { id: suggestionId, success: false, error: 'Goal service not available' });
-        }
-        break;
-      }
-
       case 'progress_check': {
         // Could mark goal as complete or trigger a break reminder
         const goalService = this.sharedContext.goalService;

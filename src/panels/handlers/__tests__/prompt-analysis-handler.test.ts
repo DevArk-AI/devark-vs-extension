@@ -101,13 +101,8 @@ describe('PromptAnalysisHandler', () => {
       injectIntoClaudeCode: vi.fn(),
     } as any;
 
-    sharedContext.goalService = {
-      inferGoalWithLLM: vi.fn().mockResolvedValue({
-        suggestedGoal: 'Test goal',
-        confidence: 0.8,
-        detectedTheme: 'testing',
-      }),
-    } as any;
+    // Note: goalService no longer needed for prompt analysis
+    // Goals are now auto-set via GoalService.analyzeGoalProgress()
 
     handler = new PromptAnalysisHandler(
       mockSender,

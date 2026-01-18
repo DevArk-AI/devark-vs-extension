@@ -29,8 +29,7 @@ export type SuggestionType =
   | 'combine_prompts'
   | 'progress_check'
   | 'resume_session'
-  | 'be_specific'
-  | 'set_goal';
+  | 'be_specific';
 
 /**
  * Suggestion intrusiveness level
@@ -174,9 +173,7 @@ export class SuggestionEngine {
    * Check for session-level suggestions (call periodically)
    */
   public checkSessionSuggestions(): Suggestion | null {
-    // Check for goal suggestion
-    const goalSuggestion = this.checkNoGoal();
-    if (goalSuggestion) return goalSuggestion;
+    // Note: Goal suggestions removed - goals are now auto-set via GoalService progress analysis
 
     // Check for progress check
     const progressSuggestion = this.checkSessionDuration();
@@ -323,37 +320,6 @@ export class SuggestionEngine {
       dismissLabel: 'Not now',
       intrusiveness: 'toast',
       context: { topic: commonWord, count: 3 },
-    });
-  }
-
-  private checkNoGoal(): Suggestion | null {
-    const goalService = getGoalService();
-    const status = goalService.getGoalStatus();
-
-    if (status.hasGoal) return null;
-
-    const sessionManager = getSessionManager();
-    const session = sessionManager.getActiveSession();
-
-    if (!session) return null;
-
-    const sessionMinutes = (Date.now() - session.startTime.getTime()) / 60000;
-    if (sessionMinutes < 0) return null; // No minimum wait time
-
-    if (!this.canShowSuggestion('set_goal', 'sidebar_badge')) return null;
-
-    const inference = goalService.inferGoal();
-
-    return this.createSuggestion({
-      type: 'set_goal',
-      title: 'Set a session goal?',
-      content: inference
-        ? `It looks like you're working on: "${inference.suggestedGoal}"`
-        : 'Setting a goal helps track your progress.',
-      actionLabel: 'Set goal',
-      dismissLabel: 'Maybe later',
-      intrusiveness: 'sidebar_badge',
-      context: { inference },
     });
   }
 
