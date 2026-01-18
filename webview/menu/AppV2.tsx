@@ -20,7 +20,6 @@ import { ProviderSelectView } from './components/v2/ProviderSelectView';
 import { HookSetupView } from './components/v2/HookSetupView';
 import { LLMDropup } from './components/v2/LLMDropup';
 import { LoadingOverlay } from './components/v2/LoadingOverlay';
-import { GoalInferenceModal } from './components/v2/GoalInferenceModal';
 import { SessionsSidebar } from './components/v2/SessionsSidebar';
 import { CoPilotSuggestion } from './components/v2/CoPilotSuggestion';
 import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
@@ -87,8 +86,6 @@ export function AppV2() {
   const [llmDropupOpen, setLlmDropupOpen] = useState(false);
 
   // Modal states
-  const [goalInferenceOpen, setGoalInferenceOpen] = useState(false);
-  const [suggestedGoal, setSuggestedGoal] = useState('');
   const [currentSuggestion, setCurrentSuggestion] = useState<CoPilotSuggestionData | null>(null);
   const [howScoresWorkOpen, setHowScoresWorkOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -310,13 +307,6 @@ export function AppV2() {
           dispatch({ type: 'SET_EDITOR_INFO', payload: message.data });
           break;
 
-        case 'openGoalEditor':
-          // Extension signals to open goal editing UI
-          console.log('[AppV2] Opening goal editor:', message.data?.currentGoal);
-          setSuggestedGoal(message.data?.currentGoal || '');
-          setGoalInferenceOpen(true);
-          break;
-
         // V2 Message handlers (Stream A/B integration)
         case 'v2ActiveSession':
           // Active session info from SessionManagerService
@@ -366,6 +356,10 @@ export function AppV2() {
                 customName: message.data.sessionTitle
               }
             });
+            // Auto-update goal in UI if inferred (goal is auto-set by GoalService)
+            if (message.data.inferredGoal) {
+              dispatch({ type: 'SET_CURRENT_GOAL', payload: message.data.inferredGoal });
+            }
           }
           break;
 
@@ -383,25 +377,6 @@ export function AppV2() {
           // Goal status from GoalService
           if (message.data.goal !== undefined) {
             dispatch({ type: 'SET_CURRENT_GOAL', payload: message.data.goal });
-          }
-          break;
-
-        case 'v2GoalInference':
-          // Goal inference suggestion from GoalService
-          console.log('[AppV2] Goal inference:', message.data);
-          // Update loading state
-          dispatch({
-            type: 'GOAL_INFERENCE_READY',
-            payload: {
-              suggestedGoal: message.data?.suggestedGoal || '',
-              confidence: message.data?.confidence || 0,
-              detectedTheme: message.data?.detectedTheme || '',
-            },
-          });
-          // Open modal if we have a suggestion
-          if (message.data?.suggestedGoal) {
-            setSuggestedGoal(message.data.suggestedGoal);
-            setGoalInferenceOpen(true);
           }
           break;
 
@@ -850,6 +825,7 @@ export function AppV2() {
                 projects={state.projects}
                 activeSessionId={state.activeSessionId}
                 coaching={state.currentCoaching}
+                coachingBySession={state.coachingBySession}
                 theme={state.theme}
                 onSessionSelect={(sessionId) => {
                   dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });
@@ -938,31 +914,6 @@ export function AppV2() {
             />
           </div>
         )}
-
-        {/* Goal Inference Modal */}
-        <GoalInferenceModal
-          isOpen={goalInferenceOpen}
-          suggestedGoal={suggestedGoal}
-          onSetGoal={(goal) => {
-            postMessage('v2SetGoal', { goalText: goal });
-            dispatch({ type: 'SET_CURRENT_GOAL', payload: goal });
-            // Also update session customName to match the goal (Goal = Session Title)
-            if (state.activeSessionId) {
-              dispatch({ type: 'RENAME_SESSION', payload: { sessionId: state.activeSessionId, customName: goal } });
-              postMessage('renameSession', { sessionId: state.activeSessionId, customName: goal });
-            }
-            setGoalInferenceOpen(false);
-          }}
-          onMaybeLater={() => {
-            postMessage('v2MaybeLaterGoal');
-            setGoalInferenceOpen(false);
-          }}
-          onDontAsk={() => {
-            postMessage('v2DontAskGoal');
-            setGoalInferenceOpen(false);
-          }}
-          onClose={() => setGoalInferenceOpen(false)}
-        />
 
         {/* How Scores Work Modal */}
         <HowScoresWorkModal

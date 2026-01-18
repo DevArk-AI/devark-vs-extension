@@ -18,6 +18,7 @@ interface SessionsSidebarProps {
   projects: Project[];
   activeSessionId?: string | null;
   coaching?: CoachingData | null;
+  coachingBySession?: Record<string, CoachingData>; // Cached coaching per session
   theme?: 'light' | 'dark' | 'high-contrast';
   onSessionSelect: (sessionId: string) => void;
 }
@@ -231,6 +232,7 @@ export function SessionsSidebar({
   projects,
   activeSessionId,
   coaching,
+  coachingBySession = {},
   theme = 'dark',
   onSessionSelect,
 }: SessionsSidebarProps) {
@@ -273,7 +275,7 @@ export function SessionsSidebar({
               <SessionListItem
                 key={session.id}
                 session={session}
-                coaching={session.id === activeSessionId ? coaching : undefined}
+                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
                 isSelected={session.id === activeSessionId}
                 theme={theme}
                 onClick={() => onSessionSelect(session.id)}
@@ -289,7 +291,7 @@ export function SessionsSidebar({
               <SessionListItem
                 key={session.id}
                 session={session}
-                coaching={session.id === activeSessionId ? coaching : undefined}
+                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
                 isSelected={session.id === activeSessionId}
                 theme={theme}
                 onClick={() => onSessionSelect(session.id)}
@@ -305,7 +307,7 @@ export function SessionsSidebar({
               <SessionListItem
                 key={session.id}
                 session={session}
-                coaching={session.id === activeSessionId ? coaching : undefined}
+                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
                 isSelected={session.id === activeSessionId}
                 theme={theme}
                 onClick={() => onSessionSelect(session.id)}

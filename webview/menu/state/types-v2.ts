@@ -242,8 +242,7 @@ export type SuggestionType =
   | 'combine_prompts'
   | 'progress_check'
   | 'resume_session'
-  | 'be_specific'
-  | 'set_goal';
+  | 'be_specific';
 
 export interface CoPilotSuggestionData {
   id: string;
@@ -624,6 +623,7 @@ export interface AppStateV2 {
 
   // Coaching state (Workstream D)
   currentCoaching: CoachingData | null;
+  coachingBySession: Record<string, CoachingData>; // Cache coaching data per session to preserve ring values
   coachingPhase: CoachingPhase;
   contextUsed: ContextUsed | null;
   sessionContext: SessionContext | null;

@@ -85,6 +85,7 @@ export const initialState: AppStateV2 = {
   editorInfo: null, // Will be set based on editor detection
   // Coaching state (Workstream D)
   currentCoaching: null,
+  coachingBySession: {},
   coachingPhase: 'idle',
   contextUsed: null,
   sessionContext: null,

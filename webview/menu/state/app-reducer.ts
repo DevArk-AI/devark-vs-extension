@@ -302,8 +302,19 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
       return { ...state, currentGoal: action.payload };
 
     // Coaching state (Workstream D)
-    case 'SET_COACHING':
-      return { ...state, currentCoaching: action.payload };
+    case 'SET_COACHING': {
+      // Store coaching per session to preserve ring values when switching sessions
+      const coaching = action.payload;
+      const sessionId = coaching?.sessionId || state.activeSessionId;
+      const updatedCoachingBySession = sessionId && coaching
+        ? { ...state.coachingBySession, [sessionId]: coaching }
+        : state.coachingBySession;
+      return {
+        ...state,
+        currentCoaching: coaching,
+        coachingBySession: updatedCoachingBySession,
+      };
+    }
 
     case 'SET_COACHING_PHASE':
       return { ...state, coachingPhase: action.payload };
