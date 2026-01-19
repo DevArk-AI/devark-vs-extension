@@ -3093,6 +3093,47 @@
   white-space: nowrap;
 }
 
+/* Custom DatePicker Header */
+.vl-datepicker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+  margin-bottom: var(--space-sm);
+}
+
+.vl-datepicker-month-year {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.vl-datepicker-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius-sm);
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-datepicker-nav-btn:hover:not(:disabled) {
+  background: var(--vscode-toolbar-hoverBackground);
+  border-color: var(--vl-accent);
+  color: var(--vl-accent);
+}
+
+.vl-datepicker-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* React DatePicker Overrides - Inline Calendar */
 .vl-inline-calendar {
   font-family: var(--font-ui);

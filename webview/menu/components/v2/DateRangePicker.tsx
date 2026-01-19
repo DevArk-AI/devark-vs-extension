@@ -14,6 +14,50 @@
 
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Custom header with explicit navigation buttons
+interface CustomHeaderProps {
+  date: Date;
+  decreaseMonth: () => void;
+  increaseMonth: () => void;
+  prevMonthButtonDisabled: boolean;
+  nextMonthButtonDisabled: boolean;
+}
+
+function CustomHeader({
+  date,
+  decreaseMonth,
+  increaseMonth,
+  prevMonthButtonDisabled,
+  nextMonthButtonDisabled
+}: CustomHeaderProps) {
+  const monthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="vl-datepicker-header">
+      <button
+        type="button"
+        className="vl-datepicker-nav-btn"
+        onClick={decreaseMonth}
+        disabled={prevMonthButtonDisabled}
+        aria-label="Previous month"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      <span className="vl-datepicker-month-year">{monthYear}</span>
+      <button
+        type="button"
+        className="vl-datepicker-nav-btn"
+        onClick={increaseMonth}
+        disabled={nextMonthButtonDisabled}
+        aria-label="Next month"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  );
+}
 
 export interface DateRangePickerProps {
   startDate: Date | null;
@@ -75,6 +119,7 @@ export function DateRangePicker({
           monthsShown={1}
           showPopperArrow={false}
           formatWeekDay={formatWeekDay}
+          renderCustomHeader={CustomHeader}
         />
       </div>
     );
@@ -98,6 +143,7 @@ export function DateRangePicker({
             monthsShown={1}
             showPopperArrow={false}
             formatWeekDay={formatWeekDay}
+            renderCustomHeader={CustomHeader}
           />
         </div>
         <div className="vl-calendar-column">
@@ -115,6 +161,7 @@ export function DateRangePicker({
             monthsShown={1}
             showPopperArrow={false}
             formatWeekDay={formatWeekDay}
+            renderCustomHeader={CustomHeader}
           />
         </div>
       </div>
