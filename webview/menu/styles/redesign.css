@@ -160,7 +160,7 @@
   display: flex !important;
   flex-direction: row !important;
   justify-content: center;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap;
   gap: var(--space-xs);
   padding: var(--space-sm) var(--space-lg);
   border-bottom: 1px solid var(--vscode-panel-border);
@@ -862,13 +862,15 @@
 
 .vl-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-sm) var(--space-lg);
   border-top: 1px solid var(--vscode-panel-border);
   background: var(--vscode-sideBar-background);
   flex-shrink: 0;
-  height: 28px;
+  min-height: 28px;
+  gap: var(--space-xs);
 }
 
 .vl-llm-selector {
@@ -2114,15 +2116,41 @@
 
 /* Extra narrow sidebar (< 350px) */
 @media (max-width: 350px) {
-  /* Keep tabs horizontal but compact */
+  /* Allow tabs to wrap to multiple rows */
   .vl-tabs {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     padding: var(--space-xs) var(--space-sm);
+    row-gap: var(--space-xs);
   }
 
   .vl-tab {
     padding: var(--space-xs) var(--space-sm);
     font-size: 10px;
+  }
+
+  /* Hide today summary on very narrow */
+  .vl-today-summary {
+    display: none;
+  }
+
+  /* Stack footer - LLM on top of cloud status */
+  .vl-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+
+  .vl-llm-selector {
+    max-width: none;
+    width: 100%;
+    order: 1;
+  }
+
+  .vl-cloud-status-bar {
+    width: 100%;
+    justify-content: center;
+    order: 2;
   }
 
   /* Further reduce padding */
@@ -2137,6 +2165,72 @@
 
   /* Hide provider descriptions in very narrow mode */
   .vl-llm-description {
+    display: none;
+  }
+}
+
+/* Ultra narrow sidebar (< 280px) */
+@media (max-width: 280px) {
+  /* Stack tabs vertically */
+  .vl-tabs {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-xs);
+    gap: 2px;
+  }
+
+  .vl-tab {
+    width: 100%;
+    text-align: center;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 10px;
+  }
+
+  /* Remove underline on active tab when stacked */
+  .vl-tab.active::after {
+    display: none;
+  }
+
+  /* Add left border indicator instead */
+  .vl-tab.active {
+    background: var(--vscode-list-activeSelectionBackground);
+    border-left: 2px solid var(--vl-accent);
+  }
+
+  /* Ultra compact footer */
+  .vl-footer {
+    padding: var(--space-xs);
+  }
+
+  .vl-llm-trigger {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .vl-llm-label {
+    display: none;
+  }
+
+  .vl-cloud-status-left {
+    font-size: 10px;
+  }
+
+  /* Hide cloud username on ultra narrow */
+  .vl-cloud-username {
+    display: none;
+  }
+
+  /* Compact content */
+  .vl-content {
+    padding: var(--space-xs);
+  }
+
+  /* Hide sidebar on ultra narrow */
+  .vl-sessions-layout__sidebar {
+    display: none;
+  }
+
+  .vl-prompt-lab-sidebar {
     display: none;
   }
 }
@@ -6360,6 +6454,42 @@
 
 .vl-action-btn-text:hover {
   color: var(--vscode-foreground);
+}
+
+/* ========================================
+   PROMPT LAB SIDEBAR
+   ======================================== */
+
+.vl-prompt-lab-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  width: 240px;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.vl-prompt-lab-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--vscode-foreground);
+  opacity: 0.7;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+}
+
+.vl-prompt-lab-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
 }
 
 /* ========================================

@@ -32,7 +32,6 @@ export function OnboardingView() {
   const defaultProvider = state.editorInfo?.isCursor ? 'cursor-cli' : 'claude-agent-sdk';
   const [selectedProvider, setSelectedProvider] = useState<string>(defaultProvider);
   const [autoAnalyze, setAutoAnalyze] = useState(true);
-  const [generateSummary, setGenerateSummary] = useState(true);
   const [isDetecting, setIsDetecting] = useState(false);
 
   // Auto-detect on mount
@@ -77,7 +76,6 @@ export function OnboardingView() {
     send('completeOnboarding', {
       provider: selectedProvider,
       autoAnalyze,
-      generateSummary,
     });
     dispatch({ type: 'SET_ACTIVE_PROVIDER', payload: selectedProvider });
     dispatch({ type: 'COMPLETE_ONBOARDING' });
@@ -306,13 +304,6 @@ export function OnboardingView() {
             <Check size={10} className="vl-checkbox-check" />
           </div>
           <span className="vl-checkbox-label">Auto-analyze prompt</span>
-        </label>
-
-        <label className="vl-checkbox-item" onClick={() => setGenerateSummary(!generateSummary)}>
-          <div className={`vl-checkbox ${generateSummary ? 'checked' : ''}`}>
-            <Check size={10} className="vl-checkbox-check" />
-          </div>
-          <span className="vl-checkbox-label">Generate daily session summary</span>
         </label>
       </div>
 

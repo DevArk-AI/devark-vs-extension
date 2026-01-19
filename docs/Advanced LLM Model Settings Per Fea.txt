@@ -1,0 +1,106 @@
+Advanced LLM Model Settings Per Feature
+Overview
+Add an "Advanced Settings" section in the provider/settings UI that enables users to configure different LLM models for each of the three main AI-powered features: Summaries, Prompt Scoring, and Prompt Improvement. Include clear runtime behavior for each feature and an ASCII view of the flow.
+
+Key Files
+Frontend (Webview):
+
+SettingsView.tsx - Add Advanced Settings toggle and model selectors
+types-v2.ts - Add types for advanced LLM settings
+AppV2.tsx - Handle new message types and state updates
+Backend (Extension):
+
+settings-manager.ts - Store/retrieve feature-specific model configs
+llm-manager.ts - Add getProviderForFeature() method
+V2MessageHandler.ts - Handle advanced settings messages
+package.json - Add configuration schema for feature models
+Consumers (Use feature-specific providers):
+
+SummaryService.ts - Use summaries model override
+prompt-scorer.ts - Support scoring model override
+prompt-enhancer.ts - Support enhancement model override
+Implementation Approach
+1. Configuration Schema
+Add VSCode settings for feature-specific model overrides:
+
+"vibelog.llm.featureModels.summaries": { "type": "string" },
+"vibelog.llm.featureModels.promptScoring": { "type": "string" },
+"vibelog.llm.featureModels.promptImprovement": { "type": "string" }
+2. Settings Manager Extension
+Add methods:
+
+getFeatureModel(feature: 'summaries' | 'scoring' | 'improvement'): string | null
+setFeatureModel(feature, model): Promise<void>
+3. LLM Manager Enhancement
+Add getProviderForFeature(feature) that returns either:
+
+A provider configured for the specific model override, OR
+Falls back to the global active provider
+4. Feature Changes (consumers)
+SummaryService: resolve provider/model via getProviderForFeature('summaries') (or pass override into generateCompletion), so summaries can use a distinct model.
+PromptScorer: before calling LLM, resolve provider/model via getProviderForFeature('scoring').
+PromptEnhancer: before calling LLM, resolve provider/model via getProviderForFeature('improvement').
+All three: if override missing or unavailable, fall back to active provider + default model; surface a warning if an override is set but the provider/model is not reachable.
+5. UI Design
+In SettingsView.tsx, add expandable "Advanced Settings" section:
+
+Toggle to enable/disable advanced mode
+When enabled, show 3 model input fields (one per feature)
+Each field shows current model or "Using default" placeholder
+Model list populated from available models of the active provider
+6. State Flow
+User enables advanced settings in UI
+User selects model for each feature
+Frontend sends setFeatureModel message to extension
+Extension stores in VSCode configuration
+When a feature runs, it checks for override model before using default
+7. ASCII View (high-level)
+[Settings UI]
+   └─ Advanced feature models (summaries | scoring | improvement)
+        └─ postMessage → extension (setFeatureModel)
+             └─ settings-manager → VSCode config
+
+[Feature runtime]
+   ├─ SummaryService → llmManager.getProviderForFeature('summaries')   → LLM
+   ├─ PromptScorer  → llmManager.getProviderForFeature('scoring')      → LLM
+   └─ PromptEnhancer→ llmManager.getProviderForFeature('improvement')  → LLM
+          (fallback: active provider if no override)
+          
+UI Design (ASCII Representation)
+┌─────────────────────────────────────────────────────────┐
+│  Settings                                          [X]  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  LLM Provider                                           │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Current: Ollama                    [Connected] │   │
+│  │  Model: codellama:7b                            │   │
+│  │                     [Test Connection] [Change]  │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  ▼ Advanced Model Settings                              │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  ☑ Use different models per feature             │   │
+│  │                                                  │   │
+│  │  Summaries                                       │   │
+│  │  ┌─────────────────────────────────────────┐    │   │
+│  │  │ claude-3.5-sonnet              ▼        │    │   │
+│  │  └─────────────────────────────────────────┘    │   │
+│  │  Best for: longer context, detailed analysis    │   │
+│  │                                                  │   │
+│  │  Prompt Scoring                                  │   │
+│  │  ┌─────────────────────────────────────────┐    │   │
+│  │  │ codellama:7b (default)         ▼        │    │   │
+│  │  └─────────────────────────────────────────┘    │   │
+│  │  Best for: fast, lightweight evaluation         │   │
+│  │                                                  │   │
+│  │  Prompt Improvement                              │   │
+│  │  ┌─────────────────────────────────────────┐    │   │
+│  │  │ gpt-4o                         ▼        │    │   │
+│  │  └─────────────────────────────────────────┘    │   │
+│  │  Best for: creative rewriting                   │   │
+│  │                                                  │   │
+│  │  [Reset to Defaults]                            │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘

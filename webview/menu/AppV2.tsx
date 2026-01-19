@@ -21,6 +21,7 @@ import { HookSetupView } from './components/v2/HookSetupView';
 import { LLMDropup } from './components/v2/LLMDropup';
 import { LoadingOverlay } from './components/v2/LoadingOverlay';
 import { SessionsSidebar } from './components/v2/SessionsSidebar';
+import { PromptLabSidebar } from './components/v2/PromptLabSidebar';
 import { CoPilotSuggestion } from './components/v2/CoPilotSuggestion';
 import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
 import { PromptLabView } from './components/v2/PromptLabView';
@@ -707,6 +708,8 @@ export function AppV2() {
             return state.sidebarMode === 'prompt-lab' ? <PromptLabView /> : <CoPilotView />;
           case 'reports':
             return <SummariesView />;
+          case 'prompts':
+            return <PromptLabView />;
           case 'account':
             return <AccountView />;
           default:
@@ -788,6 +791,15 @@ export function AppV2() {
               Reports
             </button>
             <button
+              className={`vl-tab ${state.currentTab === 'prompts' ? 'active' : ''}`}
+              onClick={() => {
+                dispatch({ type: 'SET_TAB', payload: 'prompts' });
+                postMessage('tabChanged', { tab: 'prompts' });
+              }}
+            >
+              Prompts
+            </button>
+            <button
               className={`vl-tab ${state.currentTab === 'account' ? 'active' : ''}`}
               onClick={() => {
                 dispatch({ type: 'SET_TAB', payload: 'account' });
@@ -818,7 +830,7 @@ export function AppV2() {
           </nav>
         )}
 
-        {/* Main Content - with sidebar for sessions tab */}
+        {/* Main Content - with sidebar for sessions and prompts tabs */}
         {state.currentView === 'main' && state.currentTab === 'sessions' ? (
           <div className="vl-sessions-layout">
             <div className="vl-sessions-layout__sidebar">
@@ -832,6 +844,28 @@ export function AppV2() {
                   dispatch({ type: 'SET_ACTIVE_SESSION', payload: sessionId });
                   postMessage('markSessionAsRead', { sessionId });
                   postMessage('switchSession', { sessionId });
+                }}
+              />
+            </div>
+            <div className="vl-sessions-layout__content">
+              <main className="vl-content">{renderView()}</main>
+            </div>
+          </div>
+        ) : state.currentView === 'main' && state.currentTab === 'prompts' ? (
+          <div className="vl-sessions-layout">
+            <div className="vl-sessions-layout__sidebar">
+              <PromptLabSidebar
+                savedPrompts={state.promptLab.savedPrompts}
+                onSavedPromptSelect={(prompt) => {
+                  dispatch({ type: 'LOAD_SAVED_PROMPT', payload: prompt });
+                }}
+                onSavedPromptDelete={(promptId) => {
+                  dispatch({ type: 'DELETE_SAVED_PROMPT', payload: promptId });
+                  postMessage('deletePromptFromLibrary', { promptId });
+                }}
+                onSavedPromptRename={(promptId, newName) => {
+                  dispatch({ type: 'UPDATE_SAVED_PROMPT', payload: { id: promptId, updates: { name: newName } } });
+                  postMessage('updatePromptInLibrary', { promptId, updates: { name: newName } });
                 }}
               />
             </div>

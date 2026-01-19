@@ -7,7 +7,7 @@
 import type { SessionSource } from '@shared/webview-protocol';
 
 // Tab navigation
-export type MainTab = 'sessions' | 'reports' | 'account';
+export type MainTab = 'sessions' | 'reports' | 'prompts' | 'account';
 export type SummaryPeriod = 'standup' | 'today' | 'week' | 'month' | 'custom';
 
 // Sidebar types
