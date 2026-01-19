@@ -8988,8 +8988,15 @@
 .vl-reports-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  min-height: 100%;
   padding: 0;
+}
+
+.vl-reports-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  flex: 1;
 }
 
 /* Report Cards */
@@ -9217,7 +9224,7 @@
   font-size: 11px;
 }
 
-/* Cloud CTA Banner */
+/* Cloud CTA Banner - Sticky at bottom of reports view */
 .vl-cloud-cta-banner {
   display: flex;
   align-items: center;
@@ -9226,8 +9233,13 @@
   padding: var(--space-lg);
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
   border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: var(--radius-lg);
-  margin-top: var(--space-md);
+  border-radius: 0;
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  margin-left: calc(-1 * var(--space-lg));
+  margin-right: calc(-1 * var(--space-lg));
+  margin-bottom: calc(-1 * var(--space-lg));
 }
 
 .vl-cloud-cta-text {

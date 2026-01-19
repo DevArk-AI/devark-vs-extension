@@ -418,65 +418,67 @@ export function SummariesView() {
 
   return (
     <div className="vl-reports-view">
-      {/* Daily Standup Card - show content or empty state */}
-      {state.standupSummary ? (
-        <DailyStandupCard
-          summary={state.standupSummary}
-          onCopy={handleCopyStandup}
-          onRefresh={handleGenerateStandup}
-          isLoading={state.isLoadingSummary}
-        />
-      ) : (
-        <EmptyReportCard
-          title="DAILY STANDUP"
-          icon={<Calendar size={16} />}
-          description="Yesterday's work and today's focus, ready to share with your team."
-          buttonText="Generate Standup"
-          onGenerate={handleGenerateStandup}
-          isLoading={state.isLoadingSummary}
-        />
-      )}
-
-      {/* Weekly Insights Card - show content or empty state */}
-      {state.weeklySummary ? (
-        <>
-          <WeeklyInsightsCard
-            summary={state.weeklySummary}
-            onRefresh={handleGenerateWeekly}
+      <div className="vl-reports-content">
+        {/* Daily Standup Card - show content or empty state */}
+        {state.standupSummary ? (
+          <DailyStandupCard
+            summary={state.standupSummary}
+            onCopy={handleCopyStandup}
+            onRefresh={handleGenerateStandup}
             isLoading={state.isLoadingSummary}
           />
-          <ViewFullReport summary={state.weeklySummary} />
-        </>
-      ) : (
-        <EmptyReportCard
-          title="THIS WEEK"
-          icon={<BarChart2 size={16} />}
-          description="See patterns, insights, and a summary of your week's coding sessions."
-          buttonText="Generate Weekly Report"
-          onGenerate={handleGenerateWeekly}
-          isLoading={state.isLoadingSummary}
-        />
-      )}
+        ) : (
+          <EmptyReportCard
+            title="DAILY STANDUP"
+            icon={<Calendar size={16} />}
+            description="Yesterday's work and today's focus, ready to share with your team."
+            buttonText="Generate Standup"
+            onGenerate={handleGenerateStandup}
+            isLoading={state.isLoadingSummary}
+          />
+        )}
 
-      {/* Monthly Insights Card - show content or empty state */}
-      {state.monthlySummary ? (
-        <MonthlyInsightsCard
-          summary={state.monthlySummary}
-          onRefresh={handleGenerateMonthly}
-          isLoading={state.isLoadingSummary}
-        />
-      ) : (
-        <EmptyReportCard
-          title="THIS MONTH"
-          icon={<TrendingUp size={16} />}
-          description="Monthly trends, total activity, and long-term patterns."
-          buttonText="Generate Monthly Report"
-          onGenerate={handleGenerateMonthly}
-          isLoading={state.isLoadingSummary}
-        />
-      )}
+        {/* Weekly Insights Card - show content or empty state */}
+        {state.weeklySummary ? (
+          <>
+            <WeeklyInsightsCard
+              summary={state.weeklySummary}
+              onRefresh={handleGenerateWeekly}
+              isLoading={state.isLoadingSummary}
+            />
+            <ViewFullReport summary={state.weeklySummary} />
+          </>
+        ) : (
+          <EmptyReportCard
+            title="THIS WEEK"
+            icon={<BarChart2 size={16} />}
+            description="See patterns, insights, and a summary of your week's coding sessions."
+            buttonText="Generate Weekly Report"
+            onGenerate={handleGenerateWeekly}
+            isLoading={state.isLoadingSummary}
+          />
+        )}
 
-      {/* Cloud CTA */}
+        {/* Monthly Insights Card - show content or empty state */}
+        {state.monthlySummary ? (
+          <MonthlyInsightsCard
+            summary={state.monthlySummary}
+            onRefresh={handleGenerateMonthly}
+            isLoading={state.isLoadingSummary}
+          />
+        ) : (
+          <EmptyReportCard
+            title="THIS MONTH"
+            icon={<TrendingUp size={16} />}
+            description="Monthly trends, total activity, and long-term patterns."
+            buttonText="Generate Monthly Report"
+            onGenerate={handleGenerateMonthly}
+            isLoading={state.isLoadingSummary}
+          />
+        )}
+      </div>
+
+      {/* Cloud CTA - sticky at bottom */}
       <CloudCTA />
     </div>
   );
