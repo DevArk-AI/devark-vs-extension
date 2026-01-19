@@ -114,6 +114,15 @@ function DailyStandupCard({
 
   const todayItems = summary.suggestedFocusForToday || [];
 
+  // Build stats line
+  const counts = countOutcomes(summary.previousWorkday?.businessOutcomes);
+  const statsItems = [
+    formatDuration(summary.totalTimeCoding),
+    `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`
+  ];
+  if (counts.feature) statsItems.push(`${counts.feature} feature${counts.feature > 1 ? 's' : ''}`);
+  if (counts.bugfix) statsItems.push(`${counts.bugfix} bug fix${counts.bugfix > 1 ? 'es' : ''}`);
+
   return (
     <ReportCard
       title={<><Calendar size={16} /> DAILY STANDUP</>}
@@ -125,6 +134,7 @@ function DailyStandupCard({
       }
       providerInfo={summary.providerInfo}
     >
+      <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
       {yesterdayItems.length > 0 && (
         <div className="vl-standup-section">
           <div className="vl-standup-section-label">Yesterday I:</div>
@@ -177,7 +187,7 @@ function WeeklyInsightsCard({
 
   return (
     <ReportCard
-      subtitle={`THIS WEEK · ${dateRange}`}
+      title={<><Calendar size={14} /> THIS WEEK · {dateRange}</>}
       actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
       providerInfo={summary.providerInfo}
       className="vl-report-card--insights"
@@ -226,7 +236,7 @@ function MonthlyInsightsCard({
 
   return (
     <ReportCard
-      subtitle={`THIS MONTH · ${summary.month} ${summary.year}`}
+      title={<><Calendar size={14} /> THIS MONTH · {summary.month} {summary.year}</>}
       actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
       providerInfo={summary.providerInfo}
       className="vl-report-card--insights"
@@ -719,7 +729,7 @@ function CustomRangeInsightsCard({
 
   return (
     <ReportCard
-      subtitle={`CUSTOM RANGE · ${rangeLabel}`}
+      title={<><CalendarRange size={14} /> CUSTOM RANGE · {rangeLabel}</>}
       actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
       providerInfo={summary.providerInfo}
       className="vl-report-card--insights"
