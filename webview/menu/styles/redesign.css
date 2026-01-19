@@ -6801,6 +6801,35 @@
   background: var(--score-low);
 }
 
+/* Date Range Dialog */
+.vl-date-range-dialog {
+  width: 520px;
+  max-width: 95vw;
+}
+
+.vl-date-range-dialog .vl-dialog-icon {
+  color: var(--vl-accent);
+}
+
+.vl-date-dialog-content {
+  padding: var(--space-lg);
+}
+
+.vl-date-dialog-content .vl-dialog-message {
+  margin-bottom: var(--space-lg);
+  text-align: center;
+}
+
+.vl-date-selected-range {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--vl-accent-muted);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  text-align: center;
+}
+
 /* ========================================
    ACTIVE SESSION SWITCHER
    ======================================== */

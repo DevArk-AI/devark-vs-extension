@@ -8,10 +8,11 @@
  */
 
 import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronRight, Flame, AlertTriangle, Lightbulb, Calendar, ArrowRight, BarChart2, RefreshCw, TrendingUp } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight, Flame, AlertTriangle, Lightbulb, Calendar, ArrowRight, BarChart2, RefreshCw, TrendingUp, CalendarRange } from 'lucide-react';
 import { useAppV2, formatDuration } from '../../AppV2';
 import { send } from '../../utils/vscode';
 import type { StandupSummary, WeeklySummary, MonthlySummary, BusinessOutcome } from '../../state/types-v2';
+import { DateRangeDialog } from './DateRangeDialog';
 
 // Copy Button with confirmation
 function CopyButton({ onClick, label = 'Copy' }: { onClick: () => void; label?: string }) {
@@ -390,9 +391,61 @@ function EmptyReportCard({
   );
 }
 
+// Custom Range Insights Card
+function CustomRangeInsightsCard({
+  summary,
+  dateRange,
+  onRefresh,
+  isLoading
+}: {
+  summary: WeeklySummary | null;
+  dateRange: { startDate: Date; endDate: Date } | null;
+  onRefresh: () => void;
+  isLoading?: boolean;
+}) {
+  if (!summary || !dateRange) return null;
+
+  const rangeLabel = `${formatShortDate(dateRange.startDate)} - ${formatShortDate(dateRange.endDate)}`;
+  const counts = countOutcomes(summary.businessOutcomes);
+
+  // Build stats line
+  const statsItems = [
+    formatDuration(summary.totalTime),
+    `${summary.sessions} sessions`
+  ];
+  if (counts.feature) statsItems.push(`${counts.feature} feature${counts.feature > 1 ? 's' : ''}`);
+  if (counts.bugfix) statsItems.push(`${counts.bugfix} bug fix${counts.bugfix > 1 ? 'es' : ''}`);
+
+  // Build insights from executive summary
+  const insights = summary.executiveSummary?.slice(0, 3) || [];
+
+  return (
+    <ReportCard
+      subtitle={`CUSTOM RANGE · ${rangeLabel}`}
+      actions={<RefreshButton onClick={onRefresh} isLoading={isLoading} />}
+      providerInfo={summary.providerInfo}
+      className="vl-report-card--insights"
+    >
+      <div className="vl-weekly-stats">{statsItems.join(' · ')}</div>
+
+      {insights.length > 0 && (
+        <div className="vl-weekly-insights">
+          {insights.map((insight, i) => (
+            <div key={i} className="vl-insight-item">
+              {getInsightIcon(insight)}
+              <span>{insight}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </ReportCard>
+  );
+}
+
 // Main SummariesView Component
 export function SummariesView() {
   const { state, dispatch } = useAppV2();
+  const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
 
   const handleCopyStandup = () => {
     if (state.standupSummary) {
@@ -414,6 +467,36 @@ export function SummariesView() {
   const handleGenerateMonthly = () => {
     dispatch({ type: 'START_LOADING_SUMMARY', payload: 'Generating monthly report...' });
     send('getSummary', { period: 'month' });
+  };
+
+  const handleOpenDateDialog = () => {
+    setIsDateDialogOpen(true);
+  };
+
+  const handleCloseDateDialog = () => {
+    setIsDateDialogOpen(false);
+  };
+
+  const handleGenerateCustom = (startDate: Date, endDate: Date) => {
+    dispatch({ type: 'SET_CUSTOM_DATE_RANGE', payload: { startDate, endDate } });
+    dispatch({ type: 'START_LOADING_SUMMARY', payload: 'Generating custom report...' });
+    send('getSummary', {
+      period: 'custom',
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    });
+    setIsDateDialogOpen(false);
+  };
+
+  const handleRefreshCustom = () => {
+    if (state.customDateRange) {
+      dispatch({ type: 'START_LOADING_SUMMARY', payload: 'Refreshing custom report...' });
+      send('getSummary', {
+        period: 'custom',
+        startDate: state.customDateRange.startDate.toISOString(),
+        endDate: state.customDateRange.endDate.toISOString()
+      });
+    }
   };
 
   return (
@@ -476,10 +559,37 @@ export function SummariesView() {
             isLoading={state.isLoadingSummary}
           />
         )}
+
+        {/* Custom Date Range Card - show content or empty state */}
+        {state.customSummary && state.customDateRange ? (
+          <CustomRangeInsightsCard
+            summary={state.customSummary}
+            dateRange={state.customDateRange}
+            onRefresh={handleRefreshCustom}
+            isLoading={state.isLoadingSummary}
+          />
+        ) : (
+          <EmptyReportCard
+            title="CUSTOM RANGE"
+            icon={<CalendarRange size={16} />}
+            description="Pick any date range for a detailed report of your coding activity."
+            buttonText="Select Dates"
+            onGenerate={handleOpenDateDialog}
+            isLoading={state.isLoadingSummary}
+          />
+        )}
       </div>
 
       {/* Cloud CTA - sticky at bottom */}
       <CloudCTA />
+
+      {/* Date Range Dialog */}
+      <DateRangeDialog
+        isOpen={isDateDialogOpen}
+        onClose={handleCloseDateDialog}
+        onGenerate={handleGenerateCustom}
+        isLoading={state.isLoadingSummary}
+      />
     </div>
   );
 }
