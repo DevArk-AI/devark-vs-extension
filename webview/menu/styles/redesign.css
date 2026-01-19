@@ -3265,30 +3265,44 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  /* Hide any text inside */
+  font-size: 0;
+  color: transparent;
+  text-indent: -9999px;
+  overflow: hidden;
 }
 
 .react-datepicker__navigation:hover {
   background-color: var(--vscode-toolbar-hoverBackground);
 }
 
-/* Hide the text labels, keep the arrows */
+/* Hide navigation text spans completely */
 .react-datepicker__navigation-icon {
   position: relative;
   display: block;
   width: 8px;
   height: 8px;
+  /* Hide any text */
+  font-size: 0;
+  color: transparent;
 }
 
 /* Hide the "Previous Month" / "Next Month" text */
 .react-datepicker__navigation-icon::after {
   display: none !important;
+  content: none !important;
 }
 
 .react-datepicker__navigation-icon::before {
   border-color: var(--vscode-foreground);
+  border-style: solid;
   border-width: 2px 2px 0 0;
+  content: "";
+  display: block;
   width: 8px;
   height: 8px;
   position: absolute;
@@ -3314,6 +3328,19 @@
 
 .react-datepicker__navigation--next {
   right: 4px;
+}
+
+/* Ensure aria-label text is hidden */
+.react-datepicker__navigation span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Mobile responsiveness */
