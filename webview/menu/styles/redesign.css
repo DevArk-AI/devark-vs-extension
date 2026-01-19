@@ -3255,49 +3255,59 @@
   opacity: 0.5;
 }
 
-/* Navigation buttons */
+/* Navigation buttons - prev/next month arrows */
 .react-datepicker__navigation {
-  top: 8px;
-  width: 28px;
-  height: 28px;
+  position: absolute !important;
+  top: 8px !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
-  background: transparent;
-  border: none;
+  background: var(--vscode-button-secondaryBackground) !important;
+  border: 1px solid var(--vscode-panel-border) !important;
   cursor: pointer;
-  padding: 0;
-  position: absolute;
+  z-index: 10;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .react-datepicker__navigation:hover {
-  background-color: var(--vscode-toolbar-hoverBackground);
+  background-color: var(--vscode-toolbar-hoverBackground) !important;
 }
 
-/* Navigation icon - contains the arrow */
+.react-datepicker__navigation--previous {
+  left: 4px !important;
+}
+
+.react-datepicker__navigation--next {
+  right: 4px !important;
+}
+
+/* Navigation icon - hide text, show only arrow */
 .react-datepicker__navigation-icon {
   position: relative;
-  display: block;
-  width: 28px;
-  height: 28px;
-  /* Hide text but keep pseudo-element visible */
-  font-size: 0;
-  line-height: 0;
+  width: 10px;
+  height: 10px;
+  font-size: 0 !important;
+  color: transparent !important;
 }
 
-/* Hide the "Previous Month" / "Next Month" text */
+/* Hide the "Previous Month" / "Next Month" text in ::after */
 .react-datepicker__navigation-icon::after {
   display: none !important;
 }
 
 /* Arrow chevrons via ::before pseudo-element */
 .react-datepicker__navigation-icon::before {
+  content: "" !important;
+  display: block !important;
+  width: 8px;
+  height: 8px;
   border-color: var(--vscode-foreground);
   border-style: solid;
   border-width: 2px 2px 0 0;
-  content: "";
-  display: block;
-  width: 8px;
-  height: 8px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -3313,27 +3323,6 @@
 
 .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
   border-color: var(--vl-accent);
-}
-
-.react-datepicker__navigation--previous {
-  left: 4px;
-}
-
-.react-datepicker__navigation--next {
-  right: 4px;
-}
-
-/* Hide any aria-label text spans */
-.react-datepicker__navigation > span:not(.react-datepicker__navigation-icon) {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
 }
 
 /* Mobile responsiveness */
