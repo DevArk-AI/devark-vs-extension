@@ -8,10 +8,10 @@
  */
 
 import { useState } from 'react';
-import { Copy, Check, ChevronDown, ChevronRight, Flame, AlertTriangle, Lightbulb, Calendar, ArrowRight, BarChart2, RefreshCw, TrendingUp, CalendarRange } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight, Flame, AlertTriangle, Lightbulb, Calendar, ArrowRight, BarChart2, RefreshCw, TrendingUp, CalendarRange, Sparkles, FolderKanban } from 'lucide-react';
 import { useAppV2, formatDuration } from '../../AppV2';
 import { send } from '../../utils/vscode';
-import type { StandupSummary, WeeklySummary, MonthlySummary, BusinessOutcome } from '../../state/types-v2';
+import type { StandupSummary, WeeklySummary, MonthlySummary, BusinessOutcome, PromptQualityMetrics, ProjectBreakdownItem } from '../../state/types-v2';
 import { DateRangeDialog } from './DateRangeDialog';
 
 // Copy Button with confirmation
@@ -259,6 +259,252 @@ function getInsightIcon(insight: string) {
   return <Lightbulb size={14} className="vl-insight-icon vl-insight-icon--tip" />;
 }
 
+// Executive Summary Section
+function ExecutiveSummarySection({ items }: { items?: string[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <>
+      <div className="vl-full-report-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Sparkles size={14} /> Executive Summary
+      </div>
+      <div className="vl-executive-summary" style={{
+        padding: 'var(--space-lg)',
+        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)',
+        border: '1px solid rgba(139, 92, 246, 0.3)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-xl)'
+      }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {items.map((item, i) => (
+            <li key={i} style={{
+              padding: 'var(--space-sm) 0',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 'var(--space-sm)'
+            }}>
+              <span style={{ color: 'var(--vl-accent)', fontWeight: 600 }}>-</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+// Activity Distribution Section
+function ActivityDistributionSection({ distribution }: { distribution?: Record<string, number> }) {
+  if (!distribution || Object.keys(distribution).length === 0) return null;
+
+  const sortedActivities = Object.entries(distribution).sort(([, a], [, b]) => b - a);
+
+  const getActivityColor = (activity: string): string => {
+    const colors: Record<string, string> = {
+      'Development': 'var(--score-good)',
+      'Debugging': 'var(--score-medium)',
+      'Refactoring': 'var(--platform-cursor)',
+      'Testing': 'var(--platform-vscode)',
+      'Planning': 'var(--activity-planning)',
+      'Research': 'var(--activity-research)',
+      'Review': 'var(--platform-claude)',
+      'Documentation': 'var(--activity-docs)',
+      'Other': 'var(--activity-other)'
+    };
+    return colors[activity] || 'var(--activity-other)';
+  };
+
+  return (
+    <>
+      <div className="vl-full-report-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <BarChart2 size={14} /> Activity Distribution
+      </div>
+      <div className="vl-activity-distribution" style={{
+        padding: 'var(--space-lg)',
+        background: 'var(--vscode-input-background)',
+        border: '1px solid var(--vscode-input-border)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-xl)'
+      }}>
+        {sortedActivities.map(([activity, percentage]) => (
+          <div key={activity} style={{ marginBottom: 'var(--space-md)' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: 'var(--space-xs)',
+              fontSize: '12px'
+            }}>
+              <span>{activity}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500 }}>{percentage}%</span>
+            </div>
+            <div style={{
+              height: '8px',
+              background: 'var(--vscode-panel-border)',
+              borderRadius: '4px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${percentage}%`,
+                background: getActivityColor(activity),
+                borderRadius: '4px',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Prompt Quality Section
+function PromptQualitySection({ quality }: { quality?: PromptQualityMetrics }) {
+  if (!quality) return null;
+
+  const getScoreColor = (score: number): string => {
+    if (score >= 80) return 'var(--score-good)';
+    if (score >= 60) return 'var(--score-medium)';
+    return 'var(--score-low)';
+  };
+
+  const breakdownItems = [
+    { label: 'Excellent', value: quality.breakdown.excellent, color: 'var(--score-good)' },
+    { label: 'Good', value: quality.breakdown.good, color: 'var(--platform-vscode)' },
+    { label: 'Fair', value: quality.breakdown.fair, color: 'var(--score-medium)' },
+    { label: 'Poor', value: quality.breakdown.poor, color: 'var(--score-low)' }
+  ];
+
+  return (
+    <>
+      <div className="vl-full-report-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <TrendingUp size={14} /> Prompt Quality
+      </div>
+      <div className="vl-prompt-quality" style={{
+        padding: 'var(--space-lg)',
+        background: 'var(--vscode-input-background)',
+        border: '1px solid var(--vscode-input-border)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-xl)'
+      }}>
+        {/* Average Score */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 'var(--space-lg)',
+          paddingBottom: 'var(--space-md)',
+          borderBottom: '1px solid var(--vscode-panel-border)'
+        }}>
+          <span style={{ fontSize: '13px', fontWeight: 500 }}>Average Score</span>
+          <span style={{
+            fontSize: '24px',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            color: getScoreColor(quality.averageScore)
+          }}>
+            {quality.averageScore}
+          </span>
+        </div>
+
+        {/* Breakdown Bars */}
+        <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
+          {breakdownItems.map(item => (
+            <div key={item.label} style={{
+              flex: item.value || 0.1,
+              height: '24px',
+              background: item.color,
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: item.value > 0 ? '40px' : '0',
+              transition: 'flex 0.3s ease'
+            }}>
+              {item.value > 10 && (
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'white' }}>
+                  {item.value}%
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-md)', fontSize: '11px' }}>
+          {breakdownItems.map(item => (
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '2px',
+                background: item.color
+              }} />
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Enhanced Project Breakdown Section
+function EnhancedProjectBreakdownSection({ projects }: { projects?: ProjectBreakdownItem[] }) {
+  if (!projects || projects.length === 0) return null;
+
+  return (
+    <>
+      <div className="vl-full-report-section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <FolderKanban size={14} /> Project Breakdown
+      </div>
+      <div className="vl-enhanced-project-breakdown" style={{
+        padding: 'var(--space-lg)',
+        background: 'var(--vscode-input-background)',
+        border: '1px solid var(--vscode-input-border)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-xl)'
+      }}>
+        {projects.map((project, i) => (
+          <div key={i} style={{
+            padding: 'var(--space-md)',
+            marginBottom: i < projects.length - 1 ? 'var(--space-md)' : 0,
+            borderBottom: i < projects.length - 1 ? '1px solid var(--vscode-panel-border)' : 'none'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 'var(--space-sm)'
+            }}>
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>{project.name}</span>
+              <span style={{
+                fontSize: '11px',
+                padding: '2px 8px',
+                background: 'var(--vl-accent)',
+                color: 'white',
+                borderRadius: '10px'
+              }}>
+                {project.sessions} session{project.sessions !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: 'var(--space-lg)',
+              fontSize: '12px',
+              opacity: 0.8
+            }}>
+              <span>Largest: <strong style={{ fontFamily: 'var(--font-mono)' }}>{project.largestSession}</strong></span>
+              <span>Focus: <strong>{project.focus}</strong></span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 // View Full Report Expandable
 function ViewFullReport({ summary }: { summary: WeeklySummary | null }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -278,6 +524,18 @@ function ViewFullReport({ summary }: { summary: WeeklySummary | null }) {
 
       {isOpen && (
         <div className="vl-full-report-content">
+          {/* Executive Summary - at top */}
+          <ExecutiveSummarySection items={summary.executiveSummary} />
+
+          {/* Activity Distribution */}
+          <ActivityDistributionSection distribution={summary.activityDistribution} />
+
+          {/* Prompt Quality */}
+          <PromptQualitySection quality={summary.promptQuality} />
+
+          {/* Enhanced Project Breakdown (if AI provided it) */}
+          <EnhancedProjectBreakdownSection projects={summary.projectBreakdown} />
+
           {/* Daily Breakdown */}
           {summary.dailyBreakdown && summary.dailyBreakdown.length > 0 && (
             <>
@@ -303,29 +561,8 @@ function ViewFullReport({ summary }: { summary: WeeklySummary | null }) {
             </>
           )}
 
-          {/* Activity Distribution */}
-          {summary.activityDistribution && Object.keys(summary.activityDistribution).length > 0 && (
-            <>
-              <div className="vl-full-report-section-title">Activity Distribution</div>
-              <div className="vl-activity-compact">
-                {Object.entries(summary.activityDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([activity, percentage]) => (
-                    <div key={activity} className="vl-activity-row">
-                      <span>{activity}</span>
-                      <div className="vl-activity-bar-compact">
-                        <div className="vl-activity-fill" style={{ width: `${percentage}%` }} />
-                      </div>
-                      <span className="vl-activity-pct">{percentage}%</span>
-                    </div>
-                  ))}
-              </div>
-            </>
-          )}
-
-          {/* Top Projects */}
-          {summary.topProjects && summary.topProjects.length > 0 && (
+          {/* Fallback Top Projects (if no enhanced breakdown from AI) */}
+          {!summary.projectBreakdown && summary.topProjects && summary.topProjects.length > 0 && (
             <>
               <div className="vl-full-report-section-title">Top Projects</div>
               <div className="vl-top-projects">
@@ -338,6 +575,67 @@ function ViewFullReport({ summary }: { summary: WeeklySummary | null }) {
                   </div>
                 ))}
               </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// View Full Monthly Report Expandable
+function ViewFullMonthlyReport({ summary }: { summary: MonthlySummary | null }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!summary) return null;
+
+  return (
+    <div className="vl-view-full-report">
+      <button
+        className="vl-view-full-report-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        View full monthly report
+      </button>
+
+      {isOpen && (
+        <div className="vl-full-report-content">
+          {/* Executive Summary - at top */}
+          <ExecutiveSummarySection items={summary.executiveSummary} />
+
+          {/* Activity Distribution */}
+          <ActivityDistributionSection distribution={summary.activityDistribution} />
+
+          {/* Prompt Quality */}
+          <PromptQualitySection quality={summary.promptQuality} />
+
+          {/* Enhanced Project Breakdown (if AI provided it) */}
+          <EnhancedProjectBreakdownSection projects={summary.projectBreakdown} />
+
+          {/* Weekly Breakdown */}
+          {summary.weeklyBreakdown && summary.weeklyBreakdown.length > 0 && (
+            <>
+              <div className="vl-full-report-section-title">Weekly Breakdown</div>
+              <table className="vl-daily-breakdown">
+                <thead>
+                  <tr>
+                    <th>Week</th>
+                    <th>Time</th>
+                    <th>Prompts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.weeklyBreakdown.map((week, i) => (
+                    <tr key={i}>
+                      <td>Week {week.week}</td>
+                      <td>{formatDuration(week.time)}</td>
+                      <td>{week.prompts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </>
           )}
         </div>
@@ -544,11 +842,14 @@ export function SummariesView() {
 
         {/* Monthly Insights Card - show content or empty state */}
         {state.monthlySummary ? (
-          <MonthlyInsightsCard
-            summary={state.monthlySummary}
-            onRefresh={handleGenerateMonthly}
-            isLoading={state.isLoadingSummary}
-          />
+          <>
+            <MonthlyInsightsCard
+              summary={state.monthlySummary}
+              onRefresh={handleGenerateMonthly}
+              isLoading={state.isLoadingSummary}
+            />
+            <ViewFullMonthlyReport summary={state.monthlySummary} />
+          </>
         ) : (
           <EmptyReportCard
             title="THIS MONTH"
