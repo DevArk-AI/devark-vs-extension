@@ -48,6 +48,7 @@ interface TruncatedInteraction {
   responsePreview: string;
   filesModified: string[];
   outcome: string;
+  completionSignals: string[];
 }
 
 /**
@@ -138,12 +139,21 @@ Respond with JSON:
   "remaining": ["<remaining task 1>", ...]
 }
 
-Be conservative with progress estimates:
+## Progress Estimation Guidelines
 - 0-20%: Just started, exploring the problem
 - 20-50%: Making progress, some work done
 - 50-80%: Significant progress, core work complete
 - 80-95%: Nearly complete, finishing touches
 - 100%: Fully complete, goal achieved
+
+IMPORTANT: When you see "Completion signals" in interactions, use them as evidence:
+- git_push: Code pushed to remote - strong completion indicator
+- pr_created: Pull request created/merged - task is complete
+- tests_passed: All tests passing - quality verified
+- build_success: Build completed - code compiles
+- committed: Code committed locally
+
+If the LAST interaction shows git_push or pr_created, and the work matches the goal, progress should be 95-100%.
 
 JSON response:`;
   }
@@ -220,7 +230,42 @@ JSON response:`;
         : '(no response)',
       filesModified: response?.filesModified || [],
       outcome: response?.outcome || 'unknown',
+      completionSignals: this.detectCompletionSignals(response),
     };
+  }
+
+  /**
+   * Detect completion signals from a response
+   */
+  private detectCompletionSignals(response: ResponseRecord | undefined): string[] {
+    if (!response?.text) return [];
+
+    const text = response.text;
+    const hasBash = response.toolCalls?.some(t => t.toLowerCase() === 'bash');
+    const signals: string[] = [];
+
+    // Git push (requires Bash tool)
+    if (hasBash && /git\s+push|pushed\s+to|push.*remote/i.test(text)) {
+      signals.push('git_push');
+    }
+    // PR/MR creation
+    if (/pr\s+(created|opened|merged)|pull\s+request\s+(created|opened|merged)/i.test(text)) {
+      signals.push('pr_created');
+    }
+    // Tests passing
+    if (/all\s+tests\s+pass|tests\s+passed|test.*complete/i.test(text)) {
+      signals.push('tests_passed');
+    }
+    // Build success
+    if (/build\s+(successful|complete)|compiled\s+successfully|no\s+errors/i.test(text)) {
+      signals.push('build_success');
+    }
+    // Commit (requires Bash tool, weaker signal)
+    if (hasBash && /git\s+commit|committed/i.test(text)) {
+      signals.push('committed');
+    }
+
+    return signals;
   }
 
   /**
@@ -237,8 +282,12 @@ JSON response:`;
           ? `\n   Files: ${int.filesModified.slice(0, 5).join(', ')}${int.filesModified.length > 5 ? ` (+${int.filesModified.length - 5} more)` : ''}`
           : '';
 
+        const signalsStr = int.completionSignals.length > 0
+          ? `\n   Completion signals: ${int.completionSignals.join(', ')}`
+          : '';
+
         return `${idx + 1}. Prompt: "${int.promptText}"
-   Response (${int.outcome}): ${int.responsePreview}${filesStr}`;
+   Response (${int.outcome}): ${int.responsePreview}${filesStr}${signalsStr}`;
       })
       .join('\n\n');
   }
