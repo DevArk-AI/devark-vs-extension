@@ -106,7 +106,9 @@ export class FetchHttpClient implements IHttpClient {
     }
 
     try {
+      console.log(`[FetchHttpClient] Fetching: ${config.method} ${fullUrl}`);
       const fetchResponse = await fetch(fullUrl, fetchOptions);
+      console.log(`[FetchHttpClient] Response: ${fetchResponse.status} ${fetchResponse.statusText}`);
 
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -182,6 +184,11 @@ export class FetchHttpClient implements IHttpClient {
       }
 
       // Handle network/abort errors
+      console.error('[FetchHttpClient] Network error:', {
+        message: error instanceof Error ? error.message : error,
+        code: (error as NodeJS.ErrnoException)?.code,
+        cause: (error as Error & { cause?: unknown })?.cause,
+      });
       const isNetworkError = this.isNetworkOrAbortError(error);
       const httpError = this.createHttpError(
         error instanceof Error ? error.message : 'Network error',

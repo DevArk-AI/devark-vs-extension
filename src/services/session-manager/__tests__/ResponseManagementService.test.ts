@@ -78,7 +78,7 @@ describe('ResponseManagementService', () => {
     it('should return error for unsuccessful response', () => {
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: false,
         source: 'cursor',
       };
@@ -88,7 +88,7 @@ describe('ResponseManagementService', () => {
     it('should return partial for cancelled response', () => {
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         reason: 'cancelled',
         source: 'cursor',
@@ -99,7 +99,7 @@ describe('ResponseManagementService', () => {
     it('should return partial for aborted response', () => {
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         stopReason: 'aborted',
         source: 'cursor',
@@ -110,7 +110,7 @@ describe('ResponseManagementService', () => {
     it('should return success for successful response', () => {
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -123,7 +123,7 @@ describe('ResponseManagementService', () => {
       const session = createTestSession('s1', 'p1');
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
         promptId: 'explicit-prompt-id',
@@ -141,7 +141,7 @@ describe('ResponseManagementService', () => {
 
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -154,7 +154,7 @@ describe('ResponseManagementService', () => {
 
       const response: CapturedResponse = {
         id: 'r1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -175,11 +175,11 @@ describe('ResponseManagementService', () => {
 
       const capturedResponse: CapturedResponse = {
         id: 'response-1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         response: 'This is the AI response text',
         filesModified: ['file1.ts', 'file2.ts'],
-        toolCalls: [{ name: 'edit' }, { name: 'bash' }],
+        toolCalls: [{ name: 'edit', arguments: {} }, { name: 'bash', arguments: {} }],
         source: 'cursor',
       };
 
@@ -197,6 +197,31 @@ describe('ResponseManagementService', () => {
       }));
     });
 
+    it('should extract tools from both toolCalls and toolResults', async () => {
+      const project = createTestProject('p1', 'test');
+      const session = createTestSession('s1', 'p1');
+      project.sessions.push(session);
+      projects.set('p1', project);
+      activeSessionId = 's1';
+      activeProjectId = 'p1';
+
+      const capturedResponse: CapturedResponse = {
+        id: 'response-1',
+        timestamp: new Date().toISOString(),
+        success: true,
+        source: 'claude_code',
+        toolCalls: [{ name: 'Edit', arguments: {} }],
+        toolResults: [
+          { tool: 'Bash', result: 'ok' },
+          { tool: 'Read', result: 'content' },
+        ],
+      };
+
+      await service.addResponse(capturedResponse);
+
+      expect(session.responses[0].toolCalls).toEqual(['Edit', 'Bash', 'Read']);
+    });
+
     it('should use provided promptId', async () => {
       const project = createTestProject('p1', 'test');
       const session = createTestSession('s1', 'p1');
@@ -208,7 +233,7 @@ describe('ResponseManagementService', () => {
 
       const capturedResponse: CapturedResponse = {
         id: 'response-1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -226,12 +251,11 @@ describe('ResponseManagementService', () => {
       activeSessionId = 's1';
       activeProjectId = 'p1';
 
-      const longText = 'x'.repeat(3000);
       const capturedResponse: CapturedResponse = {
         id: 'response-1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
-        response: longText,
+        response: 'x'.repeat(3000),
         source: 'cursor',
       };
 
@@ -243,7 +267,7 @@ describe('ResponseManagementService', () => {
     it('should initialize responses array if missing', async () => {
       const project = createTestProject('p1', 'test');
       const session = createTestSession('s1', 'p1');
-      delete (session as { responses?: ResponseRecord[] }).responses; // Simulate missing array
+      delete (session as { responses?: ResponseRecord[] }).responses;
       project.sessions.push(session);
       projects.set('p1', project);
       activeSessionId = 's1';
@@ -251,7 +275,7 @@ describe('ResponseManagementService', () => {
 
       const capturedResponse: CapturedResponse = {
         id: 'response-1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -265,7 +289,7 @@ describe('ResponseManagementService', () => {
     it('should do nothing when no active session', async () => {
       const capturedResponse: CapturedResponse = {
         id: 'response-1',
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         success: true,
         source: 'cursor',
       };
@@ -283,11 +307,10 @@ describe('ResponseManagementService', () => {
       activeSessionId = 's1';
       activeProjectId = 'p1';
 
-      // Add 105 responses
       for (let i = 0; i < 105; i++) {
         await service.addResponse({
           id: `response-${i}`,
-          timestamp: Date.now(),
+          timestamp: new Date().toISOString(),
           success: true,
           source: 'cursor',
         });

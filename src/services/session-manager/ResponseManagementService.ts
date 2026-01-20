@@ -82,7 +82,10 @@ export class ResponseManagementService {
       text: (response.response || '').slice(0, 2000),
       outcome,
       filesModified: response.filesModified || [],
-      toolCalls: response.toolCalls?.map(t => t.name) || [],
+      toolCalls: [
+        ...(response.toolCalls?.map(t => t.name) || []),
+        ...(response.toolResults?.map(t => t.tool) || []),
+      ],
       source: response.source,
     };
 

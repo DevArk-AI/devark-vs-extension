@@ -133,9 +133,12 @@ export class CloudAuthHandler extends BaseMessageHandler {
   }
 
   private async handleLoginWithGithub(): Promise<void> {
+    console.log('[CloudAuthHandler] handleLoginWithGithub: START');
     try {
       const authService = ExtensionState.getAuthService();
+      console.log('[CloudAuthHandler] handleLoginWithGithub: calling startLogin...');
       const { authUrl, waitForCompletion } = await authService.startLogin();
+      console.log('[CloudAuthHandler] handleLoginWithGithub: startLogin succeeded, authUrl:', authUrl);
 
       // Open browser for auth
       getNotificationService().info('Opening browser for authentication...');
@@ -157,6 +160,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
         getNotificationService().error('Login failed. Please try again.');
       }
     } catch (error) {
+      console.error('[CloudAuthHandler] handleLoginWithGithub: FAILED', error);
       getNotificationService().error(
         `Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
