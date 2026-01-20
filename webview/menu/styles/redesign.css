@@ -8593,7 +8593,7 @@
   background: #98c379;
 }
 
-.vl-ring-tooltip__ring-color--activity {
+.vl-ring-tooltip__ring-color--quality {
   background: #61afef;
 }
 
@@ -8954,8 +8954,8 @@
   background: #22c55e; /* Green - context ring */
 }
 
-.vl-progress-dot--activity {
-  background: #3b82f6; /* Blue - activity ring */
+.vl-progress-dot--quality {
+  background: #3b82f6; /* Blue - quality ring */
 }
 
 /* Sessions Sidebar Layout */

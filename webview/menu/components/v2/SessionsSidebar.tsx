@@ -80,13 +80,14 @@ function computeRingData(session: Session, coaching?: CoachingData | null): Ring
   const goalProgress = coachingProgress ?? sessionProgress ?? 0;
   const goal = goalProgress / 100;
 
-  const promptFactor = Math.min(session.promptCount / 20, 1);
-  const activityBoost = session.isActive ? 0.3 : 0;
-  const activity = Math.min(promptFactor + activityBoost, 1);
+  const context = session.tokenUsage?.contextUtilization ?? 0;
 
-  const context = Math.min(session.promptCount / 30, 0.8);
+  // Quality ring: Based on averageScore (0-10 scale)
+  const quality = session.averageScore !== undefined
+    ? session.averageScore / 10
+    : 0;
 
-  return { goal, context, activity };
+  return { goal, context, quality };
 }
 
 /**
@@ -117,10 +118,13 @@ function SessionListItem({
   // Check if goal progress is pending (not yet analyzed)
   const isPending = isGoalProgressPending(session, coaching);
 
-  // Format percentages
+  // Format values for display
   const goalPercent = Math.round(ringData.goal * 100);
   const contextPercent = Math.round(ringData.context * 100);
-  const activityPercent = Math.round(ringData.activity * 100);
+  // Quality: show as X.X/10 format, or "--" when no score
+  const qualityDisplay = session.averageScore !== undefined
+    ? `${session.averageScore.toFixed(1)}/10`
+    : '--';
 
   return (
     <button
@@ -168,9 +172,9 @@ function SessionListItem({
               <span className="vl-progress-dot vl-progress-dot--context" />
               {contextPercent}%
             </span>
-            <span className="vl-session-list-item__progress-item" title="Activity">
-              <span className="vl-progress-dot vl-progress-dot--activity" />
-              {activityPercent}%
+            <span className="vl-session-list-item__progress-item" title="Prompt quality">
+              <span className="vl-progress-dot vl-progress-dot--quality" />
+              {qualityDisplay}
             </span>
           </div>
         </div>

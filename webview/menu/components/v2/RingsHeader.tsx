@@ -57,7 +57,7 @@ function EmptyRingSlot({ theme = 'dark' }: { theme?: 'light' | 'dark' | 'high-co
   return (
     <div className="vl-rings-header__empty-slot">
       <ActivityRings
-        rings={{ goal: 0, context: 0, activity: 0 }}
+        rings={{ goal: 0, context: 0, quality: 0 }}
         size={64}
         theme={theme}
       />

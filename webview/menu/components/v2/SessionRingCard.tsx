@@ -104,18 +104,16 @@ function computeRingData(
   const goalProgress = coachingProgress ?? sessionProgress ?? 0;
   const goal = goalProgress / 100; // Convert 0-100 to 0-1
 
-  // Activity ring: Based on promptCount and isActive status
-  // Active sessions get a boost, more prompts = more filled
-  // Normalize: ~20 prompts = full ring
-  const promptFactor = Math.min(session.promptCount / 20, 1);
-  const activityBoost = session.isActive ? 0.3 : 0;
-  const activity = Math.min(promptFactor + activityBoost, 1);
-
   // Context ring: Uses real token usage if available, shows 0 if not calculated
   // contextUtilization is 0-1 scale representing how much of the context window is used
   const context = session.tokenUsage?.contextUtilization ?? 0;
 
-  return { goal, context, activity };
+  // Quality ring: Based on averageScore (0-10 scale)
+  const quality = session.averageScore !== undefined
+    ? session.averageScore / 10
+    : 0;
+
+  return { goal, context, quality };
 }
 
 /**
@@ -158,10 +156,13 @@ function RingTooltip({
   platformLabel: string;
   coaching?: CoachingData | null;
 }) {
-  // Format percentages for display
+  // Format values for display
   const goalPercent = Math.round(ringData.goal * 100);
   const contextPercent = Math.round(ringData.context * 100);
-  const activityPercent = Math.round(ringData.activity * 100);
+  // Quality: show as X.X/10 format, or "--" when no score
+  const qualityDisplay = session.averageScore !== undefined
+    ? `${session.averageScore.toFixed(1)}/10`
+    : '--';
   const isPending = isGoalProgressPending(session, coaching);
   const isAnalyzing = isSessionAnalyzing(session, coaching);
 
@@ -193,9 +194,9 @@ function RingTooltip({
           </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">
-          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--activity" />
+          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--quality" />
           <span className="vl-ring-tooltip__ring-value">
-            {activityPercent}% — Session activity
+            {qualityDisplay} — Prompt quality
           </span>
         </div>
       </div>

@@ -7,7 +7,7 @@
  * Ring meanings:
  * - Outer (red): Goal progress - how close to completing the task
  * - Middle (green): Context remaining - token/context usage (placeholder for now)
- * - Inner (blue): Session activity - based on promptCount and isActive
+ * - Inner (blue): Prompt quality - average score 0-10
  */
 
 export interface RingData {
@@ -15,8 +15,8 @@ export interface RingData {
   goal: number;
   /** Context/token usage (0-1), maps to middle green ring. Currently placeholder. */
   context: number;
-  /** Activity level (0-1), maps to inner blue ring */
-  activity: number;
+  /** Prompt quality (0-1), maps to inner blue ring */
+  quality: number;
 }
 
 export interface ActivityRingsProps {
@@ -42,8 +42,8 @@ const RING_COLORS = {
     color: '#98c379', // Muted green
     background: 'rgba(152, 195, 121, 0.2)',
   },
-  // Activity ring - using a calm blue
-  activity: {
+  // Quality ring - using a calm blue
+  quality: {
     color: '#61afef', // Muted blue
     background: 'rgba(97, 175, 239, 0.2)',
   },
@@ -104,7 +104,7 @@ function Ring({ percentage, color, backgroundColor, radius, strokeWidth }: RingC
  * Visualizes 3 metrics as concentric animated rings:
  * - Outer: Goal progress (red)
  * - Middle: Context usage (green)
- * - Inner: Activity level (blue)
+ * - Inner: Prompt quality (blue)
  */
 export function ActivityRings({
   rings,
@@ -122,11 +122,11 @@ export function ActivityRings({
   const viewBoxSize = (outerRadius + strokeWidth / 2) * 2;
 
   const ringConfigs: RingConfig[] = [
-    // Inner ring - Activity (blue)
+    // Inner ring - Quality (blue)
     {
-      percentage: rings.activity,
-      color: RING_COLORS.activity.color,
-      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.activity.background,
+      percentage: rings.quality,
+      color: RING_COLORS.quality.color,
+      backgroundColor: theme === 'high-contrast' ? 'transparent' : RING_COLORS.quality.background,
       radius: innerRadius,
       strokeWidth,
     },

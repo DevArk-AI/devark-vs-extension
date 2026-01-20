@@ -87,6 +87,7 @@ export interface Session {
   goalProgress?: number; // 0-100 percentage, LLM-inferred progress toward goal
   customName?: string; // User-defined name for the session
   tokenUsage?: TokenUsageData; // Token usage for context window tracking
+  averageScore?: number; // 0-10 scale, prompt quality score
 }
 
 // Sidebar mode for toggling between Projects view and Prompt Lab view
