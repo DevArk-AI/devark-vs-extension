@@ -5,8 +5,18 @@ import {
   CompletionResponse,
   StreamChunk,
   ConnectionTestResult,
-  ModelInfo
+  ModelInfo,
+  LLMProviderType
 } from '../types';
+
+/**
+ * Options for creating a MockLLMProvider
+ */
+export interface MockLLMProviderOptions {
+  type?: LLMProviderType;
+  model?: string;
+  capabilities?: Partial<ProviderCapabilities>;
+}
 
 /**
  * Mock LLM Provider for testing
@@ -15,15 +25,22 @@ import {
  * Useful for unit testing copilot services without hitting real APIs.
  */
 export class MockLLMProvider implements LLMProvider {
-  readonly type = 'mock';
-  readonly model = 'mock-model';
-  readonly capabilities: ProviderCapabilities = {
-    streaming: true,
-    costTracking: false,
-    modelListing: true,
-    customEndpoints: false,
-    requiresAuth: false
-  };
+  readonly type: LLMProviderType;
+  readonly model: string;
+  readonly capabilities: ProviderCapabilities;
+
+  constructor(options: MockLLMProviderOptions = {}) {
+    this.type = options.type ?? 'mock' as LLMProviderType;
+    this.model = options.model ?? 'mock-model';
+    this.capabilities = {
+      streaming: true,
+      costTracking: false,
+      modelListing: true,
+      customEndpoints: false,
+      requiresAuth: false,
+      ...options.capabilities
+    };
+  }
 
   private responses: Map<string, CompletionResponse> = new Map();
   private streamingResponses: Map<string, string[]> = new Map();

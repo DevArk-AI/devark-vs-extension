@@ -84,7 +84,7 @@ export function LLMDropup({
         {sortedProviders.map((provider) => {
           const status = getStatusLabel(provider);
           const isActive = provider.id === activeProvider;
-          const canSelect = provider.status === 'connected';
+          const canSelect = provider.status === 'connected' || provider.status === 'available';
 
           return (
             <div

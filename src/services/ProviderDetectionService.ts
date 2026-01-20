@@ -76,25 +76,29 @@ export class ProviderDetectionService {
         let model: string | undefined;
         let availableModels: string[] | undefined;
 
-        // For Ollama, fetch actual available models if connected
-        if (p.id === 'ollama') {
+        // For Ollama, fetch actual available models if connected or available
+        if (p.id === 'ollama' && (status === 'connected' || status === 'available')) {
           const provider = this.llmManager.getProvider(p.id);
-          if (provider && status === 'connected') {
-            try {
+          try {
+            if (provider) {
+              // Use provider instance if available
               const models = await provider.listModels();
               availableModels = models.map((m) => m.id);
-              // Use the configured model or the first available model
               const configuredModel = provider.model;
               model = availableModels.includes(configuredModel)
                 ? configuredModel
                 : availableModels[0];
-            } catch (error) {
-              console.error(
-                '[ProviderDetectionService] Failed to fetch Ollama models:',
-                error
-              );
-              // Keep model undefined if we can't fetch models
+            } else {
+              // Fallback: fetch models directly via HTTP when provider not initialized
+              availableModels = await this.fetchOllamaModelsDirectly();
+              model = availableModels[0];
             }
+          } catch (error) {
+            console.error(
+              '[ProviderDetectionService] Failed to fetch Ollama models:',
+              error
+            );
+            // Keep model undefined if we can't fetch models
           }
         }
 
@@ -323,7 +327,7 @@ export class ProviderDetectionService {
         if (!isAvailable) {
           return 'not-running'; // Ollama server is not running
         }
-        return 'connected'; // Ollama is running and accessible
+        return 'available'; // Ollama is running but not the active provider
       }
 
       // Provider not initialized - still check if Ollama server is running directly
@@ -378,8 +382,32 @@ export class ProviderDetectionService {
         signal: AbortSignal.timeout(3000),
       });
       return response.ok;
-    } catch {
+    } catch (error) {
+      console.log('[ProviderDetectionService] Ollama direct check failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * Fetch Ollama models directly via HTTP.
+   * Used when the Ollama provider isn't initialized yet (e.g., during onboarding).
+   */
+  private async fetchOllamaModelsDirectly(): Promise<string[]> {
+    try {
+      const response = await fetch('http://localhost:11434/api/tags', {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) {
+        console.log('[ProviderDetectionService] Ollama models fetch failed:', response.status);
+        return [];
+      }
+      const data = await response.json() as { models?: Array<{ name: string }> };
+      const models = data.models || [];
+      return models.map((m) => m.name);
+    } catch (error) {
+      console.log('[ProviderDetectionService] Ollama models fetch error:', error);
+      return [];
     }
   }
 }
