@@ -24,6 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { exec } = require('child_process');
 
 // Debug logging to persistent file
 const vibeLogDir = path.join(os.tmpdir(), 'devark-hooks');
@@ -42,6 +43,29 @@ function debugLog(message) {
     // Ignore logging errors
   }
   console.error(`[vibe-log] ${message}`);
+}
+
+/**
+ * Notify IDE to process hook files immediately
+ * Skip on Windows (causes issues with opening unwanted windows) - rely on polling instead
+ * On macOS/Linux, use simple 'code --command' which works fine
+ */
+function notifyActiveIDEs() {
+  // Skip on Windows - causes issues with Cursor/VS Code window management
+  // Extension will pick up files via polling instead
+  if (process.platform === 'win32') {
+    debugLog('Skipping IDE notification on Windows (using polling instead)');
+    return;
+  }
+
+  // On macOS/Linux, simple 'code --command' works fine
+  exec('code --command devark.processHookFiles', (err) => {
+    if (err) {
+      debugLog(`Could not notify IDE: ${err.message}`);
+    } else {
+      debugLog('Notified IDE to process hook files');
+    }
+  });
 }
 
 debugLog('Hook script started');
@@ -131,8 +155,8 @@ process.stdin.on('end', () => {
     fs.writeFileSync(latestFile, JSON.stringify(responseData, null, 2));
     debugLog(`Wrote latest file: ${latestFile}`);
 
-    // Note: We rely on polling instead of exec('code --command') to avoid opening
-    // unwanted IDE windows (e.g., Cursor when using Claude Code)
+    // Notify all active IDEs that have DevArk running
+    notifyActiveIDEs();
 
     // Log for debugging
     if (isStopHook) {
