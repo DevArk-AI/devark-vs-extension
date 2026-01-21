@@ -4,7 +4,9 @@
 
 You finish a session with Cursor or Claude Code. Two hours vanished. What happened? Did you ship something, or did you spiral into a rabbit hole?
 
-DevArk analyzes your AI coding sessions and tells you what you didn't know about how you work. **Runs entirely on your machine - no cloud required.** Or sync to DevArk Cloud and let us handle the analysis for you.
+DevArk analyzes your AI coding sessions and tells you what you didn't know about how you work.
+
+Bring Your Own Model: **Runs entirely on your machine - no cloud required.** Or use your Claude Code\Cursor agent\Open router.  
 
 ## Co-Pilot: Better Prompts, Better Results
 
