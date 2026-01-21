@@ -5214,7 +5214,7 @@
   background: var(--vscode-input-background);
   border: 1px solid var(--vl-accent);
   border-radius: var(--radius-sm);
-  color: var(--vscode-input-foreground);
+  color: var(--vscode-foreground);
   font-family: var(--font-ui);
   font-size: 12px;
   line-height: 1.4;
@@ -7617,7 +7617,7 @@
   background: var(--vscode-input-background);
   border: 1px solid var(--vscode-input-border);
   border-radius: var(--radius-sm);
-  color: var(--vscode-input-foreground);
+  color: #000000;
   font-size: 13px;
   font-family: inherit;
 }
