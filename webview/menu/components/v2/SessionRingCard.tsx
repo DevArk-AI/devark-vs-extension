@@ -159,6 +159,9 @@ function RingTooltip({
   // Format values for display
   const goalPercent = Math.round(ringData.goal * 100);
   const contextPercent = Math.round(ringData.context * 100);
+  // VIB-90: Show "--" when tokenUsage is not available (hook sessions without Claude data)
+  const hasTokenUsage = session.tokenUsage !== undefined;
+  const contextDisplay = hasTokenUsage ? `${contextPercent}%` : '--';
   // Quality: show as X.X/10 format, or "--" when no score
   const qualityDisplay = session.averageScore !== undefined
     ? `${session.averageScore.toFixed(1)}/10`
@@ -190,7 +193,7 @@ function RingTooltip({
         <div className="vl-ring-tooltip__ring-row">
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--context" />
           <span className="vl-ring-tooltip__ring-value">
-            {contextPercent}% — Context used
+            {contextDisplay} — Context used
           </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">

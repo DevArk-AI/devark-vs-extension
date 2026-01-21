@@ -165,6 +165,19 @@ Before releasing, ensure:
 
 ---
 
+## Version Auto-Update
+
+The version in the Settings tab is automatically injected from `package.json` during build. No manual updates required.
+
+**How it works:**
+1. `build.js` sets `process.env.EXTENSION_VERSION` from `package.json`
+2. HTML templates inject this as `window.DEVARK_VERSION`
+3. `SettingsView.tsx` displays `window.DEVARK_VERSION`
+
+When you run `npm version patch/minor/major`, the next build automatically reflects the new version.
+
+---
+
 ## Manual Workflow Dispatch
 
 You can also trigger a release manually from GitHub:

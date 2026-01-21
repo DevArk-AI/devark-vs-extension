@@ -2,6 +2,16 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.11] - 2026-01-21
+
+### Added
+- Settings: Version number now auto-updates from package.json (VIB-86)
+- Session: Added prompt utilities for improved session handling
+
+### Improved
+- Session reader: Better extraction of tools from toolCalls and toolResults
+- Session handler: Refactored for cleaner code organization
+
 ## [0.1.10] - 2026-01-17
 
 ### Improved

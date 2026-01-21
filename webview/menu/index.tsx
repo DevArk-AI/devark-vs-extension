@@ -28,6 +28,7 @@ declare global {
     DEVARK_LOGO_URI?: string;
     DEVARK_LOGO_WHITE_URI?: string;
     DEVARK_INITIAL_THEME?: 'light' | 'dark';
+    DEVARK_VERSION?: string;
   }
 }
 

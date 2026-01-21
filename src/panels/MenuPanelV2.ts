@@ -109,7 +109,8 @@ export class MenuPanelV2 extends BasePanel {
       `window.vscode = vscode;
       window.DEVARK_LOGO_URI = "${logoUri}";
       window.DEVARK_LOGO_WHITE_URI = "${logoWhiteUri}";
-      window.DEVARK_INITIAL_THEME = "${theme}";`
+      window.DEVARK_INITIAL_THEME = "${theme}";
+      window.DEVARK_VERSION = "${process.env.EXTENSION_VERSION}";`
     );
   }
 

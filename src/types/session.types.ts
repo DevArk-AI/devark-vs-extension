@@ -56,13 +56,21 @@ export interface SourceFileInfo {
  * Raw session data from session readers
  */
 /**
- * Token usage data for context window tracking
+ * Token usage data for context window tracking.
+ * When source is 'api', values are from actual Claude API response.
+ * When source is 'estimated', values are tiktoken estimates (fallback).
  */
 export interface TokenUsageData {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
   contextUtilization: number; // 0-1 scale
+  /** Cache tokens created during this session (reduces future input costs) */
+  cacheCreationInputTokens?: number;
+  /** Cache tokens read (reused from previous context) */
+  cacheReadInputTokens?: number;
+  /** Source of the data: 'api' for actual usage, 'estimated' for tiktoken */
+  source?: 'api' | 'estimated';
 }
 
 export interface SessionData {

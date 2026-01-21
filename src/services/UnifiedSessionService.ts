@@ -17,6 +17,7 @@ import type { CursorSessionReader } from '../cursor-integration/session-reader';
 import { ClaudeSessionReader } from '../adapters/readers/claude-session-reader';
 import { NodeFileSystem } from '../adapters/readers/node-filesystem';
 import { shouldIgnorePath } from '../adapters/prompt-detection/ignore-paths';
+import { countActualUserPrompts } from '../core/session/prompt-utils';
 
 // Re-export SessionSource from shared for backwards compatibility
 export type { SessionSource } from '../shared/webview-protocol';
@@ -683,7 +684,7 @@ export class UnifiedSessionService {
     const fileContext: string[] = claude.metadata?.editedFiles || claude.metadata?.languages || [];
 
     // Count actual user prompts (not tool results or assistant messages)
-    const promptCount = this.countActualUserPrompts(claude.messages || []);
+    const promptCount = countActualUserPrompts(claude.messages || []);
 
     return {
       id: `claude-${claude.id}`,
@@ -700,32 +701,6 @@ export class UnifiedSessionService {
       tokenUsage: claude.tokenUsage,  // Pass through token usage for context tracking
       rawData: claude
     };
-  }
-
-  /**
-   * Count actual user prompts in messages array (excludes tool results)
-   */
-  private countActualUserPrompts(messages: Array<{ role: string; content: string }>): number {
-    return messages.filter(m => m.role === 'user' && this.isActualUserPrompt(m.content)).length;
-  }
-
-  /**
-   * Check if message content is an actual user prompt (not tool result)
-   */
-  private isActualUserPrompt(content: string): boolean {
-    if (!content || content.trim().length === 0) {
-      return false;
-    }
-    // Skip tool results (these are machine-generated, not user prompts)
-    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
-      return false;
-    }
-    // Skip if content is only tool markers
-    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
-    if (toolMarkerPattern.test(content)) {
-      return false;
-    }
-    return true;
   }
 
   /**

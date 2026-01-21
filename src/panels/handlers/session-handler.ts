@@ -16,6 +16,7 @@ import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { UnifiedSession } from '../../services/UnifiedSessionService';
 import type { Session, Project, Platform, PromptRecord } from '../../services/types/session-types';
 import type { Message } from '../../types/message.types';
+import { isActualUserPrompt, countActualUserPrompts } from '../../core/session/prompt-utils';
 import * as crypto from 'crypto';
 
 export class SessionHandler extends BaseMessageHandler {
@@ -301,11 +302,16 @@ export class SessionHandler extends BaseMessageHandler {
         platform: 'claude_code',
         startTime: unifiedSession?.startTime || new Date(),
         lastActivityTime: unifiedSession?.endTime || new Date(),
-        promptCount: this.countActualUserPrompts(details.messages),
+        promptCount: countActualUserPrompts(details.messages),
         prompts: [],
         responses: [],
         isActive: false,
         totalDuration: unifiedSession?.duration,
+        // VIB-90: Include tokenUsage for context window tracking
+        tokenUsage: unifiedSession?.tokenUsage ? {
+          totalTokens: unifiedSession.tokenUsage.totalTokens,
+          contextUtilization: unifiedSession.tokenUsage.contextUtilization,
+        } : undefined,
         metadata: {
           files: details.fileContext || [],
         },
@@ -343,7 +349,7 @@ export class SessionHandler extends BaseMessageHandler {
         });
 
         // Send prompts list with just the last message
-        const totalPrompts = this.countActualUserPrompts(details.messages);
+        const totalPrompts = countActualUserPrompts(details.messages);
         this.send('v2Prompts', {
           prompts: [prompt],
           total: totalPrompts,
@@ -383,39 +389,11 @@ export class SessionHandler extends BaseMessageHandler {
   private getLastUserMessage(messages: Message[]): Message | null {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
-      if (msg.role === 'user' && this.isActualUserPrompt(msg.content)) {
+      if (msg.role === 'user' && isActualUserPrompt(msg.content)) {
         return msg;
       }
     }
     return null;
-  }
-
-  /**
-   * Check if message content is an actual user prompt (not tool result)
-   * Tool results contain [Tool result] or [Tool: ...] markers
-   */
-  private isActualUserPrompt(content: string): boolean {
-    // Skip empty content
-    if (!content || content.trim().length === 0) {
-      return false;
-    }
-    // Skip tool results (these are machine-generated, not user prompts)
-    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
-      return false;
-    }
-    // Skip if content is mostly tool markers
-    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
-    if (toolMarkerPattern.test(content)) {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Count actual user prompts in a messages array (excludes tool results)
-   */
-  private countActualUserPrompts(messages: Message[]): number {
-    return messages.filter(m => m.role === 'user' && this.isActualUserPrompt(m.content)).length;
   }
 
   /**
@@ -640,8 +618,39 @@ export class SessionHandler extends BaseMessageHandler {
   /**
    * Merge projects from hook-captured and Claude sessions.
    * Deduplicates by matching workspace paths.
+   * VIB-90: Also preserves tokenUsage from Claude sessions when merging.
    */
   private mergeProjects(hookProjects: Project[], claudeProjects: Project[]): Project[] {
+    // Build a map of Claude sessions by their original ID (without 'claude-' prefix)
+    // for cross-referencing with hook session sourceSessionId
+    const claudeSessionsByOriginalId = new Map<string, Session>();
+    for (const project of claudeProjects) {
+      for (const session of project.sessions) {
+        // Claude session IDs are "claude-<originalId>"
+        if (session.id.startsWith('claude-')) {
+          const originalId = session.id.substring(7);
+          claudeSessionsByOriginalId.set(originalId, session);
+        }
+      }
+    }
+
+    // VIB-90: Enrich hook sessions with tokenUsage from matching Claude sessions
+    for (const project of hookProjects) {
+      for (const session of project.sessions) {
+        // Skip if already has tokenUsage
+        if (session.tokenUsage) continue;
+
+        // Try to find matching Claude session via sourceSessionId
+        const sourceId = session.metadata?.sourceSessionId as string | undefined;
+        if (sourceId) {
+          const matchingClaudeSession = claudeSessionsByOriginalId.get(sourceId);
+          if (matchingClaudeSession?.tokenUsage) {
+            session.tokenUsage = matchingClaudeSession.tokenUsage;
+          }
+        }
+      }
+    }
+
     // Create a map of hook projects by normalized path
     const hookProjectsByPath = new Map<string, Project>();
     for (const p of hookProjects) {
@@ -662,14 +671,31 @@ export class SessionHandler extends BaseMessageHandler {
 
       if (existingProject) {
         // Merge Claude sessions into existing project
-        // Avoid duplicates by checking session IDs
+        // Avoid duplicates by checking session IDs AND sourceSessionId matches
         const existingSessionIds = new Set(existingProject.sessions.map(s => s.id));
+        const existingSourceIds = new Set(
+          existingProject.sessions
+            .map(s => s.metadata?.sourceSessionId as string | undefined)
+            .filter(Boolean)
+        );
+
         for (const claudeSession of claudeProject.sessions) {
-          if (!existingSessionIds.has(claudeSession.id)) {
-            existingProject.sessions.push(claudeSession);
-            existingProject.totalSessions++;
-            existingProject.totalPrompts += claudeSession.promptCount;
+          // Check if session already exists by ID
+          if (existingSessionIds.has(claudeSession.id)) continue;
+
+          // Check if there's a hook session linked to this Claude session
+          const claudeOriginalId = claudeSession.id.startsWith('claude-')
+            ? claudeSession.id.substring(7)
+            : claudeSession.id;
+          if (existingSourceIds.has(claudeOriginalId)) {
+            // Hook session already exists for this Claude session
+            // tokenUsage was already copied above, skip adding duplicate
+            continue;
           }
+
+          existingProject.sessions.push(claudeSession);
+          existingProject.totalSessions++;
+          existingProject.totalPrompts += claudeSession.promptCount;
         }
         // Update lastActivityTime if Claude has more recent activity
         if (claudeProject.lastActivityTime && (!existingProject.lastActivityTime || claudeProject.lastActivityTime > existingProject.lastActivityTime)) {
@@ -770,7 +796,7 @@ export class SessionHandler extends BaseMessageHandler {
 
       // Filter to actual user prompts (not tool results) and reverse to get most recent first
       const userMessages = details.messages
-        .filter(m => m.role === 'user' && this.isActualUserPrompt(m.content))
+        .filter(m => m.role === 'user' && isActualUserPrompt(m.content))
         .reverse();
 
       const total = userMessages.length;

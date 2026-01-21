@@ -29,7 +29,8 @@ import type {
 import { calculateDuration } from '../../core/session/duration-calculator';
 import { extractLanguagesFromPaths } from '../../core/session/language-extractor';
 import { extractHighlights } from '../../core/session/highlights-extractor';
-import { calculateTokenUsage } from '../../core/session/token-counter';
+import { calculateTokenUsage, CLAUDE_CONTEXT_WINDOWS } from '../../core/session/token-counter';
+import { isActualUserPrompt } from '../../core/session/prompt-utils';
 
 /**
  * Claude-specific patterns to skip when extracting highlights
@@ -41,6 +42,17 @@ const CLAUDE_SKIP_PATTERNS = [
 ];
 
 /**
+ * API usage data from Claude response
+ */
+interface ClaudeApiUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+  service_tier?: string;
+}
+
+/**
  * JSONL entry for Claude message
  */
 interface ClaudeMessage {
@@ -49,6 +61,7 @@ interface ClaudeMessage {
   content: string | any[];
   timestamp: string;
   model?: string;
+  usage?: ClaudeApiUsage;
 }
 
 /**
@@ -438,7 +451,7 @@ export class ClaudeSessionReader implements ISessionReader {
           // Only count actual user prompts (not tool results)
           if (data.message?.role === 'user') {
             const content = this.filterImageContent(data.message.content);
-            if (this.isActualUserPrompt(content)) {
+            if (isActualUserPrompt(content)) {
               promptCount++;
             }
           }
@@ -558,6 +571,10 @@ export class ClaudeSessionReader implements ISessionReader {
     // Planning mode tracking
     const exitPlanTimestamps: Date[] = [];
 
+    // API usage tracking (actual tokens from Claude API responses)
+    // Track LAST turn's values, not accumulated totals, since Claude's input_tokens already includes full history
+    const apiUsage = { lastInput: 0, lastOutput: 0, lastCacheCreation: 0, lastCacheRead: 0, hasData: false };
+
     // Git branch tracking
     let gitBranch: string | undefined;
 
@@ -565,7 +582,7 @@ export class ClaudeSessionReader implements ISessionReader {
       if (!line.trim()) continue;
 
       try {
-        const data: ClaudeLogEntry = JSON.parse(line);
+        const data = JSON.parse(line) as ClaudeLogEntry;
 
         // Extract git branch from first entry that has it
         if (!gitBranch && data.gitBranch) {
@@ -607,16 +624,28 @@ export class ClaudeSessionReader implements ISessionReader {
             timestamp: new Date(data.timestamp),
           });
 
-          // Track model usage for assistant messages
-          if (data.message.role === 'assistant' && data.message.model) {
-            modelStats[data.message.model] =
-              (modelStats[data.message.model] || 0) + 1;
+          // Track model usage and API token usage for assistant messages
+          if (data.message.role === 'assistant') {
+            if (data.message.model) {
+              modelStats[data.message.model] =
+                (modelStats[data.message.model] || 0) + 1;
 
-            // Track model switches
-            if (lastModel && lastModel !== data.message.model) {
-              modelSwitches++;
+              // Track model switches
+              if (lastModel && lastModel !== data.message.model) {
+                modelSwitches++;
+              }
+              lastModel = data.message.model;
             }
-            lastModel = data.message.model;
+
+            // Extract actual API usage data if available
+            // Use assignment (=) not accumulation (+=) since input_tokens already includes full conversation history
+            if (data.message.usage) {
+              apiUsage.hasData = true;
+              apiUsage.lastInput = data.message.usage.input_tokens || 0;
+              apiUsage.lastOutput = data.message.usage.output_tokens || 0;
+              apiUsage.lastCacheCreation = data.message.usage.cache_creation_input_tokens || 0;
+              apiUsage.lastCacheRead = data.message.usage.cache_read_input_tokens || 0;
+            }
           }
         }
 
@@ -695,14 +724,10 @@ export class ClaudeSessionReader implements ISessionReader {
     // Extract conversation highlights for summarization
     const highlights = extractHighlights(messages, {}, CLAUDE_SKIP_PATTERNS);
 
-    // Calculate token usage for context window tracking
-    const tokenUsageResult = calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined);
-    const tokenUsage: TokenUsageData = {
-      inputTokens: tokenUsageResult.inputTokens,
-      outputTokens: tokenUsageResult.outputTokens,
-      totalTokens: tokenUsageResult.totalTokens,
-      contextUtilization: tokenUsageResult.contextUtilization,
-    };
+    // Calculate token usage - use actual API data if available, fall back to tiktoken estimates
+    const tokenUsage: TokenUsageData = apiUsage.hasData
+      ? this.buildApiTokenUsage(apiUsage, modelInfo?.primaryModel ?? undefined)
+      : { ...calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined), source: 'estimated' as const };
 
     return {
       ...metadata,
@@ -717,27 +742,6 @@ export class ClaudeSessionReader implements ISessionReader {
       highlights,
       tokenUsage,
     };
-  }
-
-  /**
-   * Check if message content is an actual user prompt (not tool result)
-   * Tool results contain [Tool result] or [Tool: ...] markers
-   */
-  private isActualUserPrompt(content: string): boolean {
-    // Skip empty content
-    if (!content || content.trim().length === 0) {
-      return false;
-    }
-    // Skip tool results (these are machine-generated, not user prompts)
-    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
-      return false;
-    }
-    // Skip if content is only tool markers
-    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
-    if (toolMarkerPattern.test(content)) {
-      return false;
-    }
-    return true;
   }
 
   /**
@@ -779,6 +783,28 @@ export class ClaudeSessionReader implements ISessionReader {
     }
 
     return textParts.join('\n');
+  }
+
+  /**
+   * Build token usage data from actual API response data.
+   * Uses the LAST turn's token counts since input_tokens already includes full conversation history.
+   */
+  private buildApiTokenUsage(
+    apiUsage: { lastInput: number; lastOutput: number; lastCacheCreation: number; lastCacheRead: number },
+    primaryModel?: string
+  ): TokenUsageData {
+    // Context = last input (includes all history) + last output
+    const totalTokens = apiUsage.lastInput + apiUsage.lastOutput;
+    const contextWindow = CLAUDE_CONTEXT_WINDOWS[primaryModel ?? 'default'] ?? CLAUDE_CONTEXT_WINDOWS.default;
+    return {
+      inputTokens: apiUsage.lastInput,
+      outputTokens: apiUsage.lastOutput,
+      totalTokens,
+      contextUtilization: Math.min(totalTokens / contextWindow, 1),
+      cacheCreationInputTokens: apiUsage.lastCacheCreation,
+      cacheReadInputTokens: apiUsage.lastCacheRead,
+      source: 'api',
+    };
   }
 
 }

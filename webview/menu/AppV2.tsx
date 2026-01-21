@@ -8,7 +8,7 @@
 import React, { useReducer, useEffect, createContext, useContext, useState, useMemo } from 'react';
 import { Settings, ChevronUp } from 'lucide-react';
 import { getScoreClass, formatTimeAgo, formatDuration } from './state/types-v2';
-import type { AppStateV2, ActionV2 } from './state/types-v2';
+import type { AppStateV2, ActionV2, Project, Session } from './state/types-v2';
 import { initialState } from './state/initial-state';
 import { appReducer } from './state/app-reducer';
 import { CoPilotView } from './components/v2/CoPilotView';
@@ -334,10 +334,18 @@ export function AppV2() {
 
         case 'v2SessionList':
           // Session list from SessionManagerService - transform to projects
+          // Message data arrives with ISO date strings that need conversion to Date objects
           if (message.data.projects && Array.isArray(message.data.projects)) {
-            const projects = message.data.projects.map((p: any) => ({
+            interface SerializedSession extends Omit<Session, 'startTime' | 'lastActivityTime'> {
+              startTime: string;
+              lastActivityTime: string;
+            }
+            interface SerializedProject extends Omit<Project, 'sessions'> {
+              sessions: SerializedSession[];
+            }
+            const projects: Project[] = (message.data.projects as SerializedProject[]).map((p) => ({
               ...p,
-              sessions: p.sessions?.map((s: any) => ({
+              sessions: p.sessions?.map((s) => ({
                 ...s,
                 startTime: new Date(s.startTime),
                 lastActivityTime: new Date(s.lastActivityTime),

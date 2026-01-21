@@ -239,6 +239,7 @@ export class MenuSidebarView implements vscode.WebviewViewProvider {
     window.DEVARK_LOGO_URI = "${logoUri}";
     window.DEVARK_LOGO_WHITE_URI = "${logoWhiteUri}";
     window.DEVARK_INITIAL_THEME = "${theme}";
+    window.DEVARK_VERSION = "${process.env.EXTENSION_VERSION}";
     window.IS_SIDEBAR = true;
   </script>
   <script nonce="${nonce}" type="module" src="${scriptUri}"></script>

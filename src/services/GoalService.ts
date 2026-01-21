@@ -14,6 +14,7 @@ import { ExtensionState } from '../extension-state';
 import { GoalProgressAnalyzer, GoalProgressOutput } from '../copilot/goal-progress-analyzer';
 import { ClaudeSessionReader } from '../adapters/readers/claude-session-reader';
 import { NodeFileSystem } from '../adapters/readers/node-filesystem';
+import { isActualUserPrompt } from '../core/session/prompt-utils';
 
 /**
  * Goal status
@@ -108,7 +109,7 @@ export class GoalService {
       // Convert messages to PromptRecords (only user messages that are actual prompts)
       const prompts: PromptRecord[] = [];
       for (const msg of details.messages) {
-        if (msg.role === 'user' && this.isActualUserPrompt(msg.content)) {
+        if (msg.role === 'user' && isActualUserPrompt(msg.content)) {
           prompts.push({
             id: generateId(),
             sessionId: session.id,
@@ -126,25 +127,6 @@ export class GoalService {
       console.error(`[GoalService] Failed to load Claude Code prompts:`, error);
       return [];
     }
-  }
-
-  /**
-   * Check if message content is an actual user prompt (not tool result)
-   */
-  private isActualUserPrompt(content: string): boolean {
-    if (!content || content.trim().length === 0) {
-      return false;
-    }
-    // Skip tool results (these are machine-generated, not user prompts)
-    if (content.startsWith('[Tool result]') || content.startsWith('[Tool:')) {
-      return false;
-    }
-    // Skip if content is only tool markers
-    const toolMarkerPattern = /^\s*\[Tool[^\]]*\]\s*$/;
-    if (toolMarkerPattern.test(content)) {
-      return false;
-    }
-    return true;
   }
 
   /**
