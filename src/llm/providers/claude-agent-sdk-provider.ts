@@ -28,6 +28,42 @@ const SDK_NOT_INSTALLED_ERROR =
   '  npm install @anthropic-ai/claude-agent-sdk\n\n' +
   'Also requires Claude Code to be installed and logged in.';
 
+// All built-in tools that must be explicitly disabled
+// Note: disallowedTools: ['*'] doesn't work - must list tools explicitly
+// See: https://github.com/anthropics/claude-agent-sdk-typescript/issues/19
+// Full list from: https://github.com/Piebald-AI/claude-code-system-prompts
+const ALL_BUILTIN_TOOLS = [
+  // Core file/code tools
+  'Task',
+  'Bash',
+  'Glob',
+  'Grep',
+  'Read',
+  'ReadFile', // Alternative name for Read in some SDK versions
+  'Edit',
+  'Write',
+  'MultiEdit',
+  'NotebookEdit',
+  // Web tools
+  'WebFetch',
+  'WebSearch',
+  // Task/session management
+  'TodoWrite',
+  'KillShell',
+  'TaskOutput',
+  // Skills and plugins
+  'Skill',
+  'ToolSearch', // For deferred tool loading
+  // User interaction
+  'AskUserQuestion',
+  'EnterPlanMode',
+  'ExitPlanMode',
+  // Code intelligence
+  'LSP', // Language Server Protocol operations
+  // Browser automation
+  'Computer', // Chrome browser automation
+];
+
 // Check if SDK is installed (synchronous check)
 function isSDKInstalled(): boolean {
   try {
@@ -35,6 +71,17 @@ function isSDKInstalled(): boolean {
     return true;
   } catch {
     return false;
+  }
+}
+
+// Clean up temporary query directory
+function cleanupTempDir(dirPath: string): void {
+  try {
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+  } catch {
+    // Ignore cleanup errors - not critical
   }
 }
 
@@ -149,11 +196,20 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
     }
 
     // SDK is installed, now test the actual connection
+    // Use a unique working directory for test to avoid session caching
+    const queryId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+    const workingDir = path.join(this.tempDir || os.tmpdir(), `test-${queryId}`);
+
     try {
       const { query } = await getClaudeSDK();
 
-      // Ensure we have a valid working directory
-      const workingDir = this.tempDir || os.homedir();
+      try {
+        if (!fs.existsSync(workingDir)) {
+          fs.mkdirSync(workingDir, { recursive: true });
+        }
+      } catch {
+        // Fallback to base temp dir
+      }
 
       let gotResponse = false;
       for await (const message of query({
@@ -161,8 +217,9 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
         options: {
           maxTurns: 1,
           model: this._model,
-          disallowedTools: ['*'],
+          disallowedTools: ALL_BUILTIN_TOOLS,
           cwd: workingDir,
+          settingSources: [],
         },
       })) {
         if (message.type === 'assistant') {
@@ -194,6 +251,9 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
         };
       }
       return { success: false, error: msg };
+    } finally {
+      // Clean up temporary directory
+      cleanupTempDir(workingDir);
     }
   }
 
@@ -221,46 +281,94 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
   }
 
   async generateCompletion(options: CompletionOptions): Promise<CompletionResponse> {
+    // Use a unique working directory per query to avoid session caching issues
+    // The SDK maintains session state per cwd, which can cause inconsistent behavior
+    const queryId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+    const workingDir = path.join(this.tempDir || os.tmpdir(), `query-${queryId}`);
+
     try {
       const { query } = await getClaudeSDK();
-
-      // Build prompt with system prompt if provided
-      let fullPrompt = options.prompt;
-      if (options.systemPrompt) {
-        fullPrompt = `${options.systemPrompt}\n\n${options.prompt}`;
-      }
 
       let responseText = '';
       let usage: { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
       let cost: { amount: number; currency: string } | undefined;
 
-      // Ensure we have a valid working directory
-      // The SDK requires a valid path - use os.homedir() as fallback since it's cross-platform
-      const workingDir = this.tempDir || os.homedir();
-      console.log('[ClaudeAgentSDK] generateCompletion using cwd:', workingDir);
+      try {
+        if (!fs.existsSync(workingDir)) {
+          fs.mkdirSync(workingDir, { recursive: true });
+        }
+      } catch {
+        // Fallback to base temp dir if creation fails
+      }
+
+      const modelUsed = options.model || this._model;
 
       for await (const message of query({
-        prompt: fullPrompt,
+        prompt: options.prompt,
         options: {
           maxTurns: 1,
-          model: options.model || this._model,
-          disallowedTools: ['*'],
+          model: modelUsed,
+          disallowedTools: ALL_BUILTIN_TOOLS,
           cwd: workingDir,
+          // Use SDK's systemPrompt option instead of concatenating into user prompt
+          systemPrompt: options.systemPrompt,
+          // Don't load any filesystem settings - ensures isolation
+          settingSources: [],
         },
       })) {
-        if (message.type === 'assistant' && message.message?.content) {
-          const textContent = message.message.content.find((c: any) => c.type === 'text');
-          if (textContent?.text) {
-            responseText = textContent.text;
+        // Debug logging for Opus to diagnose response structure
+        if (modelUsed === 'opus') {
+          console.log(`[ClaudeAgentSDK:Opus] Event type: ${message.type}, keys: ${Object.keys(message).join(', ')}`);
+          if (message.type === 'assistant') {
+            console.log(`[ClaudeAgentSDK:Opus] Assistant message structure:`, JSON.stringify(message, null, 2).slice(0, 500));
           }
         }
 
+        // Handle assistant messages - extract text from content blocks
+        if (message.type === 'assistant' && message.message?.content) {
+          // Iterate through all content blocks to find text
+          // Opus may have thinking blocks before text blocks
+          for (const contentBlock of message.message.content) {
+            if (contentBlock.type === 'text' && contentBlock.text) {
+              // Accumulate text from all text blocks (in case there are multiple)
+              if (responseText) {
+                responseText += '\n' + contentBlock.text;
+              } else {
+                responseText = contentBlock.text;
+              }
+            }
+          }
+        }
+
+        // Handle streaming text events (some SDK versions emit these)
+        if (message.type === 'text' && message.text) {
+          if (responseText) {
+            responseText += message.text;
+          } else {
+            responseText = message.text;
+          }
+        }
+
+        // Handle content_block_delta for streaming responses
+        // The delta structure varies: delta.text for text_delta, delta.thinking for thinking_delta
+        if (message.type === 'content_block_delta' && message.delta) {
+          const delta = message.delta as { type?: string; text?: string; thinking?: string };
+          if (delta.text) {
+            responseText += delta.text;
+          }
+        }
+
+        // Handle result message for cost tracking
         if (message.type === 'result') {
           if (message.total_cost_usd !== undefined) {
             cost = {
               amount: message.total_cost_usd,
               currency: 'USD',
             };
+          }
+          // Some SDK versions include the final text in the result message
+          if (message.result && typeof message.result === 'string' && !responseText) {
+            responseText = message.result;
           }
         }
       }
@@ -282,38 +390,71 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
         timestamp: new Date(),
         error: `Claude Agent SDK error: ${msg}`,
       };
+    } finally {
+      // Clean up temporary directory
+      cleanupTempDir(workingDir);
     }
   }
 
   async *streamCompletion(options: CompletionOptions): AsyncGenerator<StreamChunk> {
+    // Use a unique working directory per query to avoid session caching issues
+    const queryId = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+    const workingDir = path.join(this.tempDir || os.tmpdir(), `stream-${queryId}`);
+
     try {
       const { query } = await getClaudeSDK();
 
-      // Build prompt with system prompt if provided
-      let fullPrompt = options.prompt;
-      if (options.systemPrompt) {
-        fullPrompt = `${options.systemPrompt}\n\n${options.prompt}`;
-      }
-
       let cost: { amount: number; currency: string } | undefined;
 
-      // Ensure we have a valid working directory
-      const workingDir = this.tempDir || os.homedir();
+      try {
+        if (!fs.existsSync(workingDir)) {
+          fs.mkdirSync(workingDir, { recursive: true });
+        }
+      } catch {
+        // Fallback to base temp dir
+      }
 
       for await (const message of query({
-        prompt: fullPrompt,
+        prompt: options.prompt,
         options: {
           maxTurns: 1,
           model: options.model || this._model,
-          disallowedTools: ['*'],
+          disallowedTools: ALL_BUILTIN_TOOLS,
           cwd: workingDir,
+          systemPrompt: options.systemPrompt,
+          settingSources: [],
         },
       })) {
+        // Handle assistant messages - yield text from all text content blocks
         if (message.type === 'assistant' && message.message?.content) {
-          const textContent = message.message.content.find((c: any) => c.type === 'text');
-          if (textContent?.text) {
+          for (const contentBlock of message.message.content) {
+            if (contentBlock.type === 'text' && contentBlock.text) {
+              yield {
+                text: contentBlock.text,
+                isComplete: false,
+                model: options.model || this._model,
+                provider: 'claude-agent-sdk',
+              };
+            }
+          }
+        }
+
+        // Handle streaming text events
+        if (message.type === 'text' && message.text) {
+          yield {
+            text: message.text,
+            isComplete: false,
+            model: options.model || this._model,
+            provider: 'claude-agent-sdk',
+          };
+        }
+
+        // Handle content_block_delta for streaming responses
+        if (message.type === 'content_block_delta' && message.delta) {
+          const delta = message.delta as { type?: string; text?: string; thinking?: string };
+          if (delta.text) {
             yield {
-              text: textContent.text,
+              text: delta.text,
               isComplete: false,
               model: options.model || this._model,
               provider: 'claude-agent-sdk',
@@ -326,6 +467,15 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
             cost = {
               amount: message.total_cost_usd,
               currency: 'USD',
+            };
+          }
+          // Some SDK versions include the final text in the result message
+          if (message.result && typeof message.result === 'string') {
+            yield {
+              text: message.result,
+              isComplete: false,
+              model: options.model || this._model,
+              provider: 'claude-agent-sdk',
             };
           }
         }
@@ -348,6 +498,9 @@ export class ClaudeAgentSDKProvider implements LLMProvider {
         provider: 'claude-agent-sdk',
         error: `Claude Agent SDK streaming error: ${msg}`,
       };
+    } finally {
+      // Clean up temporary directory
+      cleanupTempDir(workingDir);
     }
   }
 }

@@ -624,7 +624,17 @@ export class UnifiedSessionService {
       });
 
       // Normalize to unified format
-      return validSessions.map((session: SessionData) => this.normalizeClaudeSession(session));
+      const normalized = validSessions.map((session: SessionData) => this.normalizeClaudeSession(session));
+
+      // Debug: Log tokenUsage presence for first few sessions
+      const sessionsWithTokenUsage = normalized.filter(s => s.tokenUsage);
+      console.debug(`[UnifiedSessionService] Claude sessions: ${normalized.length} total, ${sessionsWithTokenUsage.length} with tokenUsage`);
+      if (sessionsWithTokenUsage.length > 0) {
+        const sample = sessionsWithTokenUsage[0];
+        console.debug(`[UnifiedSessionService] Sample tokenUsage: contextUtil=${sample.tokenUsage?.contextUtilization}, total=${sample.tokenUsage?.totalTokens}`);
+      }
+
+      return normalized;
 
     } catch (error: unknown) {
       // Handle Claude file lock errors gracefully

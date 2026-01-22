@@ -2,8 +2,7 @@
  * MiscHandler - Handles miscellaneous and legacy messages
  *
  * This is a catch-all handler for:
- * - Feature model settings
- * - Config and onboarding
+ * - Config and onboarding (NOTE: Feature model settings are in ConfigHandler)
  * - Data clearing
  * - Tab visibility
  * - Editor detection
@@ -16,7 +15,6 @@ import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { ExtensionState, isCursorIDE, getEditorName } from '../../extension-state';
-import type { FeatureType } from '../../llm/types';
 import type { WebviewMessageData } from '../../shared/webview-protocol';
 import type { IUnifiedSettingsService } from '../../services/UnifiedSettingsService';
 import { getNotificationService } from '../../services/NotificationService';
@@ -46,12 +44,7 @@ export class MiscHandler extends BaseMessageHandler {
 
   getHandledMessageTypes(): string[] {
     return [
-      // Feature model settings
-      'getFeatureModels',
-      'setFeatureModel',
-      'setFeatureModelsEnabled',
-      'resetFeatureModels',
-      'getAvailableModelsForFeature',
+      // NOTE: Feature model settings are handled by ConfigHandler
       // Config
       'getConfig',
       'completeOnboarding',
@@ -87,26 +80,7 @@ export class MiscHandler extends BaseMessageHandler {
 
   async handleMessage(type: string, data: unknown): Promise<boolean> {
     switch (type) {
-      // Feature models
-      case 'getFeatureModels':
-        await this.handleGetFeatureModels();
-        return true;
-      case 'setFeatureModel': {
-        const d = data as WebviewMessageData<'setFeatureModel'>;
-        await this.handleSetFeatureModel(d.feature, d.model);
-        return true;
-      }
-      case 'setFeatureModelsEnabled': {
-        const d = data as WebviewMessageData<'setFeatureModelsEnabled'>;
-        await this.handleSetFeatureModelsEnabled(d.enabled);
-        return true;
-      }
-      case 'resetFeatureModels':
-        await this.handleResetFeatureModels();
-        return true;
-      case 'getAvailableModelsForFeature':
-        await this.handleGetAvailableModelsForFeature();
-        return true;
+      // NOTE: Feature model messages are handled by ConfigHandler
 
       // Config
       case 'getConfig':
@@ -204,101 +178,6 @@ export class MiscHandler extends BaseMessageHandler {
       default:
         return false;
     }
-  }
-
-  // ============ FEATURE MODELS ============
-
-  /**
-   * Get current feature model configuration
-   */
-  private async handleGetFeatureModels(): Promise<void> {
-    const llmManager = ExtensionState.getLLMManager();
-    if (!llmManager) {
-      this.send('featureModelsUpdate', { config: null });
-      return;
-    }
-
-    const settingsManager = llmManager.getSettingsManager();
-    const config = settingsManager.getFeatureModelsConfig();
-
-    this.send('featureModelsUpdate', { config });
-  }
-
-  /**
-   * Set model override for a specific feature
-   */
-  private async handleSetFeatureModel(feature?: string, model?: string): Promise<void> {
-    const llmManager = ExtensionState.getLLMManager();
-    if (!llmManager || !feature) return;
-
-    const settingsManager = llmManager.getSettingsManager();
-    await settingsManager.setFeatureModel(feature as FeatureType, model || '');
-
-    // Send updated config back
-    await this.handleGetFeatureModels();
-  }
-
-  /**
-   * Enable or disable advanced feature models
-   */
-  private async handleSetFeatureModelsEnabled(enabled?: boolean): Promise<void> {
-    const llmManager = ExtensionState.getLLMManager();
-    if (!llmManager || enabled === undefined) return;
-
-    const settingsManager = llmManager.getSettingsManager();
-    await settingsManager.setFeatureModelsEnabled(enabled);
-
-    await this.handleGetFeatureModels();
-  }
-
-  /**
-   * Reset all feature models to defaults
-   */
-  private async handleResetFeatureModels(): Promise<void> {
-    const llmManager = ExtensionState.getLLMManager();
-    if (!llmManager) return;
-
-    const settingsManager = llmManager.getSettingsManager();
-    await settingsManager.resetFeatureModels();
-
-    await this.handleGetFeatureModels();
-    getNotificationService().info('Feature models reset to defaults');
-  }
-
-  /**
-   * Get available models from all configured providers
-   */
-  private async handleGetAvailableModelsForFeature(): Promise<void> {
-    const llmManager = ExtensionState.getLLMManager();
-    if (!llmManager) {
-      this.send('availableModelsForFeature', { models: [] });
-      return;
-    }
-
-    const models: { providerId: string; model: string; displayName: string }[] = [];
-
-    for (const providerId of llmManager.getConfiguredProviders()) {
-      const provider = llmManager.getProvider(providerId);
-      if (provider) {
-        try {
-          const providerModels = await provider.listModels();
-          for (const m of providerModels) {
-            models.push({
-              providerId,
-              model: `${providerId}:${m.id}`,
-              displayName: `${providerId} - ${m.name || m.id}`,
-            });
-          }
-        } catch (error) {
-          // Silently skip providers that aren't available (e.g., Ollama not running)
-          if (DEBUG_MISC_HANDLER) {
-            console.warn(`[MiscHandler] Provider ${providerId} unavailable:`, error instanceof Error ? error.message : error);
-          }
-        }
-      }
-    }
-
-    this.send('availableModelsForFeature', { models });
   }
 
   // ============ CONFIG ============

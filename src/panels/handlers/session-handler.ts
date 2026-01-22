@@ -49,19 +49,32 @@ export class SessionHandler extends BaseMessageHandler {
   }
 
   /**
-   * Extract the base session ID for cross-source matching.
-   * UnifiedSessionService IDs: "claude-<originalId>"
-   * SessionManagerService IDs: "<timestamp>-<random>" with metadata.sourceSessionId
+   * Extract the base session ID (UUID) for cross-source matching.
+   *
+   * Session ID formats:
+   * - UnifiedSessionService (Claude): "claude-C--DevArk-project/session.jsonl/f1d6dcd9-..."
+   * - SessionManagerService (Hook): "1234567890-abcd" with metadata.sourceSessionId="f1d6dcd9-..."
+   *
+   * Returns just the UUID part for consistent matching across sources.
+   *
+   * @example
+   * // Hook session with sourceSessionId
+   * getSourceSessionId({ metadata: { sourceSessionId: 'f1d6dcd9-...' } }) // => 'f1d6dcd9-...'
+   *
+   * // Claude session with full path ID
+   * getSourceSessionId({ id: 'claude-C--DevArk-proj/file.jsonl/f1d6dcd9-...' }) // => 'f1d6dcd9-...'
    */
   private getSourceSessionId(session: Session): string | undefined {
-    // For hook-captured sessions, check metadata.sourceSessionId
+    // For hook-captured sessions, use metadata.sourceSessionId directly (already just the UUID)
     if (session.metadata?.sourceSessionId) {
       return session.metadata.sourceSessionId;
     }
-    // For UnifiedSessionService sessions, the ID is "claude-<originalId>"
-    // Extract the originalId part
+    // For UnifiedSessionService (Claude) sessions, extract UUID from full path
+    // ID format: "claude-projectDir/fileName/sessionUUID"
     if (session.id.startsWith('claude-')) {
-      return session.id.substring(7); // Remove "claude-" prefix
+      const fullId = session.id.substring(7); // Remove "claude-" prefix
+      const segments = fullId.split('/');
+      return segments[segments.length - 1]; // Return just the UUID (last segment)
     }
     return undefined;
   }
@@ -524,6 +537,14 @@ export class SessionHandler extends BaseMessageHandler {
       // Flatten sessions for the sessions list
       const allMergedSessions = mergedProjects.flatMap(p => p.sessions);
 
+      // Debug: Log final tokenUsage presence before sending
+      const finalWithTokenUsage = allMergedSessions.filter(s => s.tokenUsage);
+      console.debug(`[SessionHandler] v2SessionList: ${allMergedSessions.length} sessions, ${finalWithTokenUsage.length} with tokenUsage`);
+      if (finalWithTokenUsage.length > 0) {
+        const sample = finalWithTokenUsage[0];
+        console.debug(`[SessionHandler] Sample: id=${sample.id.substring(0, 30)}... contextUtil=${sample.tokenUsage?.contextUtilization}`);
+      }
+
       this.send('v2SessionList', { sessions: allMergedSessions, projects: mergedProjects });
     } catch (error) {
       console.error('[SessionHandler] Failed to get session list:', error);
@@ -575,6 +596,10 @@ export class SessionHandler extends BaseMessageHandler {
    * Build Project objects from UnifiedSessions, grouped by workspace path
    */
   private buildProjectsFromUnifiedSessions(sessions: UnifiedSession[]): Project[] {
+    // Debug: Log input tokenUsage presence
+    const inputWithTokenUsage = sessions.filter(s => s.tokenUsage);
+    console.debug(`[SessionHandler] buildProjects input: ${sessions.length} sessions, ${inputWithTokenUsage.length} with tokenUsage`);
+
     const projectMap = new Map<string, Project>();
 
     for (const session of sessions) {
@@ -612,6 +637,11 @@ export class SessionHandler extends BaseMessageHandler {
       project.sessions.sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
     }
 
+    // Debug: Log output tokenUsage presence
+    const allOutputSessions = Array.from(projectMap.values()).flatMap(p => p.sessions);
+    const outputWithTokenUsage = allOutputSessions.filter(s => s.tokenUsage);
+    console.debug(`[SessionHandler] buildProjects output: ${allOutputSessions.length} sessions, ${outputWithTokenUsage.length} with tokenUsage`);
+
     return Array.from(projectMap.values());
   }
 
@@ -621,20 +651,25 @@ export class SessionHandler extends BaseMessageHandler {
    * VIB-90: Also preserves tokenUsage from Claude sessions when merging.
    */
   private mergeProjects(hookProjects: Project[], claudeProjects: Project[]): Project[] {
-    // Build a map of Claude sessions by their original ID (without 'claude-' prefix)
-    // for cross-referencing with hook session sourceSessionId
-    const claudeSessionsByOriginalId = new Map<string, Session>();
+    const hookSessionCount = hookProjects.reduce((sum, p) => sum + p.sessions.length, 0);
+    const claudeSessionCount = claudeProjects.reduce((sum, p) => sum + p.sessions.length, 0);
+
+    // Build a map of Claude sessions by their UUID (extracted from the full path)
+    // Claude IDs format: "claude-projectDir/fileName/UUID"
+    // Hook sourceSessionId format: "UUID"
+    // We extract just the UUID for matching.
+    const claudeSessionsByUUID = new Map<string, Session>();
     for (const project of claudeProjects) {
       for (const session of project.sessions) {
-        // Claude session IDs are "claude-<originalId>"
-        if (session.id.startsWith('claude-')) {
-          const originalId = session.id.substring(7);
-          claudeSessionsByOriginalId.set(originalId, session);
+        const uuid = this.getSourceSessionId(session);
+        if (uuid) {
+          claudeSessionsByUUID.set(uuid, session);
         }
       }
     }
 
     // VIB-90: Enrich hook sessions with tokenUsage from matching Claude sessions
+    let enrichedCount = 0;
     for (const project of hookProjects) {
       for (const session of project.sessions) {
         // Skip if already has tokenUsage
@@ -643,12 +678,18 @@ export class SessionHandler extends BaseMessageHandler {
         // Try to find matching Claude session via sourceSessionId
         const sourceId = session.metadata?.sourceSessionId as string | undefined;
         if (sourceId) {
-          const matchingClaudeSession = claudeSessionsByOriginalId.get(sourceId);
+          const matchingClaudeSession = claudeSessionsByUUID.get(sourceId);
           if (matchingClaudeSession?.tokenUsage) {
             session.tokenUsage = matchingClaudeSession.tokenUsage;
+            enrichedCount++;
           }
         }
       }
+    }
+
+    // Debug logging for merge operation (useful for VIB-90 verification)
+    if (hookSessionCount > 0 || claudeSessionCount > 0) {
+      console.debug(`[SessionHandler] mergeProjects: hook=${hookSessionCount}, claude=${claudeSessionCount}, uuidMap=${claudeSessionsByUUID.size}, enriched=${enrichedCount}`);
     }
 
     // Create a map of hook projects by normalized path
@@ -684,10 +725,9 @@ export class SessionHandler extends BaseMessageHandler {
           if (existingSessionIds.has(claudeSession.id)) continue;
 
           // Check if there's a hook session linked to this Claude session
-          const claudeOriginalId = claudeSession.id.startsWith('claude-')
-            ? claudeSession.id.substring(7)
-            : claudeSession.id;
-          if (existingSourceIds.has(claudeOriginalId)) {
+          // Extract just the UUID for comparison with hook session sourceSessionIds
+          const claudeUUID = this.getSourceSessionId(claudeSession);
+          if (claudeUUID && existingSourceIds.has(claudeUUID)) {
             // Hook session already exists for this Claude session
             // tokenUsage was already copied above, skip adding duplicate
             continue;

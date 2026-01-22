@@ -729,6 +729,9 @@ export class ClaudeSessionReader implements ISessionReader {
       ? this.buildApiTokenUsage(apiUsage, modelInfo?.primaryModel ?? undefined)
       : { ...calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined), source: 'estimated' as const };
 
+    // Debug: Log tokenUsage calculation
+    console.debug(`[ClaudeSessionReader] Session ${metadata.id.substring(0, 30)}... tokenUsage: contextUtil=${tokenUsage.contextUtilization?.toFixed(3)}, total=${tokenUsage.totalTokens}, source=${tokenUsage.source}`);
+
     return {
       ...metadata,
       messages,

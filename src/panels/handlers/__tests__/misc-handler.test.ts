@@ -132,8 +132,8 @@ describe('MiscHandler', () => {
   describe('getHandledMessageTypes', () => {
     it('should return many message types', () => {
       const types = handler.getHandledMessageTypes();
+      // NOTE: Feature model handlers moved to ConfigHandler
       expect(types.length).toBeGreaterThan(20);
-      expect(types).toContain('getFeatureModels');
       expect(types).toContain('getConfig');
       expect(types).toContain('getEditorInfo');
       expect(types).toContain('test');
@@ -202,23 +202,7 @@ describe('MiscHandler', () => {
     });
   });
 
-  describe('feature models', () => {
-    it('should handle getFeatureModels', async () => {
-      const result = await handler.handleMessage('getFeatureModels', {});
-      expect(result).toBe(true);
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('featureModelsUpdate', {
-        config: { enabled: true, models: {} },
-      });
-    });
-
-    it('should handle getAvailableModelsForFeature', async () => {
-      const result = await handler.handleMessage('getAvailableModelsForFeature', {});
-      expect(result).toBe(true);
-      expect(mockSender.sendMessage).toHaveBeenCalledWith('availableModelsForFeature', {
-        models: [{ providerId: 'ollama', model: 'ollama:llama2', displayName: 'ollama - Llama 2' }],
-      });
-    });
-  });
+  // NOTE: Feature model tests moved to config-handler.test.ts (handlers are in ConfigHandler)
 
   describe('config', () => {
     it('should handle getConfig', async () => {

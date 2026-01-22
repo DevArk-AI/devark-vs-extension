@@ -168,6 +168,8 @@ export type WebviewMessage =
   | { type: 'verifyApiKey'; data: { providerId: string; apiKey: string; model?: string } }
   | { type: 'setOllamaModel'; data: { model: string } }
   | { type: 'setOpenRouterModel'; data: { model: string } }
+  | { type: 'setCursorCliModel'; data: { model: string } }
+  | { type: 'setClaudeAgentSdkModel'; data: { model: string } }
 
   // -------- Feature Models --------
   | { type: 'getFeatureModels' }

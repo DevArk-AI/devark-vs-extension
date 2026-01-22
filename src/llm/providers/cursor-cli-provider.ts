@@ -14,7 +14,7 @@
 import { spawn } from 'child_process';
 import { CLIProviderBase } from './cli-provider-base';
 import { RegisterProvider } from '../decorators';
-import { CompletionOptions, CompletionResponse, ConnectionTestResult } from '../types';
+import { CompletionOptions, CompletionResponse, ConnectionTestResult, ModelInfo } from '../types';
 import { PromptDeliveryMethod } from '../provider-types';
 
 /**
@@ -156,6 +156,106 @@ export class CursorCLIProvider extends CLIProviderBase {
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  }
+
+  /**
+   * List available models from Cursor CLI
+   *
+   * Tries to fetch models dynamically via `cursor-agent --list-models`.
+   * Falls back to a static list if the command fails.
+   */
+  async listModels(): Promise<ModelInfo[]> {
+    try {
+      const output = await this.execListModelsCommand();
+      const models = this.parseModelsOutput(output);
+      if (models.length > 0) {
+        return models;
+      }
+    } catch (error) {
+      console.error('[CursorCLIProvider] Failed to fetch models dynamically:', error);
+    }
+
+    // Fallback to known models
+    return [
+      { id: 'auto', name: 'Auto (recommended)', description: 'Automatically selects the best model', supportsStreaming: true },
+      { id: 'claude-4-sonnet', name: 'Claude 4 Sonnet', supportsStreaming: true },
+      { id: 'claude-4-opus', name: 'Claude 4 Opus', supportsStreaming: true },
+      { id: 'gpt-4o', name: 'GPT-4o', supportsStreaming: true },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', supportsStreaming: true },
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', supportsStreaming: true },
+    ];
+  }
+
+  /**
+   * Execute `cursor-agent --list-models` command
+   */
+  private execListModelsCommand(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const child = spawn('cursor-agent', ['--list-models'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
+        reject(new Error(`Failed to run cursor-agent --list-models: ${error.message}`));
+      });
+
+      child.on('exit', (code) => {
+        if (code === 0) {
+          resolve(stdout);
+        } else {
+          reject(new Error(`cursor-agent --list-models exited with code ${code}: ${stderr}`));
+        }
+      });
+    });
+  }
+
+  /**
+   * Parse the output of `cursor-agent --list-models`
+   */
+  private parseModelsOutput(output: string): ModelInfo[] {
+    const models: ModelInfo[] = [];
+    const lines = output.split('\n').filter((line) => line.trim());
+
+    for (const line of lines) {
+      // Try to parse JSON format first (e.g., {"id": "model-id", "name": "Model Name"})
+      try {
+        const parsed = JSON.parse(line);
+        if (parsed.id) {
+          models.push({
+            id: parsed.id,
+            name: parsed.name || parsed.id,
+            description: parsed.description,
+            supportsStreaming: true,
+          });
+          continue;
+        }
+      } catch {
+        // Not JSON, try line-based format
+      }
+
+      // Try simple line format (model-id or model-id: Model Name)
+      const match = line.match(/^([a-zA-Z0-9._-]+)(?::\s*(.+))?$/);
+      if (match) {
+        models.push({
+          id: match[1],
+          name: match[2] || match[1],
+          supportsStreaming: true,
+        });
+      }
+    }
+
+    return models;
   }
 
   /**

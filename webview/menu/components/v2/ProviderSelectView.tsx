@@ -31,6 +31,8 @@ export function ProviderSelectView({ onClose }: ProviderSelectViewProps) {
   const [verifying, setVerifying] = useState<string | null>(null);
   const [verifyResult, setVerifyResult] = useState<Record<string, VerifyResult>>({});
   const [openRouterModel, setOpenRouterModel] = useState<string>('');
+  const [cursorCliModel, setCursorCliModel] = useState<string>('auto');
+  const [claudeAgentSdkModel, setClaudeAgentSdkModel] = useState<string>('haiku');
 
   // Listen for verifyApiKeyResult messages
   useEffect(() => {
@@ -59,13 +61,23 @@ export function ProviderSelectView({ onClose }: ProviderSelectViewProps) {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Initialize openRouterModel from provider data
+  // Initialize models from provider data
   useEffect(() => {
     const openRouterProvider = state.providers.find(p => p.id === 'openrouter');
     if (openRouterProvider?.model) {
       setOpenRouterModel(openRouterProvider.model);
     } else {
       setOpenRouterModel('');  // No fallback - require explicit model selection
+    }
+
+    const cursorProvider = state.providers.find(p => p.id === 'cursor-cli');
+    if (cursorProvider?.model) {
+      setCursorCliModel(cursorProvider.model);
+    }
+
+    const claudeProvider = state.providers.find(p => p.id === 'claude-agent-sdk');
+    if (claudeProvider?.model) {
+      setClaudeAgentSdkModel(claudeProvider.model);
     }
   }, [state.providers]);
 
@@ -203,6 +215,80 @@ export function ProviderSelectView({ onClose }: ProviderSelectViewProps) {
                 No models installed. Run <code style={{ fontFamily: 'var(--font-mono)' }}>ollama pull codellama</code> to install a model.
               </div>
             )}
+          </div>
+        )}
+
+        {/* Cursor CLI model selector */}
+        {isSelected && provider.id === 'cursor-cli' && provider.status === 'connected' && (
+          <div style={{ marginTop: 'var(--space-md)' }}>
+            <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: 'var(--space-xs)' }}>
+              Model:
+            </div>
+            <select
+              style={{
+                width: '100%',
+                padding: 'var(--space-sm)',
+                background: 'var(--vscode-input-background)',
+                border: '1px solid var(--vscode-input-border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--vscode-input-foreground)',
+                fontSize: '12px',
+              }}
+              value={cursorCliModel}
+              onChange={(e) => {
+                e.stopPropagation();
+                setCursorCliModel(e.target.value);
+                send('setCursorCliModel', { model: e.target.value });
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {provider.availableModels && provider.availableModels.length > 0 ? (
+                provider.availableModels.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))
+              ) : (
+                <option value="auto">auto</option>
+              )}
+            </select>
+          </div>
+        )}
+
+        {/* Claude Agent SDK model selector */}
+        {isSelected && provider.id === 'claude-agent-sdk' && provider.status === 'connected' && (
+          <div style={{ marginTop: 'var(--space-md)' }}>
+            <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: 'var(--space-xs)' }}>
+              Model:
+            </div>
+            <select
+              style={{
+                width: '100%',
+                padding: 'var(--space-sm)',
+                background: 'var(--vscode-input-background)',
+                border: '1px solid var(--vscode-input-border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--vscode-input-foreground)',
+                fontSize: '12px',
+              }}
+              value={claudeAgentSdkModel}
+              onChange={(e) => {
+                e.stopPropagation();
+                setClaudeAgentSdkModel(e.target.value);
+                send('setClaudeAgentSdkModel', { model: e.target.value });
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {provider.availableModels && provider.availableModels.length > 0 ? (
+                provider.availableModels.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))
+              ) : (
+                <option value="haiku">haiku</option>
+              )}
+            </select>
           </div>
         )}
 

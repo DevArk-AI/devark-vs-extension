@@ -471,6 +471,8 @@ describe('SessionHandler', () => {
 
     it('should match sessions by sourceSessionId for cross-source caching', async () => {
       // First call: hook-captured session with sourceSessionId
+      // Hook sessions store just the UUID in metadata.sourceSessionId
+      const sessionUUID = 'f1d6dcd9-df87-4b88-ae37-f4a0515de559';
       const mockHookProjects = [
         {
           id: 'proj-1',
@@ -484,7 +486,7 @@ describe('SessionHandler', () => {
               goal: 'Refactor module Z',
               customName: 'Refactor Session',
               metadata: {
-                sourceSessionId: 'original-claude-session-id',
+                sourceSessionId: sessionUUID,
               },
             },
           ],
@@ -495,14 +497,16 @@ describe('SessionHandler', () => {
       await handler.handleMessage('v2GetSessionList', {});
 
       // Second call: UnifiedSessionService session with matching ID
-      // (ID format: claude-<originalId>)
+      // Claude session ID format: "claude-projectDir/fileName/sessionUUID"
+      // The getSourceSessionId() method extracts just the UUID (last segment) for matching
+      const claudeSessionId = `claude-C--DevArk-myproject/session-file.jsonl/${sessionUUID}`;
       const mockUnifiedProjects = [
         {
           id: 'proj-1',
           name: 'Project One',
           sessions: [
             {
-              id: 'claude-original-claude-session-id', // Matches sourceSessionId
+              id: claudeSessionId, // Full path format, UUID extracted for matching
               promptCount: 5,
               platform: 'claude_code',
               goalProgress: undefined, // No goalProgress from JSONL
@@ -516,14 +520,77 @@ describe('SessionHandler', () => {
       sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockUnifiedProjects);
       await handler.handleMessage('v2GetSessionList', {});
 
-      // goalProgress should be applied via sourceSessionId matching
+      // goalProgress should be applied via sourceSessionId matching (UUID extracted from full path)
       expect(mockSender.sendMessage).toHaveBeenLastCalledWith('v2SessionList', {
         sessions: expect.arrayContaining([
           expect.objectContaining({
-            id: 'claude-original-claude-session-id',
+            id: claudeSessionId,
             goalProgress: 80,
             goal: 'Refactor module Z',
             customName: 'Refactor Session',
+          }),
+        ]),
+        projects: expect.any(Array),
+      });
+    });
+
+    it('should extract UUID from Windows-encoded Claude session paths', async () => {
+      // Windows paths are encoded with dashes in the projectDir folder name
+      // Format: "claude-C--Users-97254-Documents-MyProject/session-2024-01-15.jsonl/UUID"
+      const sessionUUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+      const windowsEncodedPath = 'C--Users-97254-Documents-MyProject';
+      const claudeSessionId = `claude-${windowsEncodedPath}/session-2024-01-15.jsonl/${sessionUUID}`;
+
+      // First call: hook session with just the UUID as sourceSessionId
+      const mockHookProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: 'hook-sess-456',
+              promptCount: 3,
+              platform: 'claude_code',
+              goalProgress: 45,
+              goal: 'Fix Windows path bug',
+              metadata: {
+                sourceSessionId: sessionUUID,
+              },
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockHookProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // Second call: Claude session with Windows-encoded path
+      const mockUnifiedProjects = [
+        {
+          id: 'proj-1',
+          name: 'Project One',
+          sessions: [
+            {
+              id: claudeSessionId,
+              promptCount: 3,
+              platform: 'claude_code',
+              goalProgress: undefined,
+              goal: undefined,
+            },
+          ],
+        },
+      ];
+
+      sharedContext.sessionManagerService!.getAllProjects = vi.fn().mockReturnValue(mockUnifiedProjects);
+      await handler.handleMessage('v2GetSessionList', {});
+
+      // goalProgress should be applied - UUID correctly extracted despite complex path
+      expect(mockSender.sendMessage).toHaveBeenLastCalledWith('v2SessionList', {
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: claudeSessionId,
+            goalProgress: 45,
+            goal: 'Fix Windows path bug',
           }),
         ]),
         projects: expect.any(Array),

@@ -47,11 +47,77 @@ export class ProviderDetectionService {
   private cache: CacheEntry | null = null;
   private readonly CACHE_TTL_MS = 30_000; // 30 seconds
 
+  /** Default model fallbacks per provider */
+  private static readonly DEFAULT_MODELS: Record<string, string> = {
+    'ollama': '',  // Empty string means use first available
+    'cursor-cli': 'auto',
+    'claude-agent-sdk': 'haiku',
+    'openrouter': '',
+  };
+
   /**
    * Create a new provider detection service
    * @param llmManager - LLM Manager instance to use for detection
    */
   constructor(private llmManager: LLMManager) {}
+
+  /**
+   * Fetch models for a provider and determine the active model
+   * @param providerId - Provider ID
+   * @param status - Current provider status
+   * @returns Object with model and availableModels, or undefined values if fetch fails
+   */
+  private async fetchProviderModels(
+    providerId: string,
+    status: ProviderStatus['status']
+  ): Promise<{ model?: string; availableModels?: string[] }> {
+    try {
+      // OpenRouter doesn't support listing models - just get configured model
+      if (providerId === 'openrouter') {
+        const provider = this.llmManager.getProvider(providerId);
+        return { model: provider?.model };
+      }
+
+      // Only fetch models if provider is connected or available
+      if (status !== 'connected' && status !== 'available') {
+        return {};
+      }
+
+      const provider = this.llmManager.getProvider(providerId);
+
+      // Special case: Ollama without initialized provider - fetch directly
+      if (providerId === 'ollama' && !provider) {
+        const availableModels = await this.fetchOllamaModelsDirectly();
+        const defaultModel = ProviderDetectionService.DEFAULT_MODELS[providerId];
+        const model = availableModels.length > 0 ? availableModels[0] : defaultModel;
+        return { model, availableModels };
+      }
+
+      if (!provider) {
+        return {};
+      }
+
+      const models = await provider.listModels();
+      const availableModels = models.map((m) => m.id);
+      const configuredModel = provider.model;
+      const defaultModel = ProviderDetectionService.DEFAULT_MODELS[providerId];
+
+      // Use configured model if valid, otherwise use first available or default
+      let model: string | undefined;
+      if (availableModels.includes(configuredModel)) {
+        model = configuredModel;
+      } else if (availableModels.length > 0) {
+        model = availableModels[0];
+      } else if (defaultModel) {
+        model = defaultModel;
+      }
+
+      return { model, availableModels };
+    } catch (error) {
+      console.error(`[ProviderDetectionService] Failed to fetch ${providerId} models:`, error);
+      return {};
+    }
+  }
 
   /**
    * Detect all available providers with their current status
@@ -73,42 +139,7 @@ export class ProviderDetectionService {
     const formattedProviders = await Promise.all(
       providers.map(async (p) => {
         const status = await this.getProviderStatus(p);
-        let model: string | undefined;
-        let availableModels: string[] | undefined;
-
-        // For Ollama, fetch actual available models if connected or available
-        if (p.id === 'ollama' && (status === 'connected' || status === 'available')) {
-          const provider = this.llmManager.getProvider(p.id);
-          try {
-            if (provider) {
-              // Use provider instance if available
-              const models = await provider.listModels();
-              availableModels = models.map((m) => m.id);
-              const configuredModel = provider.model;
-              model = availableModels.includes(configuredModel)
-                ? configuredModel
-                : availableModels[0];
-            } else {
-              // Fallback: fetch models directly via HTTP when provider not initialized
-              availableModels = await this.fetchOllamaModelsDirectly();
-              model = availableModels[0];
-            }
-          } catch (error) {
-            console.error(
-              '[ProviderDetectionService] Failed to fetch Ollama models:',
-              error
-            );
-            // Keep model undefined if we can't fetch models
-          }
-        }
-
-        // For OpenRouter, get the configured model from provider
-        if (p.id === 'openrouter') {
-          const provider = this.llmManager.getProvider(p.id);
-          if (provider) {
-            model = provider.model;  // No fallback - use whatever provider has
-          }
-        }
+        const { model, availableModels } = await this.fetchProviderModels(p.id, status);
 
         return {
           id: p.id,
@@ -165,36 +196,7 @@ export class ProviderDetectionService {
     }
 
     const status = await this.getProviderStatus(providerMeta);
-    let model: string | undefined;
-    let availableModels: string[] | undefined;
-
-    // For Ollama, fetch actual available models if connected
-    if (providerId === 'ollama') {
-      const provider = this.llmManager.getProvider(providerId);
-      if (provider && status === 'connected') {
-        try {
-          const models = await provider.listModels();
-          availableModels = models.map((m) => m.id);
-          const configuredModel = provider.model;
-          model = availableModels.includes(configuredModel)
-            ? configuredModel
-            : availableModels[0];
-        } catch (error) {
-          console.error(
-            '[ProviderDetectionService] Failed to fetch Ollama models:',
-            error
-          );
-        }
-      }
-    }
-
-    // For OpenRouter, get the configured model from provider
-    if (providerId === 'openrouter') {
-      const provider = this.llmManager.getProvider(providerId);
-      if (provider) {
-        model = provider.model;  // No fallback - use whatever provider has
-      }
-    }
+    const { model, availableModels } = await this.fetchProviderModels(providerId, status);
 
     return {
       id: providerMeta.id,
@@ -319,11 +321,9 @@ export class ProviderDetectionService {
     // For Ollama, check if server is running
     if (provider.id === 'ollama') {
       const providerInstance = this.llmManager.getProvider(provider.id);
-      console.log('[ProviderDetectionService] Ollama check - providerInstance exists:', !!providerInstance);
 
       if (providerInstance) {
         const isAvailable = await providerInstance.isAvailable();
-        console.log('[ProviderDetectionService] Ollama isAvailable:', isAvailable);
         if (!isAvailable) {
           return 'not-running'; // Ollama server is not running
         }
@@ -331,9 +331,7 @@ export class ProviderDetectionService {
       }
 
       // Provider not initialized - still check if Ollama server is running directly
-      console.log('[ProviderDetectionService] Ollama provider not initialized, checking directly...');
       const isRunning = await this.checkOllamaServerDirectly();
-      console.log('[ProviderDetectionService] Ollama direct check result:', isRunning);
       return isRunning ? 'available' : 'not-running';
     }
 
@@ -382,8 +380,8 @@ export class ProviderDetectionService {
         signal: AbortSignal.timeout(3000),
       });
       return response.ok;
-    } catch (error) {
-      console.log('[ProviderDetectionService] Ollama direct check failed:', error);
+    } catch {
+      // Expected when Ollama is not running
       return false;
     }
   }
@@ -399,14 +397,13 @@ export class ProviderDetectionService {
         signal: AbortSignal.timeout(5000),
       });
       if (!response.ok) {
-        console.log('[ProviderDetectionService] Ollama models fetch failed:', response.status);
         return [];
       }
       const data = await response.json() as { models?: Array<{ name: string }> };
       const models = data.models || [];
       return models.map((m) => m.name);
-    } catch (error) {
-      console.log('[ProviderDetectionService] Ollama models fetch error:', error);
+    } catch {
+      // Expected when Ollama is not running or not reachable
       return [];
     }
   }

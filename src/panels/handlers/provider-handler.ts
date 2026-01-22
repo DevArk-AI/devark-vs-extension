@@ -48,6 +48,8 @@ export class ProviderHandler extends BaseMessageHandler {
       'verifyApiKey',
       'setOllamaModel',
       'setOpenRouterModel',
+      'setCursorCliModel',
+      'setClaudeAgentSdkModel',
       'testProviders',
       'trackLlmSelectorOpenedFooter',
       'trackLlmSelectorOpenedSettings',
@@ -85,6 +87,16 @@ export class ProviderHandler extends BaseMessageHandler {
       case 'setOpenRouterModel': {
         const d = data as WebviewMessageData<'setOpenRouterModel'>;
         await this.handleSetOpenRouterModel(d.model);
+        return true;
+      }
+      case 'setCursorCliModel': {
+        const d = data as WebviewMessageData<'setCursorCliModel'>;
+        await this.handleSetCursorCliModel(d.model);
+        return true;
+      }
+      case 'setClaudeAgentSdkModel': {
+        const d = data as WebviewMessageData<'setClaudeAgentSdkModel'>;
+        await this.handleSetClaudeAgentSdkModel(d.model);
         return true;
       }
       case 'testProviders':
@@ -315,62 +327,75 @@ export class ProviderHandler extends BaseMessageHandler {
     }
   }
 
-  private async handleSetOllamaModel(model: string): Promise<void> {
-    const currentProviders = this.settingsService.getWithDefault('llm.providers', {} as ProvidersConfigMap);
+  /**
+   * Generic handler for setting a provider's model
+   * Consolidates logic for Ollama, OpenRouter, Cursor CLI, and Claude Agent SDK
+   */
+  private async handleSetProviderModel(
+    providerId: string,
+    model: string,
+    options: { reinitialize?: boolean } = {}
+  ): Promise<void> {
+    if (!model) return;
 
-    // Update Ollama model
-    if (!currentProviders.ollama) {
-      currentProviders.ollama = {};
+    const { reinitialize = false } = options;
+
+    try {
+      const currentProviders = this.settingsService.getWithDefault('llm.providers', {} as ProvidersConfigMap);
+
+      // Update provider model
+      if (!currentProviders[providerId]) {
+        currentProviders[providerId] = {};
+      }
+      currentProviders[providerId].model = model;
+
+      // Update the entire providers object
+      await this.settingsService.set('llm.providers', currentProviders);
+
+      // Track model selection
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.MODEL_SELECTED, {
+        provider: providerId,
+        model,
+      });
+
+      // Reinitialize LLM Manager if needed (for providers that need it)
+      if (reinitialize) {
+        const llmManager = ExtensionState.getLLMManager();
+        if (llmManager) {
+          await llmManager.reinitialize();
+        }
+
+        // Clear cache to force fresh detection with new model
+        const providerDetectionService = this.sharedContext.providerDetectionService;
+        if (providerDetectionService) {
+          providerDetectionService.clearCache();
+        }
+      }
+
+      // Refresh providers to show the updated model
+      await this.handleGetProviders();
+    } catch (error) {
+      console.error(`[ProviderHandler] Failed to set ${providerId} model:`, error);
+      getNotificationService().error(
+        `Failed to set model for ${providerId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
-    currentProviders.ollama.model = model;
+  }
 
-    // Update the entire providers object
-    await this.settingsService.set('llm.providers', currentProviders);
-
-    // Track model selection
-    ExtensionState.getAnalyticsService().track(AnalyticsEvents.MODEL_SELECTED, {
-      provider: 'ollama',
-      model,
-    });
-
-    // Refresh providers to show the updated model
-    await this.handleGetProviders();
+  private async handleSetOllamaModel(model: string): Promise<void> {
+    await this.handleSetProviderModel('ollama', model);
   }
 
   private async handleSetOpenRouterModel(model: string): Promise<void> {
-    if (!model) return;
+    await this.handleSetProviderModel('openrouter', model, { reinitialize: true });
+  }
 
-    const currentProviders = this.settingsService.getWithDefault('llm.providers', {} as ProvidersConfigMap);
+  private async handleSetCursorCliModel(model: string): Promise<void> {
+    await this.handleSetProviderModel('cursor-cli', model, { reinitialize: true });
+  }
 
-    // Update OpenRouter model
-    if (!currentProviders.openrouter) {
-      currentProviders.openrouter = {};
-    }
-    currentProviders.openrouter.model = model;
-
-    // Update the entire providers object
-    await this.settingsService.set('llm.providers', currentProviders);
-
-    // Track model selection
-    ExtensionState.getAnalyticsService().track(AnalyticsEvents.MODEL_SELECTED, {
-      provider: 'openrouter',
-      model,
-    });
-
-    // Reinitialize LLM Manager to pick up the new model config
-    const llmManager = ExtensionState.getLLMManager();
-    if (llmManager) {
-      await llmManager.reinitialize();
-    }
-
-    // Clear cache to force fresh detection with new model
-    const providerDetectionService = this.sharedContext.providerDetectionService;
-    if (providerDetectionService) {
-      providerDetectionService.clearCache();
-    }
-
-    // Refresh providers to show the updated model
-    await this.handleGetProviders();
+  private async handleSetClaudeAgentSdkModel(model: string): Promise<void> {
+    await this.handleSetProviderModel('claude-agent-sdk', model, { reinitialize: true });
   }
 
   private async handleTestProviders(): Promise<void> {
