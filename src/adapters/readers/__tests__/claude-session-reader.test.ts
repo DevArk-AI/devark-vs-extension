@@ -56,6 +56,21 @@ not valid json at all
 
   noMetadata: `{"message":{"role":"user","content":"Hello"},"timestamp":"2024-01-15T10:00:00Z"}
 {"message":{"role":"assistant","content":"Hi","model":"claude-3-5-sonnet"},"timestamp":"2024-01-15T10:00:30Z"}`,
+
+  // Session with API usage including cache tokens (realistic Claude Code scenario)
+  withCacheTokens: `{"sessionId":"cache123","cwd":"/home/user/project","timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"user","content":"Hello"},"timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"assistant","content":"Hi there!","model":"claude-3-5-sonnet","usage":{"input_tokens":8,"output_tokens":100,"cache_read_input_tokens":135976,"cache_creation_input_tokens":1044}},"timestamp":"2024-01-15T10:00:30Z"}`,
+
+  // Session with API usage but no cache tokens
+  withApiUsageNoCache: `{"sessionId":"nocache123","cwd":"/home/user/project","timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"user","content":"Hello"},"timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"assistant","content":"Hi there!","model":"claude-3-5-sonnet","usage":{"input_tokens":5000,"output_tokens":1000}},"timestamp":"2024-01-15T10:00:30Z"}`,
+
+  // Session with only cache read (no new cache creation)
+  withCacheReadOnly: `{"sessionId":"cacheread123","cwd":"/home/user/project","timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"user","content":"Hello"},"timestamp":"2024-01-15T10:00:00Z"}
+{"message":{"role":"assistant","content":"Hi there!","model":"claude-3-5-sonnet","usage":{"input_tokens":100,"output_tokens":500,"cache_read_input_tokens":80000}},"timestamp":"2024-01-15T10:00:30Z"}`,
 };
 
 describe('ClaudeSessionReader', () => {
@@ -767,6 +782,100 @@ describe('ClaudeSessionReader', () => {
 
       // They should be different
       expect(session.metadata!.editedFiles).not.toEqual(session.metadata!.languages);
+    });
+  });
+
+  describe('token usage with caching', () => {
+    it('includes cache tokens in context utilization calculation', async () => {
+      fs.addDirectory('/home/user/.claude/projects');
+      fs.addDirectory('/home/user/.claude/projects/-home-user-project');
+      fs.addFile(
+        '/home/user/.claude/projects/-home-user-project/session-cache.jsonl',
+        SAMPLE_JSONL.withCacheTokens
+      );
+
+      const result = await reader.readSessions();
+      const session = result.sessions[0];
+
+      expect(session.tokenUsage).toBeDefined();
+      expect(session.tokenUsage!.source).toBe('api');
+      // contextSize = 8 (input) + 1044 (cache creation) + 135976 (cache read) = 137028
+      // contextUtilization = 137028 / 200000 = 0.68514
+      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.685, 2);
+      expect(session.tokenUsage!.cacheCreationInputTokens).toBe(1044);
+      expect(session.tokenUsage!.cacheReadInputTokens).toBe(135976);
+    });
+
+    it('calculates context utilization without cache tokens when not present', async () => {
+      fs.addDirectory('/home/user/.claude/projects');
+      fs.addDirectory('/home/user/.claude/projects/-home-user-project');
+      fs.addFile(
+        '/home/user/.claude/projects/-home-user-project/session-nocache.jsonl',
+        SAMPLE_JSONL.withApiUsageNoCache
+      );
+
+      const result = await reader.readSessions();
+      const session = result.sessions[0];
+
+      expect(session.tokenUsage).toBeDefined();
+      expect(session.tokenUsage!.source).toBe('api');
+      // contextSize = 5000 (input only, no cache)
+      // contextUtilization = 5000 / 200000 = 0.025
+      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.025, 3);
+      expect(session.tokenUsage!.cacheCreationInputTokens).toBe(0);
+      expect(session.tokenUsage!.cacheReadInputTokens).toBe(0);
+    });
+
+    it('handles cache read only (no new cache creation)', async () => {
+      fs.addDirectory('/home/user/.claude/projects');
+      fs.addDirectory('/home/user/.claude/projects/-home-user-project');
+      fs.addFile(
+        '/home/user/.claude/projects/-home-user-project/session-cacheread.jsonl',
+        SAMPLE_JSONL.withCacheReadOnly
+      );
+
+      const result = await reader.readSessions();
+      const session = result.sessions[0];
+
+      expect(session.tokenUsage).toBeDefined();
+      expect(session.tokenUsage!.source).toBe('api');
+      // contextSize = 100 (input) + 0 (no cache creation) + 80000 (cache read) = 80100
+      // contextUtilization = 80100 / 200000 = 0.4005
+      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.4, 1);
+      expect(session.tokenUsage!.cacheCreationInputTokens).toBe(0);
+      expect(session.tokenUsage!.cacheReadInputTokens).toBe(80000);
+    });
+
+    it('uses estimated source when no API usage data available', async () => {
+      setupBasicSession(fs);
+      const result = await reader.readSessions();
+      const session = result.sessions[0];
+
+      expect(session.tokenUsage).toBeDefined();
+      expect(session.tokenUsage!.source).toBe('estimated');
+      // No cache tokens for estimated
+      expect(session.tokenUsage!.cacheCreationInputTokens).toBeUndefined();
+      expect(session.tokenUsage!.cacheReadInputTokens).toBeUndefined();
+    });
+
+    it('excludes output tokens from context utilization', async () => {
+      fs.addDirectory('/home/user/.claude/projects');
+      fs.addDirectory('/home/user/.claude/projects/-home-user-project');
+      fs.addFile(
+        '/home/user/.claude/projects/-home-user-project/session-nocache.jsonl',
+        SAMPLE_JSONL.withApiUsageNoCache
+      );
+
+      const result = await reader.readSessions();
+      const session = result.sessions[0];
+
+      // Output tokens (1000) should NOT be included in context utilization
+      // Only input tokens (5000) count toward context usage
+      expect(session.tokenUsage!.outputTokens).toBe(1000);
+      expect(session.tokenUsage!.inputTokens).toBe(5000);
+      // If output were included, it would be 6000/200000 = 0.03
+      // With only input, it's 5000/200000 = 0.025
+      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.025, 3);
     });
   });
 });

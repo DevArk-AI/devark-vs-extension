@@ -239,12 +239,14 @@ export class CursorSessionReader implements ISessionReader {
     };
 
     // Calculate token usage for context window tracking
+    // Cursor sessions use tiktoken estimates (no direct API access)
     const tokenUsageResult = calculateTokenUsage(convertedMessages);
     const tokenUsage: TokenUsageData = {
       inputTokens: tokenUsageResult.inputTokens,
       outputTokens: tokenUsageResult.outputTokens,
       totalTokens: tokenUsageResult.totalTokens,
       contextUtilization: tokenUsageResult.contextUtilization,
+      source: 'estimated',
     };
 
     return {

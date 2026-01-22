@@ -729,9 +729,6 @@ export class ClaudeSessionReader implements ISessionReader {
       ? this.buildApiTokenUsage(apiUsage, modelInfo?.primaryModel ?? undefined)
       : { ...calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined), source: 'estimated' as const };
 
-    // Debug: Log tokenUsage calculation
-    console.debug(`[ClaudeSessionReader] Session ${metadata.id.substring(0, 30)}... tokenUsage: contextUtil=${tokenUsage.contextUtilization?.toFixed(3)}, total=${tokenUsage.totalTokens}, source=${tokenUsage.source}`);
-
     return {
       ...metadata,
       messages,
@@ -791,19 +788,24 @@ export class ClaudeSessionReader implements ISessionReader {
   /**
    * Build token usage data from actual API response data.
    * Uses the LAST turn's token counts since input_tokens already includes full conversation history.
+   *
+   * With prompt caching, input_tokens only contains delta/new tokens.
+   * The actual context includes: input_tokens + cache_read_input_tokens + cache_creation_input_tokens
    */
   private buildApiTokenUsage(
     apiUsage: { lastInput: number; lastOutput: number; lastCacheCreation: number; lastCacheRead: number },
     primaryModel?: string
   ): TokenUsageData {
-    // Context = last input (includes all history) + last output
+    // Context = cached history + new input (caching-aware calculation)
+    // Output tokens don't count toward context utilization
+    const contextSize = apiUsage.lastInput + apiUsage.lastCacheCreation + apiUsage.lastCacheRead;
     const totalTokens = apiUsage.lastInput + apiUsage.lastOutput;
     const contextWindow = CLAUDE_CONTEXT_WINDOWS[primaryModel ?? 'default'] ?? CLAUDE_CONTEXT_WINDOWS.default;
     return {
       inputTokens: apiUsage.lastInput,
       outputTokens: apiUsage.lastOutput,
       totalTokens,
-      contextUtilization: Math.min(totalTokens / contextWindow, 1),
+      contextUtilization: Math.min(contextSize / contextWindow, 1),
       cacheCreationInputTokens: apiUsage.lastCacheCreation,
       cacheReadInputTokens: apiUsage.lastCacheRead,
       source: 'api',

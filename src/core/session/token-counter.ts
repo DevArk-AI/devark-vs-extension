@@ -82,19 +82,21 @@ export function countMessageTokens(
 
 /**
  * Estimate context utilization as a percentage (0-1).
- * @param totalTokens Total tokens used in the session
+ * Note: Only input tokens count toward context utilization.
+ * Output tokens are generated and don't consume context window space.
+ * @param contextTokens Input tokens that consume context window (excludes output)
  * @param model Optional model name to get specific context window
  * @returns Context utilization ratio (0-1)
  */
 export function estimateContextUtilization(
-  totalTokens: number,
+  contextTokens: number,
   model?: string
 ): number {
   const contextWindow = model
     ? CLAUDE_CONTEXT_WINDOWS[model] ?? CLAUDE_CONTEXT_WINDOWS.default
     : CLAUDE_CONTEXT_WINDOWS.default;
 
-  const utilization = totalTokens / contextWindow;
+  const utilization = contextTokens / contextWindow;
   // Cap at 1.0 (100%) in case tokens exceed context window
   return Math.min(utilization, 1);
 }
@@ -111,6 +113,7 @@ export interface TokenUsage {
 
 /**
  * Calculate token usage for a session from its messages.
+ * Context utilization is based on input tokens only (output doesn't consume context).
  * @param messages Array of messages with role and content
  * @param model Optional model name for context window size
  * @returns Token usage data including context utilization
@@ -120,7 +123,8 @@ export function calculateTokenUsage(
   model?: string
 ): TokenUsage {
   const { inputTokens, outputTokens, totalTokens } = countMessageTokens(messages);
-  const contextUtilization = estimateContextUtilization(totalTokens, model);
+  // Only input tokens count toward context utilization
+  const contextUtilization = estimateContextUtilization(inputTokens, model);
 
   return {
     inputTokens,
