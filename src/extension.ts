@@ -11,6 +11,7 @@ import { LLMManager } from './llm/llm-manager';
 import { SettingsManager } from './llm/settings-manager';
 import { ExtensionState } from './extension-state';
 import { createStatusBarManager } from './status-bar/StatusBarManager';
+import { createSessionRingsManager } from './status-bar/SessionRingsManager';
 import { createExtensionServices } from './di/container';
 import { UnifiedSettingsService } from './services/UnifiedSettingsService';
 import { WorkspaceContextService } from './services/WorkspaceContextService';
@@ -154,6 +155,10 @@ export async function activate(context: vscode.ExtensionContext) {
   MenuPanelV2.setStatusBarManager(statusBarManager);
   MenuSidebarView.setStatusBarManager(statusBarManager);
 
+  // Create session rings manager (shows session progress in status bar)
+  // Note: Manager is initialized and managed via context.subscriptions
+  createSessionRingsManager(context);
+
   // Set extension context for persistent storage
   MenuPanelV2.setExtensionContext(context);
   MenuSidebarView.setExtensionContext(context);
@@ -186,6 +191,23 @@ export async function activate(context: vscode.ExtensionContext) {
     MenuPanelV2.render(context.extensionUri);
   });
   context.subscriptions.push(showMenuCommand);
+
+  // Register command: devark.openSession (opens panel and switches to session)
+  // For now, just opens the panel - session switching can be added later via webview state
+  const openSessionCommand = vscode.commands.registerCommand(
+    'devark.openSession',
+    async (args?: { sessionId?: string }) => {
+      // Open the panel
+      MenuPanelV2.render(context.extensionUri);
+
+      // TODO: Add session switching via webview state or global state
+      // For now, clicking a session ring opens the DevArk panel
+      if (args?.sessionId) {
+        console.log(`[Extension] openSession called with sessionId: ${args.sessionId}`);
+      }
+    }
+  );
+  context.subscriptions.push(openSessionCommand);
 
   // Register sidebar webview provider
   const sidebarProvider = new MenuSidebarView(context.extensionUri);

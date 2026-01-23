@@ -38,7 +38,7 @@ export class StatusBarManager {
 
     // Set command to open Co-Pilot panel when clicked
     this.statusBarItem.command = 'devark.showMenu';
-    this.statusBarItem.tooltip = 'Open Vibe-Log Co-Pilot';
+    this.statusBarItem.tooltip = 'Open DevArk';
 
     // Initial render
     this.render();
@@ -153,7 +153,7 @@ export class StatusBarManager {
 
     // Update tooltip with more details
     const tooltipLines = [
-      'Vibe-Log Co-Pilot',
+      'DevArk',
       '─────────────────',
       `Average Score: ${promptCount > 0 ? avgScore.toFixed(1) + '/10' : 'No data'}`,
       `Prompts Today: ${promptCount}`,
