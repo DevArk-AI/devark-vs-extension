@@ -26,6 +26,14 @@ After you're done coding, DevArk shows you what happened:
 - **Weekly snapshots** - Which projects got attention, where you got stuck, how your prompting improved over time
 - **Focus patterns** - When you stayed on task vs. went exploring
 
+## Status Bar & Activity Rings
+
+Stay aware of your coding session at a glance:
+
+- **Status bar indicator** - Shows your current session duration and prompt count right in VS Code
+- **Activity rings** - Visual progress rings showing session activity, prompt quality, and goal completion
+- **Goal tracking** - Set a goal for your session and watch your progress as you work
+
 ## How It Works
 
 1. **Install** the extension and connect to your LLM provider

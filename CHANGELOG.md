@@ -2,6 +2,12 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.13] - 2026-01-23
+
+### Added
+- Publish to Open VSX Registry in addition to VS Code Marketplace
+- Updated README with status bar and activity rings documentation
+
 ## [0.1.12] - 2026-01-23
 
 ### Added
