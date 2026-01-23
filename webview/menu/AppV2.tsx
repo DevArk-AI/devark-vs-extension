@@ -308,6 +308,15 @@ export function AppV2() {
           dispatch({ type: 'SET_EDITOR_INFO', payload: message.data });
           break;
 
+        // Handle session selection from status bar ring click
+        case 'selectSession':
+          if (message.data?.sessionId) {
+            dispatch({ type: 'SET_ACTIVE_SESSION', payload: message.data.sessionId });
+            // Request full session details from extension
+            postMessage('switchSession', { sessionId: message.data.sessionId });
+          }
+          break;
+
         // V2 Message handlers (Stream A/B integration)
         case 'v2ActiveSession':
           // Active session info from SessionManagerService
