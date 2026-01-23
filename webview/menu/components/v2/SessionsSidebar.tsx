@@ -9,10 +9,23 @@
  * - Active/idle status
  */
 
-import { useMemo } from 'react';
-import { ActivityRings, type RingData } from './ActivityRings';
+import { useMemo, useState } from 'react';
+import { ActivityRings } from './ActivityRings';
 import type { Session, Project, CoachingData } from '../../state/types-v2';
 import { PLATFORM_CONFIG } from '../../state/types-v2';
+import {
+  formatSessionDuration,
+  getSessionDisplayName,
+  isGoalProgressPending,
+  computeRingData,
+} from '../../utils/session-utils';
+
+/** Session limits per group before "Load more" is shown */
+const SESSION_LIMITS = {
+  today: 10,
+  yesterday: 5,
+  earlier: 5,
+};
 
 interface SessionsSidebarProps {
   projects: Project[];
@@ -21,73 +34,6 @@ interface SessionsSidebarProps {
   coachingBySession?: Record<string, CoachingData>; // Cached coaching per session
   theme?: 'light' | 'dark' | 'high-contrast';
   onSessionSelect: (sessionId: string) => void;
-}
-
-/**
- * Format session duration for display
- */
-function formatDuration(startTime: Date, lastActivityTime: Date): string {
-  const diffMs = lastActivityTime.getTime() - startTime.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return '<1m';
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-}
-
-/**
- * Get display name for session (longer version for sidebar)
- */
-function getSessionDisplayName(session: Session, coaching?: CoachingData | null): string {
-  if (session.customName) {
-    return session.customName;
-  }
-  if (session.goal) {
-    return session.goal;
-  }
-  // Show "Analyzing…" if session has prompts but no title yet
-  if (session.promptCount >= 1 && isGoalProgressPending(session, coaching)) {
-    return 'Analyzing…';
-  }
-  return PLATFORM_CONFIG[session.platform].label;
-}
-
-/**
- * Check if goal progress is in a "pending" state (not yet analyzed)
- * Pending means: no coaching progress AND no session progress (undefined, not 0)
- */
-function isGoalProgressPending(
-  session: Session,
-  coaching?: CoachingData | null
-): boolean {
-  const coachingProgress = coaching?.analysis?.goalProgress?.after;
-  const sessionProgress = session.goalProgress;
-  // Pending if both are undefined (not 0, which is a valid analyzed value)
-  return coachingProgress === undefined && sessionProgress === undefined;
-}
-
-/**
- * Map session data to ring fill values (0-1)
- */
-function computeRingData(session: Session, coaching?: CoachingData | null): RingData {
-  const coachingProgress = coaching?.analysis?.goalProgress?.after;
-  const sessionProgress = session.goalProgress;
-  const goalProgress = coachingProgress ?? sessionProgress ?? 0;
-  const goal = goalProgress / 100;
-
-  const context = session.tokenUsage?.contextUtilization ?? 0;
-
-  // Quality ring: Based on averageScore (0-10 scale)
-  const quality = session.averageScore !== undefined
-    ? session.averageScore / 10
-    : 0;
-
-  return { goal, context, quality };
 }
 
 /**
@@ -112,7 +58,7 @@ function SessionListItem({
   );
 
   const displayName = getSessionDisplayName(session, coaching);
-  const duration = formatDuration(session.startTime, session.lastActivityTime);
+  const duration = formatSessionDuration(session.startTime, session.lastActivityTime);
   const platformConfig = PLATFORM_CONFIG[session.platform];
 
   // Check if goal progress is pending (not yet analyzed)
@@ -220,6 +166,11 @@ export function SessionsSidebar({
   theme = 'dark',
   onSessionSelect,
 }: SessionsSidebarProps) {
+  // Track which groups are expanded (for showing more sessions)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  // Track if Earlier group is collapsed (collapsed by default)
+  const [earlierCollapsed, setEarlierCollapsed] = useState(true);
+
   // Flatten all sessions from all projects and sort by lastActivityTime
   const allSessions = useMemo(() => {
     const sessions = projects.flatMap((p) => p.sessions);
@@ -230,6 +181,45 @@ export function SessionsSidebar({
 
   // Group sessions by time period
   const groupedSessions = useMemo(() => groupSessionsByTime(allSessions), [allSessions]);
+
+  // Helper to toggle expanded state for a group
+  const toggleExpanded = (group: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  };
+
+  // Get visible sessions for a group (respects limits)
+  const getVisibleSessions = (sessions: Session[], group: keyof typeof SESSION_LIMITS) => {
+    const limit = SESSION_LIMITS[group];
+    const isExpanded = expandedGroups.has(group);
+    return isExpanded ? sessions : sessions.slice(0, limit);
+  };
+
+  // Check if a group has more sessions than the limit
+  const hasMore = (sessions: Session[], group: keyof typeof SESSION_LIMITS) => {
+    return sessions.length > SESSION_LIMITS[group] && !expandedGroups.has(group);
+  };
+
+  // Render session items for a group
+  const renderSessionItems = (sessions: Session[]) => {
+    return sessions.map((session) => (
+      <SessionListItem
+        key={session.id}
+        session={session}
+        coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
+        isSelected={session.id === activeSessionId}
+        theme={theme}
+        onClick={() => onSessionSelect(session.id)}
+      />
+    ));
+  };
 
   if (allSessions.length === 0) {
     return (
@@ -255,48 +245,62 @@ export function SessionsSidebar({
         {groupedSessions.today.length > 0 && (
           <div className="vl-sessions-sidebar__group">
             <div className="vl-sessions-sidebar__group-header">Today</div>
-            {groupedSessions.today.map((session) => (
-              <SessionListItem
-                key={session.id}
-                session={session}
-                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
-                isSelected={session.id === activeSessionId}
-                theme={theme}
-                onClick={() => onSessionSelect(session.id)}
-              />
-            ))}
+            {renderSessionItems(getVisibleSessions(groupedSessions.today, 'today'))}
+            {hasMore(groupedSessions.today, 'today') && (
+              <button
+                className="vl-sessions-sidebar__load-more"
+                onClick={() => toggleExpanded('today')}
+              >
+                Load more ({groupedSessions.today.length - SESSION_LIMITS.today} more)
+              </button>
+            )}
           </div>
         )}
 
         {groupedSessions.yesterday.length > 0 && (
           <div className="vl-sessions-sidebar__group">
             <div className="vl-sessions-sidebar__group-header">Yesterday</div>
-            {groupedSessions.yesterday.map((session) => (
-              <SessionListItem
-                key={session.id}
-                session={session}
-                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
-                isSelected={session.id === activeSessionId}
-                theme={theme}
-                onClick={() => onSessionSelect(session.id)}
-              />
-            ))}
+            {renderSessionItems(getVisibleSessions(groupedSessions.yesterday, 'yesterday'))}
+            {hasMore(groupedSessions.yesterday, 'yesterday') && (
+              <button
+                className="vl-sessions-sidebar__load-more"
+                onClick={() => toggleExpanded('yesterday')}
+              >
+                Load more ({groupedSessions.yesterday.length - SESSION_LIMITS.yesterday} more)
+              </button>
+            )}
           </div>
         )}
 
         {groupedSessions.earlier.length > 0 && (
           <div className="vl-sessions-sidebar__group">
-            <div className="vl-sessions-sidebar__group-header">Earlier</div>
-            {groupedSessions.earlier.map((session) => (
-              <SessionListItem
-                key={session.id}
-                session={session}
-                coaching={coachingBySession[session.id] ?? (session.id === activeSessionId ? coaching : undefined)}
-                isSelected={session.id === activeSessionId}
-                theme={theme}
-                onClick={() => onSessionSelect(session.id)}
-              />
-            ))}
+            <button
+              className="vl-sessions-sidebar__group-header vl-sessions-sidebar__group-header--collapsible"
+              onClick={() => setEarlierCollapsed(!earlierCollapsed)}
+              aria-expanded={!earlierCollapsed}
+            >
+              <span className={`vl-sessions-sidebar__collapse-icon ${earlierCollapsed ? '' : 'expanded'}`}>
+                {/* Chevron icon */}
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M4.5 2L8.5 6L4.5 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              </span>
+              <span>Earlier</span>
+              <span className="vl-sessions-sidebar__group-count">{groupedSessions.earlier.length}</span>
+            </button>
+            {!earlierCollapsed && (
+              <>
+                {renderSessionItems(getVisibleSessions(groupedSessions.earlier, 'earlier'))}
+                {hasMore(groupedSessions.earlier, 'earlier') && (
+                  <button
+                    className="vl-sessions-sidebar__load-more"
+                    onClick={() => toggleExpanded('earlier')}
+                  >
+                    Load more ({groupedSessions.earlier.length - SESSION_LIMITS.earlier} more)
+                  </button>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

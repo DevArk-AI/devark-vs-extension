@@ -10,26 +10,13 @@
 
 import type { Session } from '../../state/types-v2';
 import { PLATFORM_CONFIG } from '../../state/types-v2';
+import { formatSessionDuration } from '../../utils/session-utils';
 
 interface SessionCardProps {
   session: Session;
   isActive: boolean;
   onSelect: () => void;
   compact?: boolean;
-}
-
-// Format duration
-function formatDuration(startTime: Date, endTime: Date): string {
-  const diffMs = endTime.getTime() - startTime.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
 }
 
 export function SessionCard({
@@ -39,7 +26,7 @@ export function SessionCard({
   compact = false,
 }: SessionCardProps) {
   const platformConfig = PLATFORM_CONFIG[session.platform];
-  const duration = formatDuration(session.startTime, session.lastActivityTime);
+  const duration = formatSessionDuration(session.startTime, session.lastActivityTime);
 
   if (compact) {
     return (

@@ -11,9 +11,17 @@
  */
 
 import { useMemo } from 'react';
-import { ActivityRings, type RingData } from './ActivityRings';
+import { ActivityRings } from './ActivityRings';
 import type { Session, CoachingData } from '../../state/types-v2';
 import { PLATFORM_CONFIG } from '../../state/types-v2';
+import {
+  getSessionDisplayName as getDisplayName,
+  isGoalProgressPending,
+  isSessionAnalyzing,
+  computeRingData,
+  getSessionTooltipTitle,
+  type RingData,
+} from '../../utils/session-utils';
 
 export interface SessionRingCardProps {
   /** Session data */
@@ -30,105 +38,8 @@ export interface SessionRingCardProps {
   isSelected?: boolean;
 }
 
-/**
- * Get display name for session
- * Priority: customName > goal (truncated) > "Analyzing..." (if pending) > platform label
- */
-function getSessionDisplayName(
-  session: Session,
-  coaching?: CoachingData | null
-): string {
-  if (session.customName) {
-    return session.customName.length > 12
-      ? session.customName.slice(0, 12) + '…'
-      : session.customName;
-  }
-  if (session.goal) {
-    return session.goal.length > 12
-      ? session.goal.slice(0, 12) + '…'
-      : session.goal;
-  }
-  // Show "Analyzing..." if session has prompts but no title yet
-  if (session.promptCount >= 1 && isGoalProgressPending(session, coaching)) {
-    return 'Analyzing…';
-  }
-  return PLATFORM_CONFIG[session.platform].label;
-}
-
-/**
- * Check if goal progress is in a "pending" state (not yet analyzed)
- * Pending means: no coaching progress AND no session progress (undefined, not 0)
- */
-function isGoalProgressPending(
-  session: Session,
-  coaching?: CoachingData | null
-): boolean {
-  const coachingProgress = coaching?.analysis?.goalProgress?.after;
-  const sessionProgress = session.goalProgress;
-  // Pending if both are undefined (not 0, which is a valid analyzed value)
-  return coachingProgress === undefined && sessionProgress === undefined;
-}
-
-/**
- * Check if session is currently being analyzed (has prompts but no title/goal yet)
- * Returns true if the session appears to be waiting for analysis results
- */
-function isSessionAnalyzing(
-  session: Session,
-  coaching?: CoachingData | null
-): boolean {
-  // Session needs prompts to be worth analyzing
-  if (session.promptCount < 1) return false;
-
-  // If we have a custom name or goal, analysis is complete
-  if (session.customName || session.goal) return false;
-
-  // If we have goal progress data, analysis is complete (even if 0)
-  if (!isGoalProgressPending(session, coaching)) return false;
-
-  return true;
-}
-
-/**
- * Map session data to ring fill values (0-1)
- */
-function computeRingData(
-  session: Session,
-  coaching?: CoachingData | null
-): RingData {
-  // Goal ring: Use coaching goalProgress.after if available,
-  // otherwise fall back to session.goalProgress (LLM-inferred),
-  // otherwise 0
-  const coachingProgress = coaching?.analysis?.goalProgress?.after;
-  const sessionProgress = session.goalProgress;
-  const goalProgress = coachingProgress ?? sessionProgress ?? 0;
-  const goal = goalProgress / 100; // Convert 0-100 to 0-1
-
-  // Context ring: Uses real token usage if available, shows 0 if not calculated
-  // contextUtilization is 0-1 scale representing how much of the context window is used
-  const context = session.tokenUsage?.contextUtilization ?? 0;
-
-  // Quality ring: Based on averageScore (0-10 scale)
-  const quality = session.averageScore !== undefined
-    ? session.averageScore / 10
-    : 0;
-
-  return { goal, context, quality };
-}
-
-/**
- * Get tooltip title from session
- * Priority: customName > goal > platform label + "Session"
- */
-function getTooltipTitle(session: Session, platformLabel: string): string {
-  if (session.customName) {
-    return session.customName;
-  }
-  if (session.goal) {
-    return session.goal;
-  }
-  return `${platformLabel} Session`;
-}
+/** Maximum display name length for ring card (compact view) */
+const RING_CARD_MAX_NAME_LENGTH = 12;
 
 /**
  * Ring tooltip content component
@@ -169,7 +80,7 @@ function RingTooltip({
   const isPending = isGoalProgressPending(session, coaching);
   const isAnalyzing = isSessionAnalyzing(session, coaching);
 
-  const title = getTooltipTitle(session, platformLabel);
+  const title = getSessionTooltipTitle(session, platformLabel);
   // Show platform at bottom only if we have a goal/customName (otherwise it's already in title)
   const showPlatformFooter = session.customName || session.goal;
 
@@ -261,7 +172,7 @@ export function SessionRingCard({
     [session, coaching]
   );
 
-  const displayName = getSessionDisplayName(session, coaching);
+  const displayName = getDisplayName(session, coaching, { maxLength: RING_CARD_MAX_NAME_LENGTH });
   const platformConfig = PLATFORM_CONFIG[session.platform];
   const analyzing = isSessionAnalyzing(session, coaching);
 

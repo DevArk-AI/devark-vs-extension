@@ -10,6 +10,10 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Platform, Project, Session } from '../../state/types-v2';
 import { PLATFORM_CONFIG } from '../../state/types-v2';
+import {
+  formatSessionDuration,
+  getSessionDisplayName,
+} from '../../utils/session-utils';
 
 const MAX_SESSIONS = 10;
 
@@ -26,23 +30,6 @@ interface ActiveSessionSwitcherProps {
   projects: Project[];
   activeSessionId?: string;
   onSessionSelect: (sessionId: string) => void;
-}
-
-/**
- * Format duration between two dates
- */
-function formatDuration(startTime: Date, endTime: Date): string {
-  const diffMs = new Date(endTime).getTime() - new Date(startTime).getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return '<1m';
-  if (diffMins < 60) return `${diffMins}m`;
-
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
 }
 
 /**
@@ -86,24 +73,6 @@ function groupSessionsByPlatform(sessions: ActiveSession[]): SessionGroup[] {
       (a, b) => new Date(b.lastActivityTime).getTime() - new Date(a.lastActivityTime).getTime()
     ),
   }));
-}
-
-/**
- * Get the display name for a session
- * Priority: 1) customName, 2) goal, 3) projectName
- * Format: "Name (project-name)" or just "project-name" if no name/goal
- */
-function getSessionDisplayName(session: ActiveSession): string {
-  const name = session.customName || session.goal;
-
-  if (name) {
-    // Truncate long names and add project in parenthesis
-    const truncated = name.length > 30 ? name.substring(0, 27) + '...' : name;
-    return `${truncated} (${session.projectName})`;
-  }
-
-  // No customName or goal - just show project name
-  return session.projectName;
 }
 
 export function ActiveSessionSwitcher({
@@ -202,8 +171,12 @@ export function ActiveSessionSwitcher({
                 <div className="vl-session-group-items">
                   {group.sessions.map((session) => {
                     const isSelected = session.id === activeSessionId;
-                    const displayName = getSessionDisplayName(session);
-                    const duration = formatDuration(session.startTime, session.lastActivityTime);
+                    const displayName = getSessionDisplayName(session, null, {
+                      maxLength: 30,
+                      includeProject: true,
+                      projectName: session.projectName,
+                    });
+                    const duration = formatSessionDuration(session.startTime, session.lastActivityTime);
 
                     return (
                       <button

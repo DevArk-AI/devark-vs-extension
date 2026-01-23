@@ -47,7 +47,7 @@ export interface GoalServiceConfig {
 }
 
 const DEFAULT_CONFIG: GoalServiceConfig = {
-  minPromptsForProgressAnalysis: 2,
+  minPromptsForProgressAnalysis: 1, // Trigger analysis on first prompt
   progressAnalysisInterval: 3, // Analyze every 3 prompts
   progressAnalysisDebounceMs: 30000, // 30 seconds minimum between analyses
 };
@@ -449,7 +449,7 @@ export class GoalService {
     })));
 
     // Filter to sessions that need analysis:
-    // - Has prompts >= minPromptsForProgressAnalysis (2)
+    // - Has prompts >= minPromptsForProgressAnalysis (1)
     // - No goalProgress set yet (undefined or 0)
     // Note: Claude Code sessions now supported - prompts are loaded on-demand in analyzeGoalProgress
     const sessionsNeedingAnalysis = topSessions.filter(s => {

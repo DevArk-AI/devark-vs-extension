@@ -8863,6 +8863,65 @@
   color: var(--vl-text-muted);
 }
 
+/* Load more button */
+.vl-sessions-sidebar__load-more {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-xs);
+  background: transparent;
+  border: 1px dashed var(--vl-border);
+  border-radius: var(--radius-md);
+  color: var(--vl-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-sessions-sidebar__load-more:hover {
+  background: var(--vl-hover-bg);
+  border-color: var(--vl-accent-muted);
+  color: var(--vl-text-primary);
+}
+
+/* Collapsible group header */
+.vl-sessions-sidebar__group-header--collapsible {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-sm);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vl-sessions-sidebar__group-header--collapsible:hover {
+  background: var(--vl-hover-bg);
+  border-radius: var(--radius-sm);
+}
+
+.vl-sessions-sidebar__collapse-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vl-text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.vl-sessions-sidebar__collapse-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.vl-sessions-sidebar__group-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--vl-text-muted);
+  background: var(--vl-subtle-bg);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
 /* Session List Item */
 .vl-session-list-item {
   display: flex;
