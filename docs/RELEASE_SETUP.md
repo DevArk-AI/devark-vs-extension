@@ -56,6 +56,9 @@ open https://github.com/DevArk-AI/devark-vs-extension/releases
 # Check VS Code Marketplace (wait ~5 minutes for processing)
 open https://marketplace.visualstudio.com/items?itemName=devark.devark-extension
 
+# Check Open VSX Registry (wait ~5 minutes for processing)
+open https://open-vsx.org/extension/devark/devark-extension
+
 # Test installation in VS Code
 # Search for "DevArk" in Extensions
 ```
@@ -66,8 +69,10 @@ open https://marketplace.visualstudio.com/items?itemName=devark.devark-extension
 
 ### Prerequisites
 1. **Azure DevOps Account**: Required for VS Code Marketplace publishing
-2. **GitHub Access**: Must have push access to the repository
-3. **VS Marketplace Token**: Required for GitHub Actions
+2. **Open VSX Account**: Required for Open VSX Registry publishing
+3. **GitHub Access**: Must have push access to the repository
+4. **VS Marketplace Token**: Required for GitHub Actions
+5. **Open VSX Token**: Required for GitHub Actions
 
 ### Generate VS Marketplace Token
 1. Go to [Azure DevOps](https://dev.azure.com)
@@ -80,12 +85,23 @@ open https://marketplace.visualstudio.com/items?itemName=devark.devark-extension
    - Scopes: Click **Show all scopes** → check **Marketplace > Manage**
 5. Click **Create** and copy the token
 
-### Add Token to GitHub
+### Generate Open VSX Token
+1. Go to [Open VSX](https://open-vsx.org) and sign in with GitHub
+2. Go to **User Settings** → **Access Tokens** (https://open-vsx.org/user-settings/tokens)
+3. Click **Generate New Token**
+4. Give it a description (e.g., `GitHub Actions Publish`)
+5. Click **Generate** and copy the token
+
+### Add Tokens to GitHub
 1. Go to repository **Settings** → **Secrets and variables** → **Actions**
 2. Click **New repository secret**
-3. Name: `VS_MARKETPLACE_TOKEN`
-4. Paste your Azure DevOps PAT
-5. Click **Add secret**
+3. Add VS Marketplace token:
+   - Name: `VS_MARKETPLACE_TOKEN`
+   - Paste your Azure DevOps PAT
+4. Add Open VSX token:
+   - Name: `OPEN_VSX_TOKEN`
+   - Paste your Open VSX token
+5. Click **Add secret** for each
 
 ---
 

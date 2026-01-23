@@ -103,9 +103,16 @@ jobs:
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
+        id: publishToVSMarketplace
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
+
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: ${{ steps.publishToVSMarketplace.outputs.vsixPath }}
 
       - name: Extract version
         id: get_version
@@ -125,7 +132,9 @@ jobs:
           body: |
             ## VS Code Extension v${{ steps.get_version.outputs.VERSION }}
 
-            Install from [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=devark.devark-extension)
+            **Install from:**
+            - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=devark.devark-extension)
+            - [Open VSX Registry](https://open-vsx.org/extension/devark/devark-extension)
 
             Or search for "DevArk" in VS Code Extensions.
           draft: false
