@@ -36,8 +36,8 @@ export class StatusBarManager {
       100
     );
 
-    // Set command to open Co-Pilot panel when clicked
-    this.statusBarItem.command = 'devark.showMenu';
+    // Set command to focus sidebar when clicked
+    this.statusBarItem.command = 'devark-sidebar-webview.focus';
     this.statusBarItem.tooltip = 'Open DevArk';
 
     // Initial render

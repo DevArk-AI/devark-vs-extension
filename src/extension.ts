@@ -192,16 +192,15 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(showMenuCommand);
 
-  // Register command: devark.openSession (opens panel and switches to session)
-  // For now, just opens the panel - session switching can be added later via webview state
+  // Register command: devark.openSession (focuses sidebar and switches to session)
+  // Focuses the existing sidebar instead of opening a new panel
   const openSessionCommand = vscode.commands.registerCommand(
     'devark.openSession',
     async (args?: { sessionId?: string }) => {
-      // Open the panel
-      MenuPanelV2.render(context.extensionUri);
+      // Focus the sidebar (reveals it if hidden)
+      await vscode.commands.executeCommand('devark-sidebar-webview.focus');
 
       // TODO: Add session switching via webview state or global state
-      // For now, clicking a session ring opens the DevArk panel
       if (args?.sessionId) {
         console.log(`[Extension] openSession called with sessionId: ${args.sessionId}`);
       }
