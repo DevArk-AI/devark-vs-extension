@@ -21,7 +21,7 @@ export interface MessageSummary {
  * Extract project name from full path.
  */
 export function extractProjectName(projectPath: string): string {
-  const parts = projectPath.split('/').filter(Boolean);
+  const parts = projectPath.split(/[/\\]/).filter(Boolean);
   return parts[parts.length - 1] ?? 'unknown';
 }
 

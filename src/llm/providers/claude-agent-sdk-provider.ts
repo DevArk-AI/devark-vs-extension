@@ -74,12 +74,39 @@ function isSDKInstalled(): boolean {
   }
 }
 
+// Clean up Claude Code's project folder for a given temp directory path
+// Claude Code stores projects at ~/.claude/projects/{sanitized-path}
+function cleanupClaudeProjectFolder(tempDirPath: string): void {
+  try {
+    const homeDir = os.homedir();
+    const claudeProjectsDir = path.join(homeDir, '.claude', 'projects');
+
+    // Convert path to Claude's format (cross-platform):
+    // - Windows: C:\Users\foo\temp -> C--Users-foo-temp
+    // - macOS:   /var/folders/xyz  -> var-folders-xyz
+    // - Linux:   /tmp/devark       -> tmp-devark
+    // Regex handles: ':' (Win drive), '\' (Win separator), '/' (Unix separator)
+    const sanitizedPath = tempDirPath
+      .replace(/[:\\/]/g, '-')
+      .replace(/^-+/, ''); // Remove leading dashes (from Unix paths starting with /)
+    const projectFolder = path.join(claudeProjectsDir, sanitizedPath);
+
+    if (fs.existsSync(projectFolder)) {
+      fs.rmSync(projectFolder, { recursive: true, force: true });
+    }
+  } catch {
+    // Ignore cleanup errors - not critical
+  }
+}
+
 // Clean up temporary query directory
 function cleanupTempDir(dirPath: string): void {
   try {
     if (fs.existsSync(dirPath)) {
       fs.rmSync(dirPath, { recursive: true, force: true });
     }
+    // Also clean up Claude Code's project folder for this path
+    cleanupClaudeProjectFolder(dirPath);
   } catch {
     // Ignore cleanup errors - not critical
   }

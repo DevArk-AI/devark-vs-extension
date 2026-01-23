@@ -40,6 +40,22 @@ describe('SessionTransformer', () => {
     it('handles relative path', () => {
       expect(extractProjectName('foo/bar/baz')).toBe('baz');
     });
+
+    it('extracts last path segment from Windows absolute path', () => {
+      expect(extractProjectName('C:\\Users\\dev\\my-project')).toBe('my-project');
+    });
+
+    it('extracts last path segment from Windows path with lowercase drive', () => {
+      expect(extractProjectName('c:\\devark\\devark-test')).toBe('devark-test');
+    });
+
+    it('handles mixed separators', () => {
+      expect(extractProjectName('C:\\dev/my-project')).toBe('my-project');
+    });
+
+    it('handles Windows relative path', () => {
+      expect(extractProjectName('foo\\bar\\baz')).toBe('baz');
+    });
   });
 
   describe('summarizeMessages()', () => {

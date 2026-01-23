@@ -241,8 +241,7 @@ export const IGNORED_EXTENSIONS = new Set([
  */
 function getFilename(filePath: string): string {
   if (!filePath) return '';
-  // Handle both forward and back slashes
-  const parts = filePath.replace(/\\/g, '/').split('/');
+  const parts = filePath.split(/[/\\]/);
   return parts[parts.length - 1] || '';
 }
 

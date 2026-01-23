@@ -44,19 +44,25 @@ function formatStartTime(startTime: Date): string {
 function abbreviatePath(path: string | undefined): string {
   if (!path) return '';
 
-  // Replace home directory with ~
-  const homeDir = path.match(/^\/Users\/[^/]+/) || path.match(/^\/home\/[^/]+/);
+  // Normalize to forward slashes for display
+  let normalized = path.replace(/\\/g, '/');
+
+  // Replace home directory with ~ (Unix and Windows)
+  const homeDir =
+    normalized.match(/^\/Users\/[^/]+/) ||
+    normalized.match(/^\/home\/[^/]+/) ||
+    normalized.match(/^[A-Za-z]:\/Users\/[^/]+/);
   if (homeDir) {
-    path = path.replace(homeDir[0], '~');
+    normalized = normalized.replace(homeDir[0], '~');
   }
 
   // If still too long, show last 2-3 segments
-  const segments = path.split('/').filter(Boolean);
+  const segments = normalized.split('/').filter(Boolean);
   if (segments.length > 3) {
     return '.../' + segments.slice(-2).join('/');
   }
 
-  return path;
+  return normalized;
 }
 
 export function SessionInfoHeader({ session, project }: SessionInfoHeaderProps) {
