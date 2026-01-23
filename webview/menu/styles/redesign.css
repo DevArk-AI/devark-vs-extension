@@ -4840,6 +4840,59 @@
   margin: 0;
 }
 
+/* Slash Commands Section */
+.vl-how-scores-slash-commands {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: var(--radius-md);
+}
+
+.vl-slash-commands-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.vl-slash-icon {
+  font-size: 14px;
+}
+
+.vl-slash-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--vl-accent);
+}
+
+.vl-slash-description {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--vscode-foreground);
+}
+
+.vl-slash-description code {
+  background: var(--vscode-textBlockQuote-background);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.vl-slash-benefits {
+  margin: 0;
+  padding-left: var(--space-lg);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vscode-descriptionForeground);
+}
+
+.vl-slash-benefits li {
+  margin-bottom: 2px;
+}
+
 /* ========================================
    A4: DAILY STATS & PEER COMPARISON
    ======================================== */

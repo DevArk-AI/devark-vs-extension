@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isActualUserPrompt, countActualUserPrompts } from '../prompt-utils';
+import { isActualUserPrompt, countActualUserPrompts, detectSlashCommand } from '../prompt-utils';
 
 describe('isActualUserPrompt', () => {
   it('should return true for regular user prompts', () => {
@@ -90,5 +90,176 @@ describe('countActualUserPrompts', () => {
       { role: 'user', content: 'How are you?' },
     ];
     expect(countActualUserPrompts(messages)).toBe(2);
+  });
+});
+
+describe('detectSlashCommand', () => {
+  describe('valid slash commands', () => {
+    it('should detect simple slash commands', () => {
+      const result = detectSlashCommand('/commit');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('commit');
+      expect(result.arguments).toBeUndefined();
+    });
+
+    it('should detect slash commands with arguments', () => {
+      const result = detectSlashCommand('/work-on-item VIB-123');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('work-on-item');
+      expect(result.arguments).toBe('VIB-123');
+    });
+
+    it('should detect slash commands with multiple arguments', () => {
+      const result = detectSlashCommand('/commit with multiple arguments here');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('commit');
+      expect(result.arguments).toBe('with multiple arguments here');
+    });
+
+    it('should detect kebab-case commands', () => {
+      const result = detectSlashCommand('/kebab-case-command');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('kebab-case-command');
+    });
+
+    it('should detect snake_case commands', () => {
+      const result = detectSlashCommand('/snake_case_command');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('snake_case_command');
+    });
+
+    it('should detect camelCase commands', () => {
+      const result = detectSlashCommand('/camelCase');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('camelCase');
+    });
+
+    it('should detect UPPERCASE commands', () => {
+      const result = detectSlashCommand('/UPPERCASE');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('UPPERCASE');
+    });
+
+    it('should detect single character commands', () => {
+      const result = detectSlashCommand('/a');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('a');
+    });
+
+    it('should detect commands with numbers', () => {
+      const result = detectSlashCommand('/test123');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('test123');
+    });
+
+    it('should detect namespaced commands with colons', () => {
+      const result = detectSlashCommand('/bmad:bmad-custom:workflows:quiz-master');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('bmad:bmad-custom:workflows:quiz-master');
+    });
+
+    it('should detect simple namespaced commands', () => {
+      const result = detectSlashCommand('/skill:sub-skill');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('skill:sub-skill');
+    });
+
+    it('should detect multi-level namespaces', () => {
+      const result = detectSlashCommand('/a:b:c:d');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('a:b:c:d');
+    });
+
+    it('should detect namespaced commands with arguments', () => {
+      const result = detectSlashCommand('/bmad:workflow:create my-project');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('bmad:workflow:create');
+      expect(result.arguments).toBe('my-project');
+    });
+  });
+
+  describe('whitespace handling', () => {
+    it('should trim leading whitespace', () => {
+      const result = detectSlashCommand('  /commit');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('commit');
+    });
+
+    it('should trim trailing whitespace', () => {
+      const result = detectSlashCommand('/commit  ');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.commandName).toBe('commit');
+    });
+
+    it('should trim arguments', () => {
+      const result = detectSlashCommand('/work-on-item   VIB-123   ');
+      expect(result.isSlashCommand).toBe(true);
+      expect(result.arguments).toBe('VIB-123');
+    });
+  });
+
+  describe('invalid slash commands', () => {
+    it('should reject commands starting with numbers', () => {
+      const result = detectSlashCommand('/123invalid');
+      expect(result.isSlashCommand).toBe(false);
+      expect(result.commandName).toBeUndefined();
+    });
+
+    it('should reject commands starting with hyphen', () => {
+      const result = detectSlashCommand('/-invalid');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should reject commands starting with underscore', () => {
+      const result = detectSlashCommand('/_invalid');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should reject slash followed by space', () => {
+      const result = detectSlashCommand('/ space');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should reject double slash', () => {
+      const result = detectSlashCommand('//double');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should reject regular prompts', () => {
+      const result = detectSlashCommand('not a slash command');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should reject prompts with slash in middle', () => {
+      const result = detectSlashCommand('please run /commit for me');
+      expect(result.isSlashCommand).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should return false for empty string', () => {
+      const result = detectSlashCommand('');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should return false for whitespace only', () => {
+      const result = detectSlashCommand('   ');
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should return false for null', () => {
+      const result = detectSlashCommand(null as unknown as string);
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should return false for undefined', () => {
+      const result = detectSlashCommand(undefined as unknown as string);
+      expect(result.isSlashCommand).toBe(false);
+    });
+
+    it('should return false for just a slash', () => {
+      const result = detectSlashCommand('/');
+      expect(result.isSlashCommand).toBe(false);
+    });
   });
 });

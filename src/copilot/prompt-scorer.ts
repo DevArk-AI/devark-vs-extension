@@ -23,6 +23,7 @@ import {
   createScoreBreakdown,
 } from '../services/types/score-types';
 import { getScoreExplainer } from './score-explainer';
+import { detectSlashCommand, SlashCommandInfo } from '../core/session/prompt-utils';
 
 /**
  * Legacy score breakdown for backward compatibility
@@ -65,6 +66,14 @@ export interface PromptScoreV2 extends PromptScore {
 }
 
 /**
+ * Calculate legacy overall score from 4 dimensions.
+ * Extracts the common calculation pattern used across multiple methods.
+ */
+function calculateLegacyOverall(clarity: number, specificity: number, context: number, actionability: number): number {
+  return Math.round(((clarity + specificity + context + actionability) / 4) * 10);
+}
+
+/**
  * Service for analyzing and scoring AI prompts
  */
 export class PromptScorer extends BaseCopilotTool<string, PromptScore> {
@@ -88,6 +97,12 @@ export class PromptScorer extends BaseCopilotTool<string, PromptScore> {
         return this.getMinimalScore('Prompt is empty or contains only whitespace');
       }
 
+      // Check for slash commands - they get high scores without LLM call
+      const slashInfo = detectSlashCommand(userPrompt);
+      if (slashInfo.isSlashCommand) {
+        return this.getSlashCommandScore(slashInfo);
+      }
+
       return await this.execute(userPrompt, onProgress, context);
     } catch (error) {
       console.error('[PromptScorer] Scoring failed:', error);
@@ -107,6 +122,13 @@ export class PromptScorer extends BaseCopilotTool<string, PromptScore> {
       // Validate first
       if (!userPrompt || userPrompt.trim().length === 0) {
         return this.getMinimalScoreV2('Prompt is empty or contains only whitespace');
+      }
+
+      // Check for slash commands BEFORE LLM scoring
+      // Slash commands are power-user shortcuts that should receive high scores
+      const slashInfo = detectSlashCommand(userPrompt);
+      if (slashInfo.isSlashCommand) {
+        return this.getSlashCommandScoreV2(slashInfo);
       }
 
       // Get legacy score first
@@ -267,10 +289,8 @@ Evaluate the prompt and return your scores in JSON format.`;
     const context = this.validateScore(parsed.context, 'context');
     const actionability = this.validateScore(parsed.actionability, 'actionability');
 
-    // Calculate overall score
-    const overall = Math.round(
-      ((clarity + specificity + context + actionability) / 4) * 10
-    );
+    // Calculate overall score using helper
+    const overall = calculateLegacyOverall(clarity, specificity, context, actionability);
 
     // Validate suggestions
     const suggestions = Array.isArray(parsed.suggestions)
@@ -336,10 +356,8 @@ Evaluate the prompt and return your scores in JSON format.`;
     const context = hasContext ? 6 : 4;
     const actionability = hasQuestion && hasSpecifics ? 7 : 5;
 
-    const overall = Math.round(((clarity + specificity + context + actionability) / 4) * 10);
-
     return {
-      overall,
+      overall: calculateLegacyOverall(clarity, specificity, context, actionability),
       clarity,
       specificity,
       context,
@@ -390,5 +408,78 @@ Evaluate the prompt and return your scores in JSON format.`;
   private getFallbackScoreV2(userPrompt: string, error: string): PromptScoreV2 {
     const legacyScore = this.getFallbackScore(userPrompt, error);
     return this.convertToV2Score(userPrompt, legacyScore);
+  }
+
+  /**
+   * Generate a high score for slash commands (legacy 4-dimension).
+   * Used by the deprecated scorePrompt() method.
+   */
+  private getSlashCommandScore(slashInfo: SlashCommandInfo): PromptScore {
+    const hasArguments = !!slashInfo.arguments;
+    const clarity = 10;
+    const specificity = hasArguments ? 9 : 8;
+    const context = 8;
+    const actionability = 10;
+
+    return {
+      overall: calculateLegacyOverall(clarity, specificity, context, actionability),
+      clarity,
+      specificity,
+      context,
+      actionability,
+      suggestions: [], // No suggestions needed for slash commands
+    };
+  }
+
+  /**
+   * Generate a high score for slash commands (V2 5-dimension).
+   * Slash commands are power-user shortcuts that represent efficiency,
+   * not lack of detail. They expand into full prompts with context.
+   *
+   * Scores rationale:
+   * - Intent: 10 - Command name explicitly states action
+   * - Actionability: 10 - Commands are inherently actionable
+   * - Specificity: 8-9 - Commands are specific by design (9 if has args)
+   * - Context: 8 - Context is implicit in command definition
+   * - Constraints: 8 - Constraints embedded in command definition
+   *
+   * Overall: Uses weighted breakdown.total (~88) for V2 consistency
+   */
+  private getSlashCommandScoreV2(slashInfo: SlashCommandInfo): PromptScoreV2 {
+    const hasArguments = !!slashInfo.arguments;
+    const specificityScore = hasArguments ? 9 : 8;
+
+    const breakdown = createScoreBreakdown({
+      specificity: specificityScore,
+      context: 8,
+      intent: 10,
+      actionability: 10,
+      constraints: 8,
+    });
+
+    // Generate explanation using the explainer
+    const explanation = this.explainer.generateSlashCommandExplanation(slashInfo, breakdown);
+
+    // Legacy scores for backward compatibility
+    const clarity = 10;
+    const specificity = specificityScore;
+    const context = 8;
+    const actionability = 10;
+
+    // Use weighted breakdown.total * 10 for V2 overall (more accurate than legacy 4-dim average)
+    const overall = Math.round(breakdown.total * 10);
+
+    return {
+      overall,
+      clarity,
+      specificity,
+      context,
+      actionability,
+      intent: 10,
+      constraints: 8,
+      suggestions: [], // No suggestions needed for slash commands
+      breakdown,
+      explanation,
+    };
   }
 }

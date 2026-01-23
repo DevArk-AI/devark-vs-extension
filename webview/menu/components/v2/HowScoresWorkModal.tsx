@@ -109,6 +109,21 @@ export function HowScoresWorkModal({ isOpen, onClose }: HowScoresWorkModalProps)
               Higher scores typically mean fewer back-and-forth cycles and more accurate AI responses on the first try.
             </p>
           </div>
+
+          <div className="vl-how-scores-slash-commands">
+            <div className="vl-slash-commands-header">
+              <span className="vl-slash-icon">⚡</span>
+              <span className="vl-slash-title">SLASH COMMANDS</span>
+            </div>
+            <p className="vl-slash-description">
+              Slash commands like <code>/commit</code>, <code>/test</code>, or custom commands like <code>/bmad:workflow:create</code> automatically receive high scores (88+). They are a best practice because:
+            </p>
+            <ul className="vl-slash-benefits">
+              <li>They expand into optimized prompts with full context</li>
+              <li>They skip LLM scoring for faster execution</li>
+              <li>They are more reliable and consistent than natural language</li>
+            </ul>
+          </div>
         </div>
 
         {/* Footer */}

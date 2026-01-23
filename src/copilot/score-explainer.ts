@@ -15,6 +15,7 @@ import {
   SCORE_THRESHOLDS,
   getLowestDimension,
 } from '../services/types/score-types';
+import { SlashCommandInfo } from '../core/session/prompt-utils';
 
 /**
  * Vague words that indicate low specificity
@@ -60,6 +61,17 @@ const CONSTRAINT_INDICATORS = [
   'limit', 'max', 'min', 'only', 'exactly',
   'before', 'after', 'within', 'under',
   'compatible', 'support', 'work with',
+];
+
+/**
+ * Common slash command patterns - prompts that could be replaced with slash commands
+ */
+const SLASH_COMMAND_PATTERNS: Array<{ pattern: RegExp; command: string; description: string }> = [
+  { pattern: /^(?:please\s+)?(?:make\s+a\s+)?commit/i, command: '/commit', description: 'commit changes' },
+  { pattern: /^(?:please\s+)?review\s+(?:the\s+)?(?:pr|pull\s*request)/i, command: '/review-pr', description: 'review pull requests' },
+  { pattern: /^(?:please\s+)?(?:run\s+)?(?:the\s+)?tests?/i, command: '/test', description: 'run tests' },
+  { pattern: /^(?:please\s+)?(?:create|make)\s+(?:a\s+)?(?:pr|pull\s*request)/i, command: '/pr', description: 'create pull requests' },
+  { pattern: /^(?:please\s+)?(?:help|assist)/i, command: '/help', description: 'get help' },
 ];
 
 /**
@@ -295,6 +307,12 @@ export class ScoreExplainer {
     const suggestions: string[] = [];
     const lowestDim = getLowestDimension(breakdown);
 
+    // Check if a slash command could be used instead
+    const slashSuggestion = this.getSlashCommandSuggestion(prompt);
+    if (slashSuggestion) {
+      suggestions.push(slashSuggestion);
+    }
+
     // Primary suggestion based on lowest dimension
     if (breakdown[lowestDim].score < SCORE_THRESHOLDS.GOOD) {
       suggestions.push(this.getSuggestionForDimension(lowestDim, prompt));
@@ -321,6 +339,27 @@ export class ScoreExplainer {
 
     // Limit to 3 suggestions
     return suggestions.slice(0, 3);
+  }
+
+  /**
+   * Check if a prompt could benefit from using a slash command instead.
+   * Returns a suggestion string if applicable, undefined otherwise.
+   */
+  private getSlashCommandSuggestion(prompt: string): string | undefined {
+    const trimmed = prompt.trim();
+
+    // Skip if prompt is too long (likely has more context than a simple command)
+    if (trimmed.length > 100) {
+      return undefined;
+    }
+
+    for (const { pattern, command, description } of SLASH_COMMAND_PATTERNS) {
+      if (pattern.test(trimmed)) {
+        return `Use "${command}" slash command for ${description} - it's faster and more reliable`;
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -386,6 +425,52 @@ export class ScoreExplainer {
     }
 
     return `Needs improvement. Add more ${lowestMeta.name.toLowerCase()} and detail.`;
+  }
+
+  /**
+   * Generate explanation for slash commands.
+   * Slash commands are power-user shortcuts that expand into full prompts,
+   * so they deserve positive explanations instead of penalties.
+   *
+   * @param slashInfo - Information about the detected slash command
+   * @param breakdown - Score breakdown (used for potential future enhancements)
+   */
+  public generateSlashCommandExplanation(
+    slashInfo: SlashCommandInfo,
+    breakdown: ScoreBreakdownV2
+  ): ScoreExplanationV2 {
+    const goodPoints: ExplanationPoint[] = [
+      {
+        label: 'Power-user shortcut',
+        description: 'Slash commands are efficient shortcuts that expand into full prompts',
+        dimension: 'actionability',
+      },
+      {
+        label: 'Clear intent',
+        description: `Command "/${slashInfo.commandName}" explicitly states the action`,
+        dimension: 'intent',
+      },
+      {
+        label: 'Actionable command',
+        description: 'AI agents can execute this directly',
+        dimension: 'actionability',
+      },
+    ];
+
+    // Add extra good point if arguments are provided (correlates with higher specificity score)
+    if (slashInfo.arguments && breakdown.specificity.score >= 9) {
+      goodPoints.push({
+        label: 'Context provided',
+        description: `Arguments "${slashInfo.arguments}" add specificity`,
+        dimension: 'specificity',
+      });
+    }
+
+    return {
+      goodPoints,
+      missingElements: [],
+      suggestions: ['Using slash commands is a best practice - they are faster and more reliable than natural language prompts'],
+    };
   }
 }
 
