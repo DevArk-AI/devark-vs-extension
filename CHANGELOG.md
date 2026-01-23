@@ -2,6 +2,17 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.12] - 2026-01-23
+
+### Added
+- Incremental sync: Only upload sessions newer than server's last synced session
+- Sync preview now shows accurate count of sessions to upload
+- UI shows "Sessions since [date]" when using Most Recent filter
+
+### Improved
+- Refactored sync code to consolidate duplicate implementations
+- SyncService now handles all upload logic with progress and cancellation support
+
 ## [0.1.11] - 2026-01-21
 
 ### Added

@@ -26,6 +26,8 @@ vi.mock('../../../extension-state', () => ({
         syncedSessions: 10,
         lastSynced: new Date('2024-01-01'),
       }),
+      getServerLastSessionDate: vi.fn().mockResolvedValue(new Date('2024-01-10')),
+      uploadSessionsWithProgress: vi.fn().mockResolvedValue({ success: true, sessionsUploaded: 2, errors: [] }),
     }),
     getApiClient: vi.fn().mockReturnValue({
       uploadSessions: vi.fn().mockResolvedValue({ success: true, sessionsProcessed: 2 }),
