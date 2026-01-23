@@ -70,13 +70,36 @@ export interface AuthCompletionResult {
 }
 
 /**
- * Upload progress callback
+ * Upload progress callback (simple)
  */
 export type UploadProgressCallback = (
   current: number,
   total: number,
   sizeKB?: number
 ) => void;
+
+/**
+ * Sync phase for detailed progress
+ */
+export type SyncPhase = 'preparing' | 'sanitizing' | 'uploading' | 'complete' | 'cancelled' | 'error';
+
+/**
+ * Detailed sync progress data
+ */
+export interface DetailedSyncProgress {
+  phase: SyncPhase;
+  message: string;
+  current: number;
+  total: number;
+  currentBatch?: number;
+  totalBatches?: number;
+  sizeKB?: number;
+}
+
+/**
+ * Detailed progress callback for sync operations
+ */
+export type DetailedProgressCallback = (progress: DetailedSyncProgress) => void;
 
 /**
  * API error types

@@ -13,8 +13,7 @@ import { BaseMessageHandler, type MessageSender, type HandlerContext } from './b
 import { SharedContext } from './shared-context';
 import { ExtensionState } from '../../extension-state';
 import { isEligibleForSync } from '../../core/sync';
-import { toSanitizedSession } from '../../core/session';
-import type { SessionIndex, SessionData } from '../../types';
+import type { SessionIndex, SessionData, DetailedSyncProgress } from '../../types';
 import type { UnifiedSession } from '../../services/UnifiedSessionService';
 import type { SyncProgressData } from '../../shared/webview-protocol';
 import { AnalyticsEvents } from '../../services/analytics-events';
@@ -237,7 +236,8 @@ export class CloudAuthHandler extends BaseMessageHandler {
 
   /**
    * Preview sync - show session count without uploading
-   * Uses fast session index for accurate counts from all sources
+   * Uses fast session index for accurate counts from all sources.
+   * For 'recent' filter, uses server's last session timestamp for accurate incremental preview.
    */
   private async handlePreviewSync(filterOptions: unknown): Promise<void> {
     try {
@@ -255,17 +255,24 @@ export class CloudAuthHandler extends BaseMessageHandler {
       }
 
       // Determine date range based on filter type
-      // For 'recent' and 'all', get ALL sessions (apply limit later)
-      // UnifiedSessionService defaults to 24h when since is undefined, so pass epoch date
       let since: Date | undefined;
       let until: Date | undefined;
+      let serverLastSyncedAt: string | undefined;
 
       if (options?.filterType === 'date-range') {
         since = options?.startDate ? new Date(options.startDate) : undefined;
         until = options?.endDate ? new Date(options.endDate) : undefined;
+      } else if (options?.filterType === 'recent') {
+        // For 'recent' filter, use server's last session timestamp for accurate preview
+        const syncService = ExtensionState.getSyncService();
+        const serverSince = await syncService.getServerLastSessionDate();
+        since = serverSince ?? new Date(0);
+        until = new Date();
+        serverLastSyncedAt = serverSince?.toISOString();
+        console.log('[CloudAuthHandler] Preview using server timestamp:', since.toISOString());
       } else {
-        // 'recent' or 'all' - get all sessions
-        since = new Date(0); // Unix epoch
+        // 'all' - get all sessions from epoch
+        since = new Date(0);
         until = new Date();
       }
 
@@ -314,7 +321,8 @@ export class CloudAuthHandler extends BaseMessageHandler {
           cursor: cursorCount,
           claudeCode: claudeCodeCount,
           total: sessionsToSync.length
-        }
+        },
+        serverLastSyncedAt,
       });
     } catch (error: unknown) {
       console.error('[CloudAuthHandler] Preview sync failed:', error);
@@ -327,28 +335,13 @@ export class CloudAuthHandler extends BaseMessageHandler {
   }
 
   /**
-   * Sync with filters - uses same filtering logic as preview for consistency.
-   * Fetches sessions from UnifiedSessionService, applies filters, then uploads.
-   * Now includes progress reporting and cancellation support.
+   * Sync with filters - fetches sessions from UnifiedSessionService,
+   * applies filters, then delegates to SyncService for upload.
    */
   private async handleSyncWithFilters(filterOptions: unknown): Promise<void> {
     // Create abort controller for cancellation
     this.syncAbortController = new AbortController();
     const signal = this.syncAbortController.signal;
-    let sessionsUploaded = 0;
-
-    const checkCancelled = (): boolean => {
-      if (signal.aborted) {
-        this.sendProgress({
-          phase: 'cancelled',
-          message: `Sync cancelled. ${sessionsUploaded} sessions uploaded.`,
-          current: sessionsUploaded,
-          total: sessionsUploaded,
-        });
-        return true;
-      }
-      return false;
-    };
 
     try {
       const options = filterOptions as {
@@ -364,7 +357,7 @@ export class CloudAuthHandler extends BaseMessageHandler {
         tool: 'mixed',
       });
 
-      // Phase 1: Preparing
+      // Phase: Preparing
       this.sendProgress({
         phase: 'preparing',
         message: 'Preparing to sync...',
@@ -376,37 +369,9 @@ export class CloudAuthHandler extends BaseMessageHandler {
         throw new Error('UnifiedSessionService not available');
       }
 
-      // Check authentication first
-      const authService = ExtensionState.getAuthService();
-      const hasToken = await authService.getToken();
-      if (!hasToken) {
-        this.sendProgress({
-          phase: 'error',
-          message: 'Please login first',
-          current: 0,
-          total: 0,
-        });
-        getNotificationService().warn('Please login first');
-        return;
-      }
+      const syncService = ExtensionState.getSyncService();
 
-      if (checkCancelled()) return;
-
-      const isValid = await authService.verifyToken();
-      if (!isValid) {
-        this.sendProgress({
-          phase: 'error',
-          message: 'Session expired. Please login again.',
-          current: 0,
-          total: 0,
-        });
-        getNotificationService().warn('Session expired. Please login again.');
-        return;
-      }
-
-      if (checkCancelled()) return;
-
-      // Determine date range based on filter type (same logic as handlePreviewSync)
+      // Determine date range based on filter type
       let since: Date | undefined;
       let until: Date | undefined;
 
@@ -414,7 +379,9 @@ export class CloudAuthHandler extends BaseMessageHandler {
         since = options?.startDate ? new Date(options.startDate) : undefined;
         until = options?.endDate ? new Date(options.endDate) : undefined;
       } else {
-        since = new Date(0);
+        // For 'recent' filter, use server's last session timestamp for incremental sync
+        const serverSince = await syncService.getServerLastSessionDate();
+        since = serverSince ?? new Date(0);
         until = new Date();
       }
 
@@ -431,22 +398,26 @@ export class CloudAuthHandler extends BaseMessageHandler {
         until,
       });
 
-      if (checkCancelled()) return;
-
-      // Filter out sessions shorter than 4 minutes (same as preview)
+      // Filter out sessions shorter than 4 minutes
       const eligibleSessions = result.sessions.filter((s: UnifiedSession) =>
         isEligibleForSync({ duration: s.duration * 60 } as SessionIndex)
       );
 
-      // Apply limit if specified (same as preview)
+      // Apply limit if specified
       let sessionsToSync = eligibleSessions;
       if (options?.filterType === 'recent' && options?.limit) {
         sessionsToSync = eligibleSessions.slice(0, options.limit);
       }
 
-      const totalSessions = sessionsToSync.length;
+      // Extract SessionData from rawData
+      const sessionDataList: SessionData[] = [];
+      for (const session of sessionsToSync) {
+        if (session.rawData) {
+          sessionDataList.push(session.rawData as SessionData);
+        }
+      }
 
-      if (totalSessions === 0) {
+      if (sessionDataList.length === 0) {
         this.sendProgress({
           phase: 'complete',
           message: 'No sessions to sync.',
@@ -457,133 +428,46 @@ export class CloudAuthHandler extends BaseMessageHandler {
         return;
       }
 
-      // Phase 2: Sanitizing
-      this.sendProgress({
-        phase: 'sanitizing',
-        message: `Sanitizing ${totalSessions} sessions...`,
-        current: 0,
-        total: totalSessions,
+      // Delegate to SyncService for upload with progress
+      const syncResult = await syncService.uploadSessionsWithProgress({
+        sessions: sessionDataList,
+        onDetailedProgress: (progress: DetailedSyncProgress) => {
+          this.sendProgress(progress);
+        },
+        abortSignal: signal,
       });
 
-      // Extract SessionData from rawData and convert to sanitized format
-      const sessionDataList: SessionData[] = [];
-      for (let i = 0; i < sessionsToSync.length; i++) {
-        if (checkCancelled()) return;
-
-        const session = sessionsToSync[i];
-        if (session.rawData) {
-          sessionDataList.push(session.rawData as SessionData);
-        }
-
-        // Update progress every 10 sessions
-        if (i % 10 === 0 || i === sessionsToSync.length - 1) {
-          this.sendProgress({
-            phase: 'sanitizing',
-            message: `Sanitizing session ${i + 1} of ${totalSessions}...`,
-            current: i + 1,
-            total: totalSessions,
-          });
-        }
-      }
-
-      if (sessionDataList.length === 0) {
-        this.sendProgress({
-          phase: 'error',
-          message: 'Could not extract session data for upload.',
-          current: 0,
-          total: totalSessions,
-        });
-        getNotificationService().warn('Could not extract session data for upload.');
-        return;
-      }
-
-      // Sanitize sessions
-      const sanitizedSessions = sessionDataList.map(session => toSanitizedSession(session));
-      const estimatedSizeKB = sanitizedSessions.length * 5;
-
-      if (checkCancelled()) return;
-
-      // Phase 3: Uploading in batches
-      const BATCH_SIZE = 100;
-      const totalBatches = Math.ceil(sanitizedSessions.length / BATCH_SIZE);
-      const apiClient = ExtensionState.getApiClient();
-
-      this.sendProgress({
-        phase: 'uploading',
-        message: `Uploading ${sanitizedSessions.length} sessions...`,
-        current: 0,
-        total: sanitizedSessions.length,
-        currentBatch: 1,
-        totalBatches,
-        sizeKB: estimatedSizeKB,
-      });
-
-      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        if (checkCancelled()) return;
-
-        const start = batchIndex * BATCH_SIZE;
-        const end = Math.min(start + BATCH_SIZE, sanitizedSessions.length);
-        const batch = sanitizedSessions.slice(start, end);
-
-        this.sendProgress({
-          phase: 'uploading',
-          message: `Uploading batch ${batchIndex + 1} of ${totalBatches}...`,
-          current: start,
-          total: sanitizedSessions.length,
-          currentBatch: batchIndex + 1,
-          totalBatches,
-          sizeKB: estimatedSizeKB,
-        });
-
-        const uploadResult = await apiClient.uploadSessions(batch);
-
-        if (!uploadResult.success) {
-          throw new Error(`Batch ${batchIndex + 1} upload failed`);
-        }
-
-        sessionsUploaded += uploadResult.sessionsProcessed;
-
-        this.sendProgress({
-          phase: 'uploading',
-          message: `Uploaded ${sessionsUploaded} of ${sanitizedSessions.length} sessions...`,
-          current: sessionsUploaded,
-          total: sanitizedSessions.length,
-          currentBatch: batchIndex + 1,
-          totalBatches,
-          sizeKB: estimatedSizeKB,
-        });
-      }
-
-      // Phase 4: Complete
-      this.sendProgress({
-        phase: 'complete',
-        message: `Successfully synced ${sessionsUploaded} sessions!`,
-        current: sessionsUploaded,
-        total: sessionsUploaded,
-      });
-
+      // Send completion message
       this.send('syncComplete', {
-        success: true,
-        sessionsUploaded,
+        success: syncResult.success,
+        sessionsUploaded: syncResult.sessionsUploaded,
+        error: syncResult.errors.length > 0 ? syncResult.errors[0].message : undefined,
       });
 
-      ExtensionState.getAnalyticsService().track(AnalyticsEvents.SESSIONS_SYNCED, {
-        session_count: sessionsUploaded,
-        tool: 'mixed',
-      });
+      if (syncResult.success && syncResult.sessionsUploaded > 0) {
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.SESSIONS_SYNCED, {
+          session_count: syncResult.sessionsUploaded,
+          tool: 'mixed',
+        });
 
-      getNotificationService().info(
-        `Synced ${sessionsUploaded} sessions successfully!`
-      );
+        getNotificationService().info(
+          `Synced ${syncResult.sessionsUploaded} sessions successfully!`
+        );
 
-      // Invalidate caches after successful sync
-      this.invalidateSyncStatusCache();
-      if (this.sharedContext.unifiedSessionService) {
-        this.sharedContext.unifiedSessionService.invalidateCache();
+        // Invalidate caches after successful sync
+        this.invalidateSyncStatusCache();
+        if (this.sharedContext.unifiedSessionService) {
+          this.sharedContext.unifiedSessionService.invalidateCache();
+        }
+
+        await this.handleGetCloudStatus();
+        await this.handleGetSyncStatus();
+      } else if (!syncResult.success) {
+        const errorMsg = syncResult.errors.length > 0 ? syncResult.errors[0].message : 'Unknown error';
+        if (errorMsg !== 'Sync cancelled by user') {
+          getNotificationService().error(`Sync failed: ${errorMsg}`);
+        }
       }
-
-      await this.handleGetCloudStatus();
-      await this.handleGetSyncStatus();
     } catch (error: unknown) {
       console.error('[CloudAuthHandler] Sync with filters failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -591,13 +475,13 @@ export class CloudAuthHandler extends BaseMessageHandler {
       this.sendProgress({
         phase: 'error',
         message: `Sync failed: ${errorMessage}`,
-        current: sessionsUploaded,
-        total: sessionsUploaded,
+        current: 0,
+        total: 0,
       });
 
       this.send('syncComplete', {
         success: false,
-        sessionsUploaded,
+        sessionsUploaded: 0,
         error: errorMessage,
       });
 

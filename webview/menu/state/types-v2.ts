@@ -374,6 +374,7 @@ export interface SyncPreview {
   projects?: string[];
   filteredOutShort?: number; // Number of sessions < 4 minutes filtered out
   sessionsBySource?: SessionsBySource; // Breakdown by source (Cursor vs Claude Code)
+  serverLastSyncedAt?: string; // ISO timestamp of server's last synced session (for incremental sync)
 }
 
 // Editor info (Cursor vs VS Code)

@@ -33,6 +33,14 @@ export interface ApiSession {
   };
 }
 
+/**
+ * Result from getLastSessionDate for incremental sync
+ */
+export interface LastSessionResult {
+  lastSessionTimestamp: string | null;
+  lastSessionId: number | null;
+}
+
 export interface IApiClient {
   // === Authentication ===
 
@@ -78,6 +86,12 @@ export interface IApiClient {
     startDate?: Date,
     endDate?: Date
   ): Promise<ApiSession[]>;
+
+  /**
+   * Get the timestamp of the user's most recent session for incremental sync
+   * @returns Last session timestamp (ISO string) and ID, or null if no sessions exist
+   */
+  getLastSessionDate(): Promise<LastSessionResult>;
 
   // === User Data ===
 

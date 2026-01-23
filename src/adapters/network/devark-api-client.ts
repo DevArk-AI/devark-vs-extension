@@ -9,7 +9,7 @@
  */
 
 import crypto from 'crypto';
-import type { IApiClient, ApiSession } from '../../ports/network/api-client.interface';
+import type { IApiClient, ApiSession, LastSessionResult } from '../../ports/network/api-client.interface';
 import type { IHttpClient, HttpError } from '../../ports/network/http-client.interface';
 import type {
   SanitizedSession,
@@ -180,6 +180,23 @@ export class DevArkApiClient implements IApiClient {
       return response.data;
     }
     return response.data.sessions || [];
+  }
+
+  async getLastSessionDate(): Promise<LastSessionResult> {
+    try {
+      console.log('[DevArkApiClient] GET /api/sessions/last');
+      const response = await this.httpClient.get<LastSessionResult>('/api/sessions/last');
+      console.log('[DevArkApiClient] /api/sessions/last response:', response.data);
+      return response.data;
+    } catch (error) {
+      const httpError = error as HttpError;
+      console.error('[DevArkApiClient] /api/sessions/last error:', httpError.status, httpError.message);
+      // If endpoint returns 404, user has no sessions
+      if (httpError.status === 404) {
+        return { lastSessionTimestamp: null, lastSessionId: null };
+      }
+      throw error;
+    }
   }
 
   // === User Data ===

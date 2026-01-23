@@ -378,7 +378,7 @@ export type ExtensionMessage =
   // -------- Cloud & Auth --------
   | { type: 'cloudStatus'; data: CloudStatusData }
   | { type: 'syncStatus'; data: { localSessions: number; syncedSessions: number; pendingUploads: number; lastSynced?: string } }
-  | { type: 'syncPreview'; data: { totalSessions: number; estimatedSizeKB: number; dateRange?: unknown; projects?: unknown; filteredOutShort?: number; sessionsBySource?: { cursor: number; claudeCode: number; total: number }; error?: string } }
+  | { type: 'syncPreview'; data: { totalSessions: number; estimatedSizeKB: number; dateRange?: unknown; projects?: unknown; filteredOutShort?: number; sessionsBySource?: { cursor: number; claudeCode: number; total: number }; serverLastSyncedAt?: string; error?: string } }
 
   // -------- Sync Progress --------
   | { type: 'syncProgress'; data: SyncProgressData }

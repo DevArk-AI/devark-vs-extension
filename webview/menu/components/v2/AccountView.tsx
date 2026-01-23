@@ -407,6 +407,11 @@ export function AccountView() {
                       }}
                     />
                     <span>Most recent sessions</span>
+                    <span className="vl-filter-description">
+                      {syncPreview?.serverLastSyncedAt
+                        ? `Sessions since ${new Date(syncPreview.serverLastSyncedAt).toLocaleString()}`
+                        : 'Only new sessions since last sync'}
+                    </span>
                   </label>
 
                   {filterOptions.filterType === 'recent' && (
