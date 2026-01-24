@@ -28,9 +28,10 @@ interface SyncProgressModalProps {
   onMinimize: () => void;
   onCancel: () => void;
   onClose: () => void;
+  onOpenDashboard: () => void;
 }
 
-export function SyncProgressModal({ progress, theme = 'dark', onMinimize, onCancel, onClose }: SyncProgressModalProps) {
+export function SyncProgressModal({ progress, theme = 'dark', onMinimize, onCancel, onClose, onOpenDashboard }: SyncProgressModalProps) {
   const percentage = progress.total > 0
     ? Math.round((progress.current / progress.total) * 100)
     : 0;
@@ -165,6 +166,13 @@ export function SyncProgressModal({ progress, theme = 'dark', onMinimize, onCanc
           {isComplete && progress.current > 0 && (
             <div className="vl-sync-complete-stats">
               <span>{progress.current} sessions synced successfully</span>
+              <button
+                className="vl-btn vl-btn-link"
+                onClick={onOpenDashboard}
+                style={{ marginTop: '8px', display: 'block' }}
+              >
+                View in Dashboard →
+              </button>
             </div>
           )}
         </div>

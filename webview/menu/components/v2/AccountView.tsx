@@ -613,6 +613,7 @@ export function AccountView() {
           onMinimize={handleMinimizeSync}
           onCancel={handleCancelSync}
           onClose={handleCloseSyncProgress}
+          onOpenDashboard={handleOpenDashboard}
         />
       )}
 
