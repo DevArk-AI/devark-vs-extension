@@ -76,19 +76,33 @@ function isSDKInstalled(): boolean {
 
 // Clean up Claude Code's project folder for a given temp directory path
 // Claude Code stores projects at ~/.claude/projects/{sanitized-path}
-function cleanupClaudeProjectFolder(tempDirPath: string): void {
+// Exported for testing
+export function cleanupClaudeProjectFolder(tempDirPath: string): void {
   try {
     const homeDir = os.homedir();
     const claudeProjectsDir = path.join(homeDir, '.claude', 'projects');
 
+    // Resolve symlinks (macOS: /var -> /private/var)
+    // Claude Code uses the resolved real path, so we must match it
+    let realPath = tempDirPath;
+    try {
+      realPath = fs.realpathSync(tempDirPath);
+    } catch {
+      // Path may not exist yet, try resolving parent directory
+      try {
+        const parentReal = fs.realpathSync(path.dirname(tempDirPath));
+        realPath = path.join(parentReal, path.basename(tempDirPath));
+      } catch {
+        // Fallback to original path if resolution fails completely
+      }
+    }
+
     // Convert path to Claude's format (cross-platform):
-    // - Windows: C:\Users\foo\temp -> C--Users-foo-temp
-    // - macOS:   /var/folders/xyz  -> var-folders-xyz
-    // - Linux:   /tmp/devark       -> tmp-devark
-    // Regex handles: ':' (Win drive), '\' (Win separator), '/' (Unix separator)
-    const sanitizedPath = tempDirPath
-      .replace(/[:\\/]/g, '-')
-      .replace(/^-+/, ''); // Remove leading dashes (from Unix paths starting with /)
+    // - Windows: C:\Users\foo\temp -> C-Users-foo-temp
+    // - macOS:   /private/var/folders/xyz -> -private-var-folders-xyz
+    // - Linux:   /tmp/devark              -> -tmp-devark
+    // IMPORTANT: Claude Code KEEPS the leading dash from Unix paths starting with /
+    const sanitizedPath = realPath.replace(/[:\\/]/g, '-');
     const projectFolder = path.join(claudeProjectsDir, sanitizedPath);
 
     if (fs.existsSync(projectFolder)) {
