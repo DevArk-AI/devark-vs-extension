@@ -8507,6 +8507,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* Size can be controlled by --ring-size (from container) or --ring-size-prop (from component) */
+  width: var(--ring-size, var(--ring-size-prop, 64px));
+  height: var(--ring-size, var(--ring-size-prop, 64px));
+}
+
+.vl-activity-rings svg {
+  width: 100%;
+  height: 100%;
 }
 
 /* SessionRingCard - compact ring + info card */
@@ -8824,9 +8832,38 @@
 /* ========================================
    RINGS HEADER - Cockpit Style Header
    Phase 2: Fixed header with 3 rings
+
+   Responsive behavior using container queries:
+   - Scale down ring sizes as width decreases
+   - Wrap vertically at very narrow widths
    ======================================== */
 
+/* Responsive configuration - adjust these values as needed */
 .vl-rings-header {
+  /* Default sizes (wide) */
+  --rings-size-default: 64px;
+  --rings-min-width-default: 80px;
+  --rings-gap-default: var(--space-lg);
+
+  /* Medium sizes (320px and below) */
+  --rings-size-medium: 48px;
+  --rings-min-width-medium: 64px;
+  --rings-gap-medium: var(--space-md);
+
+  /* Narrow sizes (260px and below) */
+  --rings-size-narrow: 40px;
+  --rings-min-width-narrow: 56px;
+  --rings-gap-narrow: var(--space-sm);
+
+  /* Wrapped sizes (200px and below) */
+  --rings-size-wrapped: 48px;
+  --rings-min-width-wrapped: 80px;
+  --rings-gap-wrapped: var(--space-sm);
+
+  /* Enable container queries */
+  container-type: inline-size;
+  container-name: rings-header;
+
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -8836,11 +8873,76 @@
 }
 
 .vl-rings-header__slots {
+  /* Default state uses default values */
+  --ring-size: var(--rings-size-default);
+
   display: flex;
   justify-content: center;
-  gap: var(--space-lg);
+  gap: var(--rings-gap-default);
   width: 100%;
   max-width: 400px;
+}
+
+/* Apply ring size via CSS variable */
+.vl-rings-header .vl-activity-rings {
+  width: var(--ring-size);
+  height: var(--ring-size);
+}
+
+.vl-rings-header .vl-activity-rings svg {
+  width: 100%;
+  height: 100%;
+}
+
+.vl-rings-header .vl-session-ring-card {
+  min-width: var(--rings-min-width-default);
+}
+
+.vl-rings-header .vl-rings-header__empty-slot {
+  min-width: var(--rings-min-width-default);
+}
+
+/* Medium width - scale down */
+@container rings-header (max-width: 320px) {
+  .vl-rings-header__slots {
+    --ring-size: var(--rings-size-medium);
+    gap: var(--rings-gap-medium);
+  }
+  .vl-session-ring-card {
+    min-width: var(--rings-min-width-medium);
+  }
+  .vl-rings-header__empty-slot {
+    min-width: var(--rings-min-width-medium);
+  }
+}
+
+/* Narrow width - scale down further */
+@container rings-header (max-width: 260px) {
+  .vl-rings-header__slots {
+    --ring-size: var(--rings-size-narrow);
+    gap: var(--rings-gap-narrow);
+  }
+  .vl-session-ring-card {
+    min-width: var(--rings-min-width-narrow);
+  }
+  .vl-rings-header__empty-slot {
+    min-width: var(--rings-min-width-narrow);
+  }
+}
+
+/* Wrap to vertical at very narrow widths */
+@container rings-header (max-width: 200px) {
+  .vl-rings-header__slots {
+    --ring-size: var(--rings-size-wrapped);
+    gap: var(--rings-gap-wrapped);
+    flex-wrap: wrap;
+  }
+  .vl-session-ring-card {
+    min-width: var(--rings-min-width-wrapped);
+  }
+  .vl-rings-header__empty-slot {
+    min-width: var(--rings-min-width-wrapped);
+  }
 }
 
 /* Empty state styling */

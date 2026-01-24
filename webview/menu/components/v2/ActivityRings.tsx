@@ -151,12 +151,10 @@ export function ActivityRings({
   return (
     <div
       className="vl-activity-rings"
-      style={{ width: size, height: size }}
+      style={{ '--ring-size-prop': `${size}px` } as React.CSSProperties}
     >
       <svg
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-        width={size}
-        height={size}
       >
         {ringConfigs.map((config, index) => (
           <Ring key={index} {...config} />
