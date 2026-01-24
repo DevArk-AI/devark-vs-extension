@@ -179,23 +179,25 @@ describe('DevArkApiClient', () => {
       expect(request?.data).toHaveProperty('sessions');
     });
 
-    it('chunks sessions into batches of 100', async () => {
+    it('batches sessions based on payload size', async () => {
       httpClient.setResponse('/cli/sessions', {
         data: { success: true, created: 100, duplicates: 0 },
       });
 
-      // Create 250 sessions
+      // Create 250 small sessions - they should fit in fewer batches with size-based batching
       const sessions = Array.from({ length: 250 }, () => createSampleSession());
       await apiClient.uploadSessions(sessions);
 
-      // Should make 3 requests (100 + 100 + 50)
+      // With small sessions, batching should be based on size, not count
       const requests = httpClient.getRequestsTo('/cli/sessions');
-      expect(requests).toHaveLength(3);
+      expect(requests.length).toBeGreaterThanOrEqual(1);
 
-      // Check batch sizes
-      expect((requests[0].data as any).sessions).toHaveLength(100);
-      expect((requests[1].data as any).sessions).toHaveLength(100);
-      expect((requests[2].data as any).sessions).toHaveLength(50);
+      // Verify all sessions were uploaded
+      const totalUploaded = requests.reduce(
+        (sum, req) => sum + (req.data as any).sessions.length,
+        0
+      );
+      expect(totalUploaded).toBe(250);
     });
 
     it('includes checksum in payload', async () => {
@@ -225,14 +227,15 @@ describe('DevArkApiClient', () => {
         progressCalls.push({ current, total });
       });
 
-      // Should have 2 progress calls (2 batches)
-      expect(progressCalls.length).toBe(2);
-      expect(progressCalls[0]).toEqual({ current: 100, total: 150 });
-      expect(progressCalls[1]).toEqual({ current: 150, total: 150 });
+      // Progress should be called for each batch
+      expect(progressCalls.length).toBeGreaterThanOrEqual(1);
+      // Last progress call should show all sessions uploaded
+      const lastCall = progressCalls[progressCalls.length - 1];
+      expect(lastCall.total).toBe(150);
+      expect(lastCall.current).toBe(150);
     });
 
     it('merges results from multiple chunks', async () => {
-      // First batch
       httpClient.setResponse('/cli/sessions', {
         data: {
           success: true,
@@ -246,9 +249,9 @@ describe('DevArkApiClient', () => {
       const result = await apiClient.uploadSessions(sessions);
 
       expect(result.success).toBe(true);
-      expect(result.sessionsProcessed).toBe(200); // 100 + 100
-      expect(result.created).toBe(160); // 80 + 80
-      expect(result.duplicates).toBe(40); // 20 + 20
+      expect(result.sessionsProcessed).toBe(200);
+      // created and duplicates will be aggregated from all batches
+      expect(result.created).toBeGreaterThanOrEqual(80);
     });
 
     it('includes batchNumber and totalBatches', async () => {
@@ -261,13 +264,15 @@ describe('DevArkApiClient', () => {
 
       const requests = httpClient.getRequestsTo('/cli/sessions');
 
-      // First batch
+      // Verify batch metadata is included in all requests
+      expect(requests.length).toBeGreaterThanOrEqual(1);
       expect((requests[0].data as any).batchNumber).toBe(1);
-      expect((requests[0].data as any).totalBatches).toBe(2);
+      expect((requests[0].data as any).totalBatches).toBeGreaterThanOrEqual(1);
 
-      // Second batch
-      expect((requests[1].data as any).batchNumber).toBe(2);
-      expect((requests[1].data as any).totalBatches).toBe(2);
+      // If multiple batches, verify incrementing batch numbers
+      if (requests.length > 1) {
+        expect((requests[1].data as any).batchNumber).toBe(2);
+      }
     });
 
     it('returns empty result for empty sessions array', async () => {
@@ -276,6 +281,114 @@ describe('DevArkApiClient', () => {
       expect(result.success).toBe(true);
       expect(result.sessionsProcessed).toBe(0);
       expect(httpClient.getRequests()).toHaveLength(0);
+    });
+  });
+
+  describe('Size-Based Batching', () => {
+    // Helper to create session with specific size
+    function createSessionWithSize(sizeKB: number): SanitizedSession {
+      const baseSize = 300;
+      const targetBytes = sizeKB * 1024;
+      const paddingNeeded = Math.max(0, targetBytes - baseSize);
+      const padding = 'x'.repeat(paddingNeeded);
+
+      return createSampleSession({
+        data: {
+          projectName: 'test-project',
+          messageSummary: JSON.stringify({ padding, stats: {} }),
+          messageCount: 10,
+          metadata: { files_edited: 1, languages: ['typescript'] },
+        },
+      });
+    }
+
+    it('should batch by payload size not session count', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 5, duplicates: 0 },
+      });
+
+      // 10 large sessions at 50KB each = 500KB total
+      const sessions = Array.from({ length: 10 }, () => createSessionWithSize(50));
+      await apiClient.uploadSessions(sessions);
+
+      // Should make 2+ calls due to size
+      const requests = httpClient.getRequestsTo('/cli/sessions');
+      expect(requests.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should keep small sessions in single batch up to ~400KB', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 50, duplicates: 0 },
+      });
+
+      // 50 small sessions at 5KB each = 250KB total
+      const sessions = Array.from({ length: 50 }, () => createSessionWithSize(5));
+      await apiClient.uploadSessions(sessions);
+
+      const requests = httpClient.getRequestsTo('/cli/sessions');
+      expect(requests).toHaveLength(1);
+      expect((requests[0].data as any).sessions).toHaveLength(50);
+    });
+
+    it('should split into multiple batches when exceeding ~400KB', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 7, duplicates: 0 },
+      });
+
+      // 20 sessions at 50KB each = 1000KB total
+      const sessions = Array.from({ length: 20 }, () => createSessionWithSize(50));
+      await apiClient.uploadSessions(sessions);
+
+      const requests = httpClient.getRequestsTo('/cli/sessions');
+      expect(requests.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('should handle single session exceeding target size', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 1, duplicates: 0 },
+      });
+
+      const hugeSession = createSessionWithSize(600);
+      await apiClient.uploadSessions([hugeSession]);
+
+      const requests = httpClient.getRequestsTo('/cli/sessions');
+      expect(requests).toHaveLength(1);
+      expect((requests[0].data as any).sessions).toHaveLength(1);
+    });
+
+    it('should report accurate batch count in payload metadata', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 2, duplicates: 0 },
+      });
+
+      // 4 sessions at 150KB each = 600KB total
+      // Should create 2 batches (2 sessions per batch at ~300KB each, under 400KB limit)
+      const sessions = Array.from({ length: 4 }, () => createSessionWithSize(150));
+      await apiClient.uploadSessions(sessions);
+
+      const requests = httpClient.getRequestsTo('/cli/sessions');
+      expect(requests.length).toBe(2);
+
+      expect((requests[0].data as any).batchNumber).toBe(1);
+      expect((requests[0].data as any).totalBatches).toBe(2);
+      expect((requests[1].data as any).batchNumber).toBe(2);
+      expect((requests[1].data as any).totalBatches).toBe(2);
+    });
+
+    it('should call progress callback for each size-based batch', async () => {
+      httpClient.setResponse('/cli/sessions', {
+        data: { success: true, created: 2, duplicates: 0 },
+      });
+
+      // 4 sessions at 150KB each = 600KB total, 2 batches
+      const sessions = Array.from({ length: 4 }, () => createSessionWithSize(150));
+      const progressCalls: number[] = [];
+
+      await apiClient.uploadSessions(sessions, (current) => {
+        progressCalls.push(current);
+      });
+
+      expect(progressCalls.length).toBe(2);
     });
   });
 

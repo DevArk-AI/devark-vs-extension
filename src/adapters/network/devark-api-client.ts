@@ -23,7 +23,9 @@ import type {
   InstructionsFetchResult,
 } from '../../types';
 
-const CHUNK_SIZE = 100;
+// Size-based batching constants
+const TARGET_BATCH_SIZE_BYTES = 500 * 1024; // 500KB
+const BUFFER_PERCENT = 0.20; // 20% overhead buffer
 
 export class DevArkApiClient implements IApiClient {
   private readonly httpClient: IHttpClient;
@@ -108,6 +110,44 @@ export class DevArkApiClient implements IApiClient {
 
   // === Session Management ===
 
+  private estimateSessionSize(session: SanitizedSession): number {
+    const encoder = new TextEncoder();
+    return encoder.encode(JSON.stringify(session)).length;
+  }
+
+  private createSizeBatches(
+    sessions: SanitizedSession[],
+    targetSizeBytes: number = TARGET_BATCH_SIZE_BYTES,
+    bufferPercent: number = BUFFER_PERCENT
+  ): SanitizedSession[][] {
+    const effectiveTarget = targetSizeBytes * (1 - bufferPercent);
+    const batches: SanitizedSession[][] = [];
+    let currentBatch: SanitizedSession[] = [];
+    let currentSize = 0;
+
+    for (const session of sessions) {
+      const sessionSize = this.estimateSessionSize(session);
+
+      // Only split if batch already has sessions
+      // This ensures oversized sessions get their own batch, never infinite loop
+      if (currentBatch.length > 0 && currentSize + sessionSize > effectiveTarget) {
+        batches.push(currentBatch);
+        currentBatch = [session];
+        currentSize = sessionSize;
+      } else {
+        // Always add to batch - even if session exceeds target (when batch is empty)
+        currentBatch.push(session);
+        currentSize += sessionSize;
+      }
+    }
+
+    if (currentBatch.length > 0) {
+      batches.push(currentBatch);
+    }
+
+    return batches;
+  }
+
   async uploadSessions(
     sessions: SanitizedSession[],
     onProgress?: UploadProgressCallback
@@ -122,17 +162,21 @@ export class DevArkApiClient implements IApiClient {
       };
     }
 
-    // Chunk sessions into batches
-    const chunks: SanitizedSession[][] = [];
-    for (let i = 0; i < sessions.length; i += CHUNK_SIZE) {
-      chunks.push(sessions.slice(i, i + CHUNK_SIZE));
-    }
+    // Use size-based batching for optimal payload sizes
+    const chunks = this.createSizeBatches(sessions);
+
+    // Log batching info
+    const totalSizeKB = sessions.reduce((sum, s) => sum + this.estimateSessionSize(s), 0) / 1024;
+    console.log(`[DevArkApiClient] Uploading in ${chunks.length} size-based batches (Total: ${totalSizeKB.toFixed(2)} KB, Target: ~500KB per batch)`);
 
     const results: UploadResult[] = [];
     let uploadedCount = 0;
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
+      const chunkSizeKB = chunk.reduce((sum, s) => sum + this.estimateSessionSize(s), 0) / 1024;
+      console.log(`[DevArkApiClient] Uploading batch ${i + 1} of ${chunks.length} with ${chunk.length} sessions (${chunkSizeKB.toFixed(2)} KB)`);
+
       const payload = {
         sessions: chunk,
         checksum: this.calculateChecksum(chunk),

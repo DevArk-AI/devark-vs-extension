@@ -111,11 +111,11 @@ export class SyncService {
   /**
    * Upload pre-loaded sessions with detailed progress tracking.
    * Use this when sessions are already loaded (e.g., from UnifiedSessionService).
-   * Handles sanitization, batching, and upload with cancellation support.
+   * Handles sanitization and upload with cancellation support.
+   * Note: Batching is handled by the API client using size-based batching.
    */
   async uploadSessionsWithProgress(options: UploadSessionsOptions): Promise<SyncResult> {
     const { sessions, onDetailedProgress, abortSignal } = options;
-    const BATCH_SIZE = 100;
     let sessionsUploaded = 0;
 
     const sendProgress = (progress: DetailedSyncProgress) => {
@@ -232,62 +232,66 @@ export class SyncService {
     }
 
     const estimatedSizeKB = sanitizedSessions.length * 5;
-    const totalBatches = Math.ceil(sanitizedSessions.length / BATCH_SIZE);
+    const projectsSynced = [...new Set(eligibleSessions.map((s) => s.projectPath))];
+    const errors: SyncError[] = [];
 
-    // Phase: Uploading
+    // Phase: Uploading - API client handles size-based batching internally
     sendProgress({
       phase: 'uploading',
       message: `Uploading ${sanitizedSessions.length} sessions...`,
       current: 0,
       total: sanitizedSessions.length,
-      currentBatch: 1,
-      totalBatches,
       sizeKB: estimatedSizeKB,
     });
 
-    const projectsSynced = [...new Set(eligibleSessions.map((s) => s.projectPath))];
-    const errors: SyncError[] = [];
-    let lastUploadResult: UploadResult | undefined;
-
     try {
-      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        if (checkCancelled()) {
-          return this.cancelledResult(sessionsUploaded, projectsSynced, errors);
-        }
-
-        const start = batchIndex * BATCH_SIZE;
-        const end = Math.min(start + BATCH_SIZE, sanitizedSessions.length);
-        const batch = sanitizedSessions.slice(start, end);
-
-        sendProgress({
-          phase: 'uploading',
-          message: `Uploading batch ${batchIndex + 1} of ${totalBatches}...`,
-          current: start,
-          total: sanitizedSessions.length,
-          currentBatch: batchIndex + 1,
-          totalBatches,
-          sizeKB: estimatedSizeKB,
-        });
-
-        const uploadResult = await this.apiClient.uploadSessions(batch);
-        lastUploadResult = uploadResult;
-
-        if (!uploadResult.success) {
-          throw new Error(`Batch ${batchIndex + 1} upload failed`);
-        }
-
-        sessionsUploaded += uploadResult.sessionsProcessed;
-
-        sendProgress({
-          phase: 'uploading',
-          message: `Uploaded ${sessionsUploaded} of ${sanitizedSessions.length} sessions...`,
-          current: sessionsUploaded,
-          total: sanitizedSessions.length,
-          currentBatch: batchIndex + 1,
-          totalBatches,
-          sizeKB: estimatedSizeKB,
-        });
+      if (checkCancelled()) {
+        return this.cancelledResult(sessionsUploaded, projectsSynced, errors);
       }
+
+      const uploadResult = await this.apiClient.uploadSessions(
+        sanitizedSessions,
+        (current, total) => {
+          sendProgress({
+            phase: 'uploading',
+            message: `Uploading ${current} of ${total} sessions...`,
+            current,
+            total: sanitizedSessions.length,
+            sizeKB: estimatedSizeKB,
+          });
+        }
+      );
+
+      if (!uploadResult.success) {
+        throw new Error('Upload failed');
+      }
+
+      sessionsUploaded = uploadResult.sessionsProcessed;
+
+      // Update sync state for each project
+      for (const project of projectsSynced) {
+        const projectSessions = eligibleSessions.filter((s) => s.projectPath === project);
+        const lastSession = projectSessions[projectSessions.length - 1];
+        await this.syncState.recordSync(project, projectSessions.length, lastSession?.id);
+      }
+
+      // Phase: Complete
+      sendProgress({
+        phase: 'complete',
+        message: `Successfully synced ${sessionsUploaded} sessions!`,
+        current: sessionsUploaded,
+        total: sessionsUploaded,
+      });
+
+      return {
+        success: true,
+        sessionsUploaded,
+        sessionsFailed: 0,
+        sessionsSkipped: sessions.length - totalSessions,
+        projectsSynced,
+        errors,
+        uploadResult,
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
       errors.push({ message, code: 'UPLOAD_FAILED' });
@@ -307,34 +311,8 @@ export class SyncService {
         sessionsSkipped: sessions.length - totalSessions,
         projectsSynced,
         errors,
-        uploadResult: lastUploadResult,
       };
     }
-
-    // Update sync state for each project
-    for (const project of projectsSynced) {
-      const projectSessions = eligibleSessions.filter((s) => s.projectPath === project);
-      const lastSession = projectSessions[projectSessions.length - 1];
-      await this.syncState.recordSync(project, projectSessions.length, lastSession?.id);
-    }
-
-    // Phase: Complete
-    sendProgress({
-      phase: 'complete',
-      message: `Successfully synced ${sessionsUploaded} sessions!`,
-      current: sessionsUploaded,
-      total: sessionsUploaded,
-    });
-
-    return {
-      success: true,
-      sessionsUploaded,
-      sessionsFailed: 0,
-      sessionsSkipped: sessions.length - totalSessions,
-      projectsSynced,
-      errors,
-      uploadResult: lastUploadResult,
-    };
   }
 
   /**

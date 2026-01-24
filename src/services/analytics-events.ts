@@ -36,6 +36,7 @@ export const AnalyticsEvents = {
   // Session Sync
   SYNC_STARTED: 'vs-extension-sync-started',
   SESSIONS_SYNCED: 'vs-extension-sessions-synced',
+  BATCH_UPLOADED: 'vs-extension-batch-uploaded',
 } as const;
 
 export type AnalyticsEvent = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
