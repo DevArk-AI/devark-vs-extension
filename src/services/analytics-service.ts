@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import type { AnalyticsEvent } from './analytics-events';
 import { MIXPANEL_TOKEN } from '../config/analytics.config';
+import { getEditorType } from '../extension-state';
 
 /** Function to check if user is registered to cloud */
 export type AuthStatusChecker = () => Promise<boolean>;
@@ -95,6 +96,7 @@ export class AnalyticsService implements IAnalyticsService {
           $insert_id: generateInsertId(),
           // Standard properties
           platform: 'vscode-extension',
+          editor_type: getEditorType(),
           extension_version: process.env.EXTENSION_VERSION || 'unknown',
           is_registered_to_cloud: isRegistered,
           // User-provided properties

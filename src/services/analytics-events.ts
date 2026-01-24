@@ -33,6 +33,11 @@ export const AnalyticsEvents = {
   AUTO_ANALYZE_RESPONSE_TOGGLED: 'vs-extension-auto-analyze-response-toggled',
   HOOKS_INSTALLED: 'vs-extension-hooks-installed',
 
+  // Local Reports
+  REPORT_GENERATED: 'vs-extension-report-generated',
+  REPORT_COPIED: 'vs-extension-report-copied',
+  REPORT_DOWNLOADED: 'vs-extension-report-downloaded',
+
   // Session Sync
   SYNC_STARTED: 'vs-extension-sync-started',
   SESSIONS_SYNCED: 'vs-extension-sessions-synced',

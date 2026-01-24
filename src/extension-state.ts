@@ -47,6 +47,26 @@ export function getEditorName(): 'Cursor' | 'VS Code' {
   return isCursorIDE() ? 'Cursor' : 'VS Code';
 }
 
+/**
+ * Editor type for analytics and tracking
+ */
+export type EditorType = 'cursor' | 'windsurf' | 'vscodium' | 'vscode' | 'unknown';
+
+/**
+ * Get the editor type for analytics purposes
+ * Detects VS Code forks: Cursor, Windsurf, VSCodium
+ */
+export function getEditorType(): EditorType {
+  const appName = vscode.env.appName.toLowerCase();
+
+  if (appName.includes('cursor')) return 'cursor';
+  if (appName.includes('windsurf')) return 'windsurf';
+  if (appName.includes('vscodium')) return 'vscodium';
+  if (appName === 'visual studio code') return 'vscode';
+
+  return 'unknown';
+}
+
 export class ExtensionState {
   private static _llmManager: LLMManager | null = null;
   private static _statusBarManager: StatusBarManager | null = null;

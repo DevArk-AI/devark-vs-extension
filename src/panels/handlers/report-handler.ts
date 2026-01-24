@@ -16,6 +16,8 @@ import * as vscode from 'vscode';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { getNotificationService } from '../../services/NotificationService';
+import { ExtensionState } from '../../extension-state';
+import { AnalyticsEvents } from '../../services/analytics-events';
 
 interface GenerateReportData {
   type: 'daily' | 'weekly' | 'custom';
@@ -29,6 +31,7 @@ interface GenerateReportData {
 export class ReportHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
   private currentReportHtml: string | null = null;
+  private currentReportType: 'daily' | 'weekly' | 'custom' | null = null;
 
   constructor(
     messageSender: MessageSender,
@@ -124,6 +127,7 @@ export class ReportHandler extends BaseMessageHandler {
         // Generate empty report
         const html = this.generateEmptyReportHtml(reportType, dateRange);
         this.currentReportHtml = html;
+        this.currentReportType = reportType;
         this.send('reportSuccess', {
           html,
           type: reportType,
@@ -170,6 +174,7 @@ export class ReportHandler extends BaseMessageHandler {
 
       // Store for copy/download
       this.currentReportHtml = html;
+      this.currentReportType = reportType;
 
       // Send success
       this.send('reportSuccess', {
@@ -181,6 +186,12 @@ export class ReportHandler extends BaseMessageHandler {
         },
         sessionCount: sessions.length,
       });
+
+      // Track analytics
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.REPORT_GENERATED, {
+        report_type: reportType,
+        session_count: sessions.length,
+      });
     } catch (error) {
       console.error('[ReportHandler] Report generation failed:', error);
       this.send('reportError', error instanceof Error ? error.message : 'Failed to generate report');
@@ -189,6 +200,7 @@ export class ReportHandler extends BaseMessageHandler {
 
   private handleResetReport(): void {
     this.currentReportHtml = null;
+    this.currentReportType = null;
     this.send('reportReset');
   }
 
@@ -201,6 +213,9 @@ export class ReportHandler extends BaseMessageHandler {
     try {
       await vscode.env.clipboard.writeText(this.currentReportHtml);
       getNotificationService().info('Report copied to clipboard');
+      ExtensionState.getAnalyticsService().track(AnalyticsEvents.REPORT_COPIED, {
+        report_type: this.currentReportType,
+      });
     } catch (error) {
       getNotificationService().error('Failed to copy report');
     }
@@ -226,6 +241,9 @@ export class ReportHandler extends BaseMessageHandler {
         const encoder = new TextEncoder();
         await vscode.workspace.fs.writeFile(uri, encoder.encode(this.currentReportHtml));
         getNotificationService().info(`Report saved to ${uri.fsPath}`);
+        ExtensionState.getAnalyticsService().track(AnalyticsEvents.REPORT_DOWNLOADED, {
+          report_type: this.currentReportType,
+        });
       }
     } catch (error) {
       getNotificationService().error('Failed to save report');

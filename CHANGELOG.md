@@ -2,6 +2,11 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.16] - 2026-01-24
+
+### Added
+- Dashboard link in sync completion dialog for quick access to view synced sessions
+
 ## [0.1.15] - 2026-01-24
 
 ### Improved
