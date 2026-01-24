@@ -9570,7 +9570,7 @@
   justify-content: space-between;
   gap: var(--space-lg);
   padding: var(--space-lg);
-  background-color: #1e1e1e;
+  background-color: var(--vscode-sideBar-background);
   border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   position: sticky;
@@ -9588,13 +9588,13 @@
 .vl-cloud-cta-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--foreground-default);
+  color: var(--vscode-foreground);
   margin-bottom: 2px;
 }
 
 .vl-cloud-cta-subtitle {
   font-size: 11px;
-  color: var(--foreground-muted);
+  color: var(--vscode-descriptionForeground);
 }
 
 .vl-cloud-cta-btn {
