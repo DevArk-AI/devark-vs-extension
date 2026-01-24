@@ -2,6 +2,14 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.14] - 2026-01-24
+
+### Added
+- Feedback button in header next to settings gear
+- Star rating modal for submitting feedback
+- Anonymous feedback support (no login required)
+- Authenticated feedback linked to user account when logged in
+
 ## [0.1.13] - 2026-01-23
 
 ### Added
