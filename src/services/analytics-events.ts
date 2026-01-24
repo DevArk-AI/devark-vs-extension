@@ -37,6 +37,9 @@ export const AnalyticsEvents = {
   SYNC_STARTED: 'vs-extension-sync-started',
   SESSIONS_SYNCED: 'vs-extension-sessions-synced',
   BATCH_UPLOADED: 'vs-extension-batch-uploaded',
+
+  // Feedback
+  FEEDBACK_SUBMITTED: 'vs-extension-feedback-submitted',
 } as const;
 
 export type AnalyticsEvent = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];

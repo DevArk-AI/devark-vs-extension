@@ -48,6 +48,7 @@ import { ReportHandler } from './handlers/report-handler';
 import { StatsHandler } from './handlers/stats-handler';
 import { SuggestionHandler } from './handlers/suggestion-handler';
 import { ConfigHandler } from './handlers/config-handler';
+import { FeedbackHandler } from './handlers/feedback-handler';
 import { getNotificationService } from '../services/NotificationService';
 import { SharedContext } from './handlers/shared-context';
 import type { BaseMessageHandler } from './handlers/base-handler';
@@ -203,8 +204,9 @@ export class V2MessageHandler {
       new StatsHandler(messageSender, handlerContext, this.sharedContext),
       new SuggestionHandler(messageSender, handlerContext, this.sharedContext),
       new ConfigHandler(messageSender, handlerContext, this.sharedContext),
+      new FeedbackHandler(messageSender, handlerContext, this.sharedContext),
     ];
-    console.log('[V2MessageHandler] Handlers initialized - 13 handlers registered');
+    console.log('[V2MessageHandler] Handlers initialized - 14 handlers registered');
 
     // Initialize Co-Pilot V2 Coordinator (manages all Co-Pilot services, storage, and subscriptions)
     const handlerFinder = {

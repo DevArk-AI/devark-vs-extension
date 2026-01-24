@@ -132,6 +132,12 @@
   letter-spacing: -0.3px;
 }
 
+.vl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .vl-settings-btn {
   display: flex;
   align-items: center;
@@ -2751,6 +2757,106 @@
   justify-content: flex-end;
   padding: var(--space-lg);
   border-top: 1px solid var(--vscode-panel-border);
+}
+
+/* Feedback Modal */
+.vl-feedback-modal {
+  width: 320px;
+  max-width: 90vw;
+}
+
+.vl-feedback-stars {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.vl-feedback-star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-xs);
+  transition: transform 0.15s ease;
+}
+
+.vl-feedback-star-btn:hover {
+  transform: scale(1.15);
+}
+
+.vl-feedback-star {
+  color: var(--vscode-descriptionForeground);
+  transition: color 0.15s ease;
+}
+
+.vl-feedback-star.filled {
+  color: #f59e0b;
+  fill: #f59e0b;
+}
+
+.vl-feedback-textarea {
+  width: 100%;
+  height: 80px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 6px;
+  padding: var(--space-md);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--vscode-input-foreground);
+  resize: none;
+  margin-bottom: var(--space-md);
+}
+
+.vl-feedback-textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.vl-feedback-textarea:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.vl-feedback-submit {
+  width: 100%;
+}
+
+.vl-feedback-thanks {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.vl-feedback-thanks-icon {
+  display: block;
+  font-size: 32px;
+  color: var(--vl-green);
+  margin-bottom: var(--space-md);
+}
+
+.vl-feedback-thanks p {
+  color: var(--vl-green);
+  font-weight: 500;
+}
+
+/* Feedback Button in Header */
+.vl-feedback-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: var(--space-xs);
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  opacity: 0.8;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  border-radius: 4px;
+}
+
+.vl-feedback-btn:hover {
+  opacity: 1;
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
 }
 
 /* Filter Section */

@@ -6,7 +6,7 @@
  */
 
 import React, { useReducer, useEffect, createContext, useContext, useState, useMemo } from 'react';
-import { Settings, ChevronUp } from 'lucide-react';
+import { Settings, ChevronUp, MessageSquare } from 'lucide-react';
 import { getScoreClass, formatTimeAgo, formatDuration } from './state/types-v2';
 import type { AppStateV2, ActionV2, Project, Session } from './state/types-v2';
 import { initialState } from './state/initial-state';
@@ -24,6 +24,7 @@ import { SessionsSidebar } from './components/v2/SessionsSidebar';
 import { PromptLabSidebar } from './components/v2/PromptLabSidebar';
 import { CoPilotSuggestion } from './components/v2/CoPilotSuggestion';
 import { HowScoresWorkModal } from './components/v2/HowScoresWorkModal';
+import { FeedbackModal } from './components/v2/FeedbackModal';
 import { PromptLabView } from './components/v2/PromptLabView';
 import { CloudStatusBar, type CloudStatus } from './components/v2/CloudStatusBar';
 import { NotificationToast, useNotifications } from './components/v2/NotificationToast';
@@ -89,6 +90,7 @@ export function AppV2() {
   // Modal states
   const [currentSuggestion, setCurrentSuggestion] = useState<CoPilotSuggestionData | null>(null);
   const [howScoresWorkOpen, setHowScoresWorkOpen] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(false);
 
@@ -756,13 +758,23 @@ export function AppV2() {
               )}
               <span className="vl-header-title">DEVARK</span>
             </div>
-            <button
-              className="vl-settings-btn"
-              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'settings' })}
-              aria-label="Settings"
-            >
-              <Settings size={16} />
-            </button>
+            <div className="vl-header-actions">
+              <button
+                className="vl-feedback-btn"
+                onClick={() => setFeedbackModalOpen(true)}
+                aria-label="Feedback"
+                title="Send Feedback"
+              >
+                <MessageSquare size={16} />
+              </button>
+              <button
+                className="vl-settings-btn"
+                onClick={() => dispatch({ type: 'SET_VIEW', payload: 'settings' })}
+                aria-label="Settings"
+              >
+                <Settings size={16} />
+              </button>
+            </div>
           </header>
         )}
 
@@ -971,6 +983,15 @@ export function AppV2() {
         <HowScoresWorkModal
           isOpen={howScoresWorkOpen}
           onClose={() => setHowScoresWorkOpen(false)}
+        />
+
+        {/* Feedback Modal */}
+        <FeedbackModal
+          isOpen={feedbackModalOpen}
+          onClose={() => setFeedbackModalOpen(false)}
+          onSubmit={(rating, message) => {
+            postMessage('submitFeedback', { rating, message });
+          }}
         />
 
         {/* Notification Toast (VIB-74) */}

@@ -267,6 +267,9 @@ export type WebviewMessage =
   | { type: 'clearPromptHistory' }
   | { type: 'openExternal'; data: { url: string } }
 
+  // -------- Feedback --------
+  | { type: 'submitFeedback'; data: { rating: number; message?: string } }
+
   // -------- Misc --------
   | { type: 'test'; data?: unknown }
   | { type: 'testCLI' }

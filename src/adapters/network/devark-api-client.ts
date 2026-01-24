@@ -277,6 +277,16 @@ export class DevArkApiClient implements IApiClient {
     return response.data;
   }
 
+  // === Feedback ===
+
+  async submitFeedback(rating: number, message?: string): Promise<{ success: boolean }> {
+    const response = await this.httpClient.post<{ success: boolean }>('/api/feedback-extension', {
+      rating,
+      message,
+    });
+    return response.data;
+  }
+
   // === Configuration ===
 
   getBaseUrl(): string {

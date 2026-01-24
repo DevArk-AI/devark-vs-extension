@@ -109,6 +109,26 @@ npm test:watch
 npm test:coverage
 ```
 
+## Development with Local Server
+
+The extension connects to the DevArk API. The API URL is controlled by the `DEVARK_API_URL` environment variable.
+
+### VS Code Launch Configurations (`.vscode/launch.json`)
+
+- **Run Extension (Local Server)** - Uses `DEVARK_API_URL=http://localhost:5173` for local development
+- **Run Extension (Production)** - Uses the default production URL (`https://app.devark.ai`)
+
+To test with a local server:
+1. Start the devark-react-router server: `cd ../devark-react-router && npm run dev`
+2. In VS Code, use "Run Extension (Local Server)" launch configuration (F5)
+
+### Configuration Priority
+
+The API URL is resolved in this order:
+1. `DEVARK_API_URL` environment variable (set in launch.json or shell)
+2. `apiUrl` in `~/.devark/config.json` (user config file)
+3. Default: `https://app.devark.ai`
+
 ## Important Notes
 
 1. **Brand rename in progress** - Migrating from Vibe-Log to DevArk

@@ -122,6 +122,15 @@ export interface IApiClient {
    */
   deleteInstructions(): Promise<{ success: boolean }>;
 
+  // === Feedback ===
+
+  /**
+   * Submit authenticated feedback
+   * @param rating Rating 1-5
+   * @param message Optional message
+   */
+  submitFeedback(rating: number, message?: string): Promise<{ success: boolean }>;
+
   // === Configuration ===
 
   /**
