@@ -2,6 +2,13 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.15] - 2026-01-24
+
+### Improved
+- Session ring indicators now respond gracefully to narrow panel widths
+- Rings scale down at 320px, 260px, and wrap vertically at 200px
+- All responsive sizes configurable via CSS custom properties
+
 ## [0.1.14] - 2026-01-24
 
 ### Added
