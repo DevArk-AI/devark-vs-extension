@@ -5,6 +5,7 @@
  */
 
 // VS Code webview global - injected by VS Code into webview context
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ambient declaration used in typeof
 declare function acquireVsCodeApi(): {
   postMessage(message: unknown): void;
   getState<T>(): T | undefined;

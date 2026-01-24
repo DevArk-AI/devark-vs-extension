@@ -47,7 +47,7 @@ function formatEntitiesModified(entities: string[] | undefined): string {
 
   // Extract just filenames from paths
   const fileNames = entities.map(e => {
-    const parts = e.split(/[\/\\]/);
+    const parts = e.split(/[/\\]/);
     return parts[parts.length - 1];
   });
 
@@ -69,6 +69,7 @@ export function CoachingSection({
 
   // Reset expanded state when coaching data changes (new session or new coaching)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on coaching change
     setExpanded(false);
   }, [coaching?.timestamp]);
 
@@ -156,9 +157,9 @@ export function CoachingSection({
           </div>
           <div className="vl-suggestion-title-prominent">{topSuggestion.title}</div>
           <div className="vl-suggestion-prompt-box">
-            "{topSuggestion.suggestedPrompt.length > 150
+            &ldquo;{topSuggestion.suggestedPrompt.length > 150
               ? topSuggestion.suggestedPrompt.substring(0, 150) + '...'
-              : topSuggestion.suggestedPrompt}"
+              : topSuggestion.suggestedPrompt}&rdquo;
           </div>
           <div className="vl-suggestion-actions">
             <button

@@ -28,6 +28,7 @@ export function DateRangeDialog({
   // Reset dates when dialog closes
   useEffect(() => {
     if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on dialog close
       setStartDate(null);
       setEndDate(null);
     }

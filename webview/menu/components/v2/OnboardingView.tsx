@@ -168,7 +168,7 @@ export function OnboardingView() {
         <div className="vl-value-prop">
           <div className="vl-value-prop-title">3. Prep Your Standups</div>
           <div className="vl-value-prop-desc">
-            Yesterday's work, summarized. Ready for standup.
+            Yesterday&apos;s work, summarized. Ready for standup.
             <br />
             <span
               className="vl-value-prop-link"

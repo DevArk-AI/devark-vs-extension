@@ -917,7 +917,7 @@ export class SummaryHandler extends BaseMessageHandler {
         for (const message of messages) {
           // Look for file paths in message content
           // Common patterns: src/file.ts, ./components/Button.tsx, /absolute/path.js
-          const fileMatches = message.content.match(/(?:\.\/|\/)?[\w\-\/]+\.(?:ts|tsx|js|jsx|json|css|html|md|py|java|go|rs|c|cpp|h|hpp)/gi);
+          const fileMatches = message.content.match(/(?:\.\/|\/)?[\w\-/]+\.(?:ts|tsx|js|jsx|json|css|html|md|py|java|go|rs|c|cpp|h|hpp)/gi);
 
           if (fileMatches) {
             fileMatches.forEach(file => filePathsSet.add(file));

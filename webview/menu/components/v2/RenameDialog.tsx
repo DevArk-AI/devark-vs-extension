@@ -29,6 +29,7 @@ export function RenameDialog({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset when dialog opens
       setName(currentName);
       // Focus and select input after a brief delay
       setTimeout(() => {

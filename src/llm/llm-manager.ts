@@ -57,6 +57,7 @@ export class LLMManager {
     settingsManager: SettingsManager
   ) {
     // Use provided registry or import the global one
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy loading to avoid circular deps
     this.providerRegistry = registry || require('./decorators').defaultProviderRegistry;
     this.settingsManager = settingsManager;
     this.providers = new Map();

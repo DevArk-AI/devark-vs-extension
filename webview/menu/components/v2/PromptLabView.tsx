@@ -38,6 +38,7 @@ export function PromptLabView() {
   // Sync editedImprovedPrompt when improved version arrives
   useEffect(() => {
     if (promptLab.currentAnalysis?.improvedVersion) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync derived state
       setEditedImprovedPrompt(promptLab.currentAnalysis.improvedVersion);
     }
   }, [promptLab.currentAnalysis?.improvedVersion]);

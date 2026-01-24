@@ -40,7 +40,7 @@ export async function isCommandAvailable(command: string): Promise<boolean> {
       // Check if stdout has a valid path (not empty)
       return stdout.trim().length > 0;
     }
-  } catch (error) {
+  } catch {
     // Command not found or error executing the check
     return false;
   }

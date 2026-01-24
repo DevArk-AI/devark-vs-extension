@@ -193,7 +193,7 @@ export function AppV2() {
           });
           break;
 
-        case 'analysisComplete':
+        case 'analysisComplete': {
           // Handle both old and new message format
           const promptData = message.data.prompt || message.data;
           dispatch({
@@ -205,6 +205,7 @@ export function AppV2() {
           });
           // Coaching will be pushed by CoPilotCoordinator when Stop hook fires
           break;
+        }
 
         case 'enhancedPromptReady':
           // Enhanced prompt text arrived (score comes separately)

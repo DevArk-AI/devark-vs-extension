@@ -64,6 +64,7 @@ export function ProviderSelectView({ onClose }: ProviderSelectViewProps) {
   // Initialize models from provider data
   useEffect(() => {
     const openRouterProvider = state.providers.find(p => p.id === 'openrouter');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initialize from props
     if (openRouterProvider?.model) {
       setOpenRouterModel(openRouterProvider.model);
     } else {

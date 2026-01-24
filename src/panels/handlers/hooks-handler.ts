@@ -12,6 +12,7 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+import { exec } from 'child_process';
 import { BaseMessageHandler, type MessageSender, type HandlerContext } from './base-handler';
 import { SharedContext } from './shared-context';
 import { ExtensionState, isCursorIDE } from '../../extension-state';
@@ -125,7 +126,6 @@ export class HooksHandler extends BaseMessageHandler {
     }
 
     // Method 2: Check if 'claude' command exists in PATH
-    const { exec } = require('child_process');
     const command = process.platform === 'win32' ? 'where' : 'which';
     const executable = process.platform === 'win32' ? 'claude.exe' : 'claude';
 

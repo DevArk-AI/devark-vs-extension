@@ -31,7 +31,7 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
     case 'SET_AVAILABLE_FEATURE_MODELS':
       return { ...state, availableFeatureModels: action.payload };
 
-    case 'UPDATE_FEATURE_MODEL':
+    case 'UPDATE_FEATURE_MODEL': {
       if (!state.featureModels) return state;
       const { feature, model } = action.payload;
       const key = feature === 'scoring' ? 'promptScoring'
@@ -44,6 +44,7 @@ export function appReducer(state: AppStateV2, action: ActionV2): AppStateV2 {
           [key]: model,
         },
       };
+    }
 
     case 'TOGGLE_AUTO_ANALYZE':
       return { ...state, autoAnalyzeEnabled: !state.autoAnalyzeEnabled };

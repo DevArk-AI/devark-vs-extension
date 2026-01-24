@@ -89,6 +89,7 @@ export function ActiveSessionSwitcher({
   // Expand new platforms when they appear
   useEffect(() => {
     const currentPlatforms = new Set(groups.map((g) => g.platform));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand new platforms
     setExpandedGroups((prev) => {
       const next = new Set(prev);
       for (const platform of currentPlatforms) {

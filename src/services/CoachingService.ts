@@ -332,6 +332,7 @@ export class CoachingService {
     let sessionDuration = 0;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy loading to avoid circular deps
       const { getContextExtractor } = require('./ContextExtractor');
       const contextExtractor = getContextExtractor();
       const sessionContext = contextExtractor.extractSessionContext();

@@ -70,7 +70,7 @@ export function GoalBanner({ goal, onEditGoal }: GoalBannerProps) {
       ) : goal ? (
         <div className="vl-goal-banner-display">
           <span className="vl-goal-label">Goal:</span>
-          <span className="vl-goal-text">"{goal}"</span>
+          <span className="vl-goal-text">&ldquo;{goal}&rdquo;</span>
           <button className="vl-goal-edit-btn" onClick={handleStartEdit} title="Edit goal">
             <Edit2 size={12} />
           </button>

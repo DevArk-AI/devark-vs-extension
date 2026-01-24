@@ -613,7 +613,7 @@ export class SummaryService {
       }
 
       // Extract bullet points or numbered items
-      const bulletMatch = line.match(/^[\-\*\d+\.)]\s*(.+)$/);
+      const bulletMatch = line.match(/^[-*\d+.)]\s*(.+)$/);
       const content = bulletMatch ? bulletMatch[1] : line;
 
       // Add to appropriate section

@@ -57,11 +57,13 @@ function getCursorDatabasePaths(): string[] {
         path.join(homeDir, '.config', 'Cursor', 'User', 'globalStorage', 'state.vscdb')
       ];
 
-    case 'win32': // Windows
+    case 'win32': {
+      // Windows
       const appData = process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming');
       return [
         path.join(appData, 'Cursor', 'User', 'globalStorage', 'state.vscdb')
       ];
+    }
 
     default:
       if (DEBUG_SESSION_READER) console.warn(`[Session Reader] Unsupported platform: ${platform}`);

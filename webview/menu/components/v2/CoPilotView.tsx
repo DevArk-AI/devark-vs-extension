@@ -32,6 +32,7 @@ export function CoPilotView() {
   // Sync editedImprovedPrompt when improved version arrives
   useEffect(() => {
     if (state.currentAnalysis?.improvedVersion) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync derived state
       setEditedImprovedPrompt(state.currentAnalysis.improvedVersion);
     }
   }, [state.currentAnalysis?.improvedVersion]);
