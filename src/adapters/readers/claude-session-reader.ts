@@ -139,7 +139,7 @@ export class ClaudeSessionReader implements ISessionReader {
       // Folder names like "C--Users-97254-AppData-Local-Temp-devark-hooks"
       // should be skipped if they contain "devark-hooks", "programs-cursor", etc.
       if (this.shouldIgnoreProjectFolder(project.name)) {
-        console.log(`[ClaudeSessionReader] ❌ SKIPPING ignored folder: ${project.name}`);
+        //console.log(`[ClaudeSessionReader] ❌ SKIPPING ignored folder: ${project.name}`);
         continue; // Skip entire folder if it matches ignored patterns
       }
 
