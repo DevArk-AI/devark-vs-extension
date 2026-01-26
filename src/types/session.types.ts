@@ -64,7 +64,6 @@ export interface TokenUsageData {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-  contextUtilization: number; // 0-1 scale
   /** Cache tokens created during this session (reduces future input costs) */
   cacheCreationInputTokens?: number;
   /** Cache tokens read (reused from previous context) */

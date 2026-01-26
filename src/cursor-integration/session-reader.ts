@@ -29,9 +29,9 @@ try {
   // Running in standalone CLI mode without VS Code
 }
 import { CursorSession, ComposerData, CursorDiskKVRow, MessageData, RawCursorMessage, ICursorDatabase } from './types';
-import type { ConversationHighlights, SessionIndex, SessionDetails, SessionData, ReaderOptions, ToolType, Message, SessionMetadata, TokenUsageData } from '../types';
+import type { ConversationHighlights, SessionIndex, SessionDetails, SessionData, ReaderOptions, ToolType, Message, SessionMetadata } from '../types';
 import type { ISessionReader, ReaderCapabilities, SessionReaderResult, SessionReaderError } from '../ports/readers/session-reader.interface';
-import { extractHighlights, calculateDuration, calculateTokenUsage } from '../core/session';
+import { extractHighlights, calculateDuration } from '../core/session';
 
 /** Max characters for truncated content in highlights */
 const MAX_HIGHLIGHT_LENGTH = 300;
@@ -240,16 +240,7 @@ export class CursorSessionReader implements ISessionReader {
       languages: [],
     };
 
-    // Calculate token usage for context window tracking
-    // Cursor sessions use tiktoken estimates (no direct API access)
-    const tokenUsageResult = calculateTokenUsage(convertedMessages);
-    const tokenUsage: TokenUsageData = {
-      inputTokens: tokenUsageResult.inputTokens,
-      outputTokens: tokenUsageResult.outputTokens,
-      totalTokens: tokenUsageResult.totalTokens,
-      contextUtilization: tokenUsageResult.contextUtilization,
-      source: 'estimated',
-    };
+    // Note: Cursor sessions don't have token usage data (no API access)
 
     return {
       id: `cursor-${cursorSession.sessionId}`,
@@ -260,7 +251,6 @@ export class CursorSessionReader implements ISessionReader {
       tool: 'cursor',
       metadata,
       highlights: cursorSession.highlights,
-      tokenUsage,
     };
   }
 

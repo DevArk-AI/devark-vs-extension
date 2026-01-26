@@ -799,14 +799,11 @@ describe('ClaudeSessionReader', () => {
 
       expect(session.tokenUsage).toBeDefined();
       expect(session.tokenUsage!.source).toBe('api');
-      // contextSize = 8 (input) + 1044 (cache creation) + 135976 (cache read) = 137028
-      // contextUtilization = 137028 / 200000 = 0.68514
-      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.685, 2);
       expect(session.tokenUsage!.cacheCreationInputTokens).toBe(1044);
       expect(session.tokenUsage!.cacheReadInputTokens).toBe(135976);
     });
 
-    it('calculates context utilization without cache tokens when not present', async () => {
+    it('handles token usage without cache tokens', async () => {
       fs.addDirectory('/home/user/.claude/projects');
       fs.addDirectory('/home/user/.claude/projects/-home-user-project');
       fs.addFile(
@@ -819,9 +816,8 @@ describe('ClaudeSessionReader', () => {
 
       expect(session.tokenUsage).toBeDefined();
       expect(session.tokenUsage!.source).toBe('api');
-      // contextSize = 5000 (input only, no cache)
-      // contextUtilization = 5000 / 200000 = 0.025
-      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.025, 3);
+      expect(session.tokenUsage!.inputTokens).toBe(5000);
+      expect(session.tokenUsage!.outputTokens).toBe(1000);
       expect(session.tokenUsage!.cacheCreationInputTokens).toBe(0);
       expect(session.tokenUsage!.cacheReadInputTokens).toBe(0);
     });
@@ -839,43 +835,17 @@ describe('ClaudeSessionReader', () => {
 
       expect(session.tokenUsage).toBeDefined();
       expect(session.tokenUsage!.source).toBe('api');
-      // contextSize = 100 (input) + 0 (no cache creation) + 80000 (cache read) = 80100
-      // contextUtilization = 80100 / 200000 = 0.4005
-      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.4, 1);
       expect(session.tokenUsage!.cacheCreationInputTokens).toBe(0);
       expect(session.tokenUsage!.cacheReadInputTokens).toBe(80000);
     });
 
-    it('uses estimated source when no API usage data available', async () => {
+    it('returns undefined tokenUsage when no API usage data available', async () => {
       setupBasicSession(fs);
       const result = await reader.readSessions();
       const session = result.sessions[0];
 
-      expect(session.tokenUsage).toBeDefined();
-      expect(session.tokenUsage!.source).toBe('estimated');
-      // No cache tokens for estimated
-      expect(session.tokenUsage!.cacheCreationInputTokens).toBeUndefined();
-      expect(session.tokenUsage!.cacheReadInputTokens).toBeUndefined();
-    });
-
-    it('excludes output tokens from context utilization', async () => {
-      fs.addDirectory('/home/user/.claude/projects');
-      fs.addDirectory('/home/user/.claude/projects/-home-user-project');
-      fs.addFile(
-        '/home/user/.claude/projects/-home-user-project/session-nocache.jsonl',
-        SAMPLE_JSONL.withApiUsageNoCache
-      );
-
-      const result = await reader.readSessions();
-      const session = result.sessions[0];
-
-      // Output tokens (1000) should NOT be included in context utilization
-      // Only input tokens (5000) count toward context usage
-      expect(session.tokenUsage!.outputTokens).toBe(1000);
-      expect(session.tokenUsage!.inputTokens).toBe(5000);
-      // If output were included, it would be 6000/200000 = 0.03
-      // With only input, it's 5000/200000 = 0.025
-      expect(session.tokenUsage!.contextUtilization).toBeCloseTo(0.025, 3);
+      // No API usage in basic session, so tokenUsage should be undefined
+      expect(session.tokenUsage).toBeUndefined();
     });
   });
 });

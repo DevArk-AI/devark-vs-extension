@@ -19,6 +19,9 @@ import type { Message } from '../../types/message.types';
 import { isActualUserPrompt, countActualUserPrompts } from '../../core/session/prompt-utils';
 import * as crypto from 'crypto';
 
+// Set to true to enable token usage debug logging
+const DEBUG_TOKEN_USAGE = false;
+
 export class SessionHandler extends BaseMessageHandler {
   private sharedContext: SharedContext;
 
@@ -323,7 +326,6 @@ export class SessionHandler extends BaseMessageHandler {
         // VIB-90: Include tokenUsage for context window tracking
         tokenUsage: unifiedSession?.tokenUsage ? {
           totalTokens: unifiedSession.tokenUsage.totalTokens,
-          contextUtilization: unifiedSession.tokenUsage.contextUtilization,
         } : undefined,
         metadata: {
           files: details.fileContext || [],
@@ -538,11 +540,13 @@ export class SessionHandler extends BaseMessageHandler {
       const allMergedSessions = mergedProjects.flatMap(p => p.sessions);
 
       // Debug: Log final tokenUsage presence before sending
-      const finalWithTokenUsage = allMergedSessions.filter(s => s.tokenUsage);
-      console.debug(`[SessionHandler] v2SessionList: ${allMergedSessions.length} sessions, ${finalWithTokenUsage.length} with tokenUsage`);
-      if (finalWithTokenUsage.length > 0) {
-        const sample = finalWithTokenUsage[0];
-        console.debug(`[SessionHandler] Sample: id=${sample.id.substring(0, 30)}... contextUtil=${sample.tokenUsage?.contextUtilization}`);
+      if (DEBUG_TOKEN_USAGE) {
+        const finalWithTokenUsage = allMergedSessions.filter(s => s.tokenUsage);
+        console.debug(`[SessionHandler] v2SessionList: ${allMergedSessions.length} sessions, ${finalWithTokenUsage.length} with tokenUsage`);
+        if (finalWithTokenUsage.length > 0) {
+          const sample = finalWithTokenUsage[0];
+          console.debug(`[SessionHandler] Sample: id=${sample.id.substring(0, 30)}... totalTokens=${sample.tokenUsage?.totalTokens}`);
+        }
       }
 
       this.send('v2SessionList', { sessions: allMergedSessions, projects: mergedProjects });
@@ -576,7 +580,6 @@ export class SessionHandler extends BaseMessageHandler {
       // Token usage for context window tracking
       tokenUsage: unified.tokenUsage ? {
         totalTokens: unified.tokenUsage.totalTokens,
-        contextUtilization: unified.tokenUsage.contextUtilization,
       } : undefined,
       metadata: {
         files: unified.fileContext,
@@ -597,8 +600,10 @@ export class SessionHandler extends BaseMessageHandler {
    */
   private buildProjectsFromUnifiedSessions(sessions: UnifiedSession[]): Project[] {
     // Debug: Log input tokenUsage presence
-    const inputWithTokenUsage = sessions.filter(s => s.tokenUsage);
-    console.debug(`[SessionHandler] buildProjects input: ${sessions.length} sessions, ${inputWithTokenUsage.length} with tokenUsage`);
+    if (DEBUG_TOKEN_USAGE) {
+      const inputWithTokenUsage = sessions.filter(s => s.tokenUsage);
+      console.debug(`[SessionHandler] buildProjects input: ${sessions.length} sessions, ${inputWithTokenUsage.length} with tokenUsage`);
+    }
 
     const projectMap = new Map<string, Project>();
 
@@ -638,9 +643,11 @@ export class SessionHandler extends BaseMessageHandler {
     }
 
     // Debug: Log output tokenUsage presence
-    const allOutputSessions = Array.from(projectMap.values()).flatMap(p => p.sessions);
-    const outputWithTokenUsage = allOutputSessions.filter(s => s.tokenUsage);
-    console.debug(`[SessionHandler] buildProjects output: ${allOutputSessions.length} sessions, ${outputWithTokenUsage.length} with tokenUsage`);
+    if (DEBUG_TOKEN_USAGE) {
+      const allOutputSessions = Array.from(projectMap.values()).flatMap(p => p.sessions);
+      const outputWithTokenUsage = allOutputSessions.filter(s => s.tokenUsage);
+      console.debug(`[SessionHandler] buildProjects output: ${allOutputSessions.length} sessions, ${outputWithTokenUsage.length} with tokenUsage`);
+    }
 
     return Array.from(projectMap.values());
   }
@@ -687,8 +694,8 @@ export class SessionHandler extends BaseMessageHandler {
       }
     }
 
-    // Debug logging for merge operation (useful for VIB-90 verification)
-    if (hookSessionCount > 0 || claudeSessionCount > 0) {
+    // Debug logging for merge operation
+    if (DEBUG_TOKEN_USAGE && (hookSessionCount > 0 || claudeSessionCount > 0)) {
       console.debug(`[SessionHandler] mergeProjects: hook=${hookSessionCount}, claude=${claudeSessionCount}, uuidMap=${claudeSessionsByUUID.size}, enriched=${enrichedCount}`);
     }
 

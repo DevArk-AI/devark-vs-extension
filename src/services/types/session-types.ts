@@ -125,11 +125,12 @@ export interface SerializedResponseRecord extends Omit<ResponseRecord, 'timestam
  * - >2 hour gap in activity
  */
 /**
- * Token usage data for context window tracking
+ * Token usage data for sessions (minimal version for service layer).
+ * Intentionally only includes totalTokens - the full TokenUsageData
+ * with inputTokens, outputTokens, and cache fields is in session.types.ts.
  */
 export interface TokenUsageData {
   totalTokens: number;
-  contextUtilization: number; // 0-1 scale
 }
 
 export interface Session {

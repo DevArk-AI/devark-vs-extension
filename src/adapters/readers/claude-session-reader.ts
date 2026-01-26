@@ -29,7 +29,6 @@ import type {
 import { calculateDuration } from '../../core/session/duration-calculator';
 import { extractLanguagesFromPaths } from '../../core/session/language-extractor';
 import { extractHighlights } from '../../core/session/highlights-extractor';
-import { calculateTokenUsage, CLAUDE_CONTEXT_WINDOWS } from '../../core/session/token-counter';
 import { isActualUserPrompt } from '../../core/session/prompt-utils';
 
 /**
@@ -724,10 +723,10 @@ export class ClaudeSessionReader implements ISessionReader {
     // Extract conversation highlights for summarization
     const highlights = extractHighlights(messages, {}, CLAUDE_SKIP_PATTERNS);
 
-    // Calculate token usage - use actual API data if available, fall back to tiktoken estimates
-    const tokenUsage: TokenUsageData = apiUsage.hasData
-      ? this.buildApiTokenUsage(apiUsage, modelInfo?.primaryModel ?? undefined)
-      : { ...calculateTokenUsage(messages, modelInfo?.primaryModel ?? undefined), source: 'estimated' as const };
+    // Token usage - only set if we have actual API data (no estimates)
+    const tokenUsage: TokenUsageData | undefined = apiUsage.hasData
+      ? this.buildApiTokenUsage(apiUsage)
+      : undefined;
 
     return {
       ...metadata,
@@ -788,24 +787,15 @@ export class ClaudeSessionReader implements ISessionReader {
   /**
    * Build token usage data from actual API response data.
    * Uses the LAST turn's token counts since input_tokens already includes full conversation history.
-   *
-   * With prompt caching, input_tokens only contains delta/new tokens.
-   * The actual context includes: input_tokens + cache_read_input_tokens + cache_creation_input_tokens
    */
   private buildApiTokenUsage(
-    apiUsage: { lastInput: number; lastOutput: number; lastCacheCreation: number; lastCacheRead: number },
-    primaryModel?: string
+    apiUsage: { lastInput: number; lastOutput: number; lastCacheCreation: number; lastCacheRead: number }
   ): TokenUsageData {
-    // Context = cached history + new input (caching-aware calculation)
-    // Output tokens don't count toward context utilization
-    const contextSize = apiUsage.lastInput + apiUsage.lastCacheCreation + apiUsage.lastCacheRead;
     const totalTokens = apiUsage.lastInput + apiUsage.lastOutput;
-    const contextWindow = CLAUDE_CONTEXT_WINDOWS[primaryModel ?? 'default'] ?? CLAUDE_CONTEXT_WINDOWS.default;
     return {
       inputTokens: apiUsage.lastInput,
       outputTokens: apiUsage.lastOutput,
       totalTokens,
-      contextUtilization: Math.min(contextSize / contextWindow, 1),
       cacheCreationInputTokens: apiUsage.lastCacheCreation,
       cacheReadInputTokens: apiUsage.lastCacheRead,
       source: 'api',

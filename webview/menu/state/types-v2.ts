@@ -67,11 +67,12 @@ export interface Project {
 }
 
 /**
- * Token usage data for context window tracking
+ * Token usage data for webview display (minimal version).
+ * Only totalTokens is needed for UI display - the full TokenUsageData
+ * with inputTokens, outputTokens, and cache fields is in the backend types.
  */
 export interface TokenUsageData {
   totalTokens: number;
-  contextUtilization: number; // 0-1 scale
 }
 
 export interface Session {

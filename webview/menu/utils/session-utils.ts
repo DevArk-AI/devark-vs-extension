@@ -19,7 +19,6 @@ export const RECENT_SESSION_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
  */
 export interface RingData {
   goal: number;    // 0-1 scale
-  context: number; // 0-1 scale
   quality: number; // 0-1 scale
 }
 
@@ -155,7 +154,7 @@ export function getSessionDisplayName(
  *
  * @param session - The session
  * @param coaching - Optional coaching data for goal progress override
- * @returns Ring data with goal, context, and quality values (0-1 scale)
+ * @returns Ring data with goal and quality values (0-1 scale)
  */
 export function computeRingData(
   session: Session,
@@ -169,16 +168,12 @@ export function computeRingData(
   const goalProgress = coachingProgress ?? sessionProgress ?? 0;
   const goal = goalProgress / 100; // Convert 0-100 to 0-1
 
-  // Context ring: Uses real token usage if available, shows 0 if not calculated
-  // contextUtilization is 0-1 scale representing how much of the context window is used
-  const context = session.tokenUsage?.contextUtilization ?? 0;
-
   // Quality ring: Based on averageScore (0-10 scale)
   const quality = session.averageScore !== undefined
     ? session.averageScore / 10
     : 0;
 
-  return { goal, context, quality };
+  return { goal, quality };
 }
 
 /**

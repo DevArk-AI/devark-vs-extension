@@ -66,7 +66,6 @@ function SessionListItem({
 
   // Format values for display
   const goalPercent = Math.round(ringData.goal * 100);
-  const contextPercent = Math.round(ringData.context * 100);
   // Quality: show as X.X/10 format, or "--" when no score
   const qualityDisplay = session.averageScore !== undefined
     ? `${session.averageScore.toFixed(1)}/10`
@@ -113,10 +112,6 @@ function SessionListItem({
             <span className="vl-session-list-item__progress-item" title={isPending ? "Goal progress pending" : "Goal Progress"}>
               <span className="vl-progress-dot vl-progress-dot--goal" />
               {isPending ? '—' : `${goalPercent}%`}
-            </span>
-            <span className="vl-session-list-item__progress-item" title="Context Usage">
-              <span className="vl-progress-dot vl-progress-dot--context" />
-              {contextPercent}%
             </span>
             <span className="vl-session-list-item__progress-item" title="Prompt quality">
               <span className="vl-progress-dot vl-progress-dot--quality" />

@@ -27,7 +27,7 @@ const PROGRESS_ICONS = {
 } as const;
 
 // Ring colors match the webview ActivityRings component:
-// Goal: #e06c75 (red), Context: #98c379 (green), Quality: #61afef (blue)
+// Goal: #e06c75 (red), Quality: #61afef (blue)
 
 /**
  * Get progress icon based on percentage (0-100)
@@ -59,7 +59,6 @@ interface SessionRingData {
   id: string;
   name: string;
   goalProgress: number;
-  contextProgress: number;
   qualityScore: number;
   promptCount: number;
   isActive: boolean;
@@ -72,7 +71,6 @@ interface SessionRingData {
  */
 function extractRingData(session: Session): SessionRingData {
   const goalProgress = session.goalProgress ?? 0;
-  const contextProgress = (session.tokenUsage?.contextUtilization ?? 0) * 100;
   const qualityScore = session.averageScore ?? 0;
 
   // Get display name: customName > goal > platform (no truncation - show full title)
@@ -82,7 +80,6 @@ function extractRingData(session: Session): SessionRingData {
     id: session.id,
     name,
     goalProgress,
-    contextProgress,
     qualityScore,
     promptCount: session.promptCount,
     isActive: session.isActive,
@@ -124,14 +121,10 @@ function buildTooltip(data: SessionRingData): vscode.MarkdownString {
 
   // Ring metrics - visual progress bars
   const goalBar = getProgressBar(data.goalProgress);
-  const contextBar = getProgressBar(data.contextProgress);
   const qualityBar = getProgressBar(data.qualityScore * 10);
 
   md.appendMarkdown(`**Goal Completion**\n\n`);
   md.appendMarkdown(`${goalBar} **${Math.round(data.goalProgress)}%**\n\n`);
-
-  md.appendMarkdown(`**Context Used**\n\n`);
-  md.appendMarkdown(`${contextBar} **${Math.round(data.contextProgress)}%**\n\n`);
 
   md.appendMarkdown(`**Prompt Quality**\n\n`);
   md.appendMarkdown(`${qualityBar} **${data.qualityScore.toFixed(1)}/10**\n\n`);

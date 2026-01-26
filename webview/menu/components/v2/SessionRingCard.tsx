@@ -111,11 +111,7 @@ function computeRingData(
   const activityBoost = session.isActive ? 0.3 : 0;
   const quality = Math.min(promptFactor + activityBoost, 1);
 
-  // Context ring: Uses real token usage if available, shows 0 if not calculated
-  // contextUtilization is 0-1 scale representing how much of the context window is used
-  const context = session.tokenUsage?.contextUtilization ?? 0;
-
-  return { goal, context, quality };
+  return { goal, quality };
 }
 
 /**
@@ -140,8 +136,7 @@ function getTooltipTitle(session: Session, platformLabel: string): string {
  * │ Implement Reports tab...    │  ← Goal as title
  * │ 3 prompts · Active          │
  * ├─────────────────────────────┤
- * │ 🔴 0% — Task completion     │  ← No redundant labels
- * │ 🟢 10% — Context used       │
+ * │ 🔴 0% — Task completion     │
  * │ 🔵 45% — Session activity   │
  * ├─────────────────────────────┤
  * │ Claude Code                 │  ← Platform at bottom
@@ -160,7 +155,6 @@ function RingTooltip({
 }) {
   // Format percentages for display
   const goalPercent = Math.round(ringData.goal * 100);
-  const contextPercent = Math.round(ringData.context * 100);
   const qualityPercent = Math.round(ringData.quality * 100);
   const isPending = isGoalProgressPending(session, coaching);
   const isAnalyzing = isSessionAnalyzing(session, coaching);
@@ -184,12 +178,6 @@ function RingTooltip({
           <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--goal" />
           <span className="vl-ring-tooltip__ring-value">
             {isAnalyzing ? 'Analyzing...' : isPending ? '—' : `${goalPercent}%`} — Goal completion
-          </span>
-        </div>
-        <div className="vl-ring-tooltip__ring-row">
-          <span className="vl-ring-tooltip__ring-color vl-ring-tooltip__ring-color--context" />
-          <span className="vl-ring-tooltip__ring-value">
-            {contextPercent}% — Context used
           </span>
         </div>
         <div className="vl-ring-tooltip__ring-row">

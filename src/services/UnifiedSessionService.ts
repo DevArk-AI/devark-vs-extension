@@ -25,6 +25,7 @@ import type { SessionSource } from '../shared/webview-protocol';
 
 // Set to true to enable verbose logging for debugging
 const DEBUG_UNIFIED_SESSION = false;
+const DEBUG_TOKEN_USAGE = false;
 
 // Cache configuration
 const CACHE_TTL_MS = 30000; // 30 seconds - matches sync status cache TTL
@@ -627,11 +628,13 @@ export class UnifiedSessionService {
       const normalized = validSessions.map((session: SessionData) => this.normalizeClaudeSession(session));
 
       // Debug: Log tokenUsage presence for first few sessions
-      const sessionsWithTokenUsage = normalized.filter(s => s.tokenUsage);
-      console.debug(`[UnifiedSessionService] Claude sessions: ${normalized.length} total, ${sessionsWithTokenUsage.length} with tokenUsage`);
-      if (sessionsWithTokenUsage.length > 0) {
-        const sample = sessionsWithTokenUsage[0];
-        console.debug(`[UnifiedSessionService] Sample tokenUsage: contextUtil=${sample.tokenUsage?.contextUtilization}, total=${sample.tokenUsage?.totalTokens}`);
+      if (DEBUG_TOKEN_USAGE) {
+        const sessionsWithTokenUsage = normalized.filter(s => s.tokenUsage);
+        console.debug(`[UnifiedSessionService] Claude sessions: ${normalized.length} total, ${sessionsWithTokenUsage.length} with tokenUsage`);
+        if (sessionsWithTokenUsage.length > 0) {
+          const sample = sessionsWithTokenUsage[0];
+          console.debug(`[UnifiedSessionService] Sample tokenUsage: total=${sample.tokenUsage?.totalTokens}`);
+        }
       }
 
       return normalized;

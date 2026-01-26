@@ -2,6 +2,11 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.17] - 2026-01-26
+
+### Changed
+- Simplified token data by removing contextUtilization metric
+
 ## [0.1.16] - 2026-01-24
 
 ### Added
