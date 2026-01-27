@@ -2,6 +2,11 @@
 
 All notable changes to the DevArk VS Code Extension will be documented in this file.
 
+## [0.1.18] - 2026-01-27
+
+### Fixed
+- Custom date range reports now include expandable "View full report" section with detailed breakdown
+
 ## [0.1.17] - 2026-01-26
 
 ### Changed
