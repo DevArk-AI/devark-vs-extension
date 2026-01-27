@@ -654,6 +654,84 @@ function ViewFullMonthlyReport({ summary }: { summary: MonthlySummary | null }) 
   );
 }
 
+// View Full Custom Range Report Expandable
+function ViewFullCustomReport({ summary }: { summary: WeeklySummary | null }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!summary) return null;
+
+  return (
+    <div className="vl-view-full-report">
+      <button
+        className="vl-view-full-report-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        View full report
+      </button>
+
+      {isOpen && (
+        <div className="vl-full-report-content">
+          {/* Executive Summary - at top */}
+          <ExecutiveSummarySection items={summary.executiveSummary} />
+
+          {/* Activity Distribution */}
+          <ActivityDistributionSection distribution={summary.activityDistribution} />
+
+          {/* Prompt Quality */}
+          <PromptQualitySection quality={summary.promptQuality} />
+
+          {/* Enhanced Project Breakdown (if AI provided it) */}
+          <EnhancedProjectBreakdownSection projects={summary.projectBreakdown} />
+
+          {/* Daily Breakdown */}
+          {summary.dailyBreakdown && summary.dailyBreakdown.length > 0 && (
+            <>
+              <div className="vl-full-report-section-title">Daily Breakdown</div>
+              <table className="vl-daily-breakdown">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Prompts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.dailyBreakdown.map((day, i) => (
+                    <tr key={i}>
+                      <td>{day.day}</td>
+                      <td>{formatDuration(day.time)}</td>
+                      <td>{day.prompts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {/* Fallback Top Projects (if no enhanced breakdown from AI) */}
+          {!summary.projectBreakdown && summary.topProjects && summary.topProjects.length > 0 && (
+            <>
+              <div className="vl-full-report-section-title">Top Projects</div>
+              <div className="vl-top-projects">
+                {summary.topProjects.slice(0, 4).map((project, i) => (
+                  <div key={i} className="vl-project-row">
+                    <span className="vl-project-name">{project.name}</span>
+                    <span className="vl-project-stats">
+                      {formatDuration(project.time)} · {project.prompts} prompts
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Empty Card Placeholder with Generate Button
 function EmptyReportCard({
   title,
@@ -873,12 +951,15 @@ export function SummariesView() {
 
         {/* Custom Date Range Card - show content or empty state */}
         {state.customSummary && state.customDateRange ? (
-          <CustomRangeInsightsCard
-            summary={state.customSummary}
-            dateRange={state.customDateRange}
-            onRefresh={handleRefreshCustom}
-            isLoading={state.isLoadingSummary}
-          />
+          <>
+            <CustomRangeInsightsCard
+              summary={state.customSummary}
+              dateRange={state.customDateRange}
+              onRefresh={handleRefreshCustom}
+              isLoading={state.isLoadingSummary}
+            />
+            <ViewFullCustomReport summary={state.customSummary} />
+          </>
         ) : (
           <EmptyReportCard
             title="CUSTOM RANGE"
